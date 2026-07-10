@@ -129,6 +129,22 @@
         }
         
         .row-flex { display: flex; gap: 8px; }
+        .row-flex > div { min-width: 0; }
+
+        /* 📱 手機窄螢幕：把左右並排的欄位改成上下排列，避免擠壓重疊 */
+        @media (max-width: 480px) {
+            .row-flex {
+                flex-direction: column;
+                gap: 0;
+            }
+            .row-flex > div {
+                width: 100%;
+            }
+            input[type="date"], input[type="time"] {
+                font-size: 15px;
+                padding: 10px;
+            }
+        }
 
         .comic-btn {
             background-color: var(--main-yellow);
@@ -528,19 +544,19 @@
     <!-- 底部固定五大導覽列按鈕 -->
     <div class="nav-bar">
         <div class="nav-item active" onclick="switchTab('trip', this)">
-            <div class="nav-icon">🏕️</div><div>專案成員</div>
+            <div class="nav-icon">🐻</div><div>專案成員</div>
         </div>
         <div class="nav-item" onclick="switchTab('pre', this)">
-            <div class="nav-icon">🎟️</div><div>行前花費</div>
+            <div class="nav-icon">🎫</div><div>行前花費</div>
         </div>
         <div class="nav-item" onclick="switchTab('local', this)">
-            <div class="nav-icon">🍜</div><div>當地日常</div>
+            <div class="nav-icon">🍡</div><div>當地日常</div>
         </div>
         <div class="nav-item" onclick="switchTab('schedule', this)">
-            <div class="nav-icon">📅</div><div>本次行程</div>
+            <div class="nav-icon">🗓️</div><div>本次行程</div>
         </div>
         <div class="nav-item" onclick="switchTab('personal', this)">
-            <div class="nav-icon">👤</div><div>個人記帳</div>
+            <div class="nav-icon">🙋</div><div>個人記帳</div>
         </div>
     </div>
 </div>
