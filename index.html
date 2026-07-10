@@ -326,11 +326,16 @@
                 <option value="personal">👤 個人自付 (自己花自己的，透明展示不拆帳)</option>
             </select>
 
-            <label>🎈 項目名稱</label>
-            <input type="text" id="preTitle" placeholder="買機票、訂房、買網卡...">
-            
-            <label>💰 金額 (台幣 TWD)</label>
-            <input type="number" id="preAmount" placeholder="請輸入台幣金額">
+            <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
+                <div style="flex:1.6; min-width:0;">
+                    <label>🎈 項目名稱</label>
+                    <input type="text" id="preTitle" placeholder="買機票、訂房、買網卡...">
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <label>💰 金額 (台幣)</label>
+                    <input type="number" id="preAmount" placeholder="金額">
+                </div>
+            </div>
 
             <!-- 👑 聯動核心精修：依據模式切換顯示 -->
             <div id="prePayerBlock">
@@ -368,28 +373,22 @@
             <div class="dashboard">
                 <div class="dash-item" style="background: #ffd1dc;">總花費<br><span id="localTotalSum" style="color:red;">$0</span></div>
                 <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
-                <div class="dash-item" style="background: #dfb2f4;">個人私物<br><span id="localOwnSum" style="color:purple;">$0</span></div>
             </div>
         </div>
 
         <div class="comic-card">
             <div class="card-title">🍜 當地日常消費記錄</div>
-            <label>🍨 支出模式</label>
-            <select id="localCostType" onchange="toggleLocalCostUI()">
-                <option value="share">🤝 大家代墊 (日常公帳，事後平分)</option>
-                <option value="personal">👤 個人私物 (買伴手禮、個人藥妝，不拆帳)</option>
-            </select>
 
             <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
-                <div style="flex:1.1; min-width:0;">
+                <div style="flex:1; min-width:0;">
                     <label>📅 花錢日期</label>
                     <input type="date" id="localDate" value="2026-07-11">
                 </div>
-                <div style="flex:1.3; min-width:0;">
+                <div style="flex:1; min-width:0;">
                     <label>外幣金額</label>
                     <input type="number" id="localAmount" placeholder="輸入金額">
                 </div>
-                <div style="flex:1.3; min-width:0;">
+                <div style="flex:1; min-width:0;">
                     <label>🌐 幣別</label>
                     <select id="localCurrency" onchange="updateExchangeHint()">
                         <option value="TWD">🇹🇼 台幣 TWD</option>
@@ -411,17 +410,12 @@
             <label>🍡 消費項目</label>
             <input type="text" id="localTitle" placeholder="吃拉麵、泰式按摩、買伴手禮...">
 
-            <!-- 👑 聯動核心精修：當地自付也隱藏選單 -->
+            <!-- 👑 聯動核心精修：當地日常只處理大家代墊 -->
             <div id="localPayerBlock">
                 <label>👑 誰先代墊的？</label>
                 <select id="localPayerSelect"></select>
                 <label>💞 誰要共同分攤？</label>
                 <div id="localShareGroup" class="checkbox-group"></div>
-            </div>
-
-            <div id="localPersonalBlock" style="display:none;">
-                <label>👤 這是「誰」買的個人私物？(可多選)</label>
-                <div id="localPersonalGroup" class="checkbox-group"></div>
             </div>
 
             <button class="comic-btn btn-pink" onclick="addExpense('local')" style="margin-top:15px;">🥞 儲存當地日常</button>
@@ -477,10 +471,10 @@
     <div id="page-personal" class="page">
         <div class="comic-card" style="background: #f3e5f5;">
             <div class="card-title">👤 個人記帳（旅伴自由填寫）</div>
-            <p style="font-size:13px; color:#666; margin-top:0;">選自己的名字，記下自己買的伴手禮、私人花費，不會影響大家的公帳結算唷！</p>
+            <p style="font-size:13px; color:#666; margin-top:0;">選自己的名字，記下自己買的伴手禮、私人花費，只有自己看得到，不會影響大家的公帳結算唷！</p>
 
             <label>🙋 我是誰？</label>
-            <select id="personalNameSelect"></select>
+            <select id="personalNameSelect" onchange="refreshPersonalPage()"></select>
 
             <div class="row-flex">
                 <div style="flex:1.2;">
@@ -524,7 +518,7 @@
         </div>
 
         <div class="comic-card">
-            <div class="card-title">📋 大家的個人私物紀錄</div>
+            <div class="card-title">📋 我的個人私物紀錄</div>
             <div id="personalHistoryList"></div>
         </div>
     </div>
@@ -685,13 +679,6 @@
         document.getElementById('prePersonalBlock').style.display = (type === 'personal') ? 'block' : 'none';
     }
 
-    // 👑 聯動精修：當地模式切換
-    function toggleLocalCostUI() {
-        const type = document.getElementById('localCostType').value;
-        document.getElementById('localPayerBlock').style.display = (type === 'personal') ? 'none' : 'block';
-        document.getElementById('localPersonalBlock').style.display = (type === 'personal') ? 'block' : 'none';
-    }
-
     function updateTripDates() {
         if (guestGuard()) return;
         if (db.currentIdx === -1) return;
@@ -823,16 +810,19 @@
 
         const hist = document.getElementById('personalHistoryList');
         hist.innerHTML = "";
-        const personalItems = trip.expenses.filter(e => e.costType === 'personal');
+        // 🔒 隱私設計：只顯示「目前選的這個人」自己的私物花費，不會看到別人買了什麼
+        const myName = nameSelect.value;
+        const personalItems = trip.expenses.filter(e => e.costType === 'personal' && e.payer === myName);
+        if (!myName) { hist.innerHTML = "<p style='color:gray; font-size:14px;'>請先選擇你的名字～</p>"; return; }
         if (!personalItems.length) {
-            hist.innerHTML = "<p style='color:gray; font-size:14px;'>目前還沒有人記錄個人花費唷～</p>";
+            hist.innerHTML = "<p style='color:gray; font-size:14px;'>你還沒有記錄過個人花費唷～</p>";
             return;
         }
         personalItems.forEach(e => {
             const currencyHint = e.currency && e.currency !== 'TWD' ? ` <small style="color:gray;">(原幣:${e.rawAmount} ${e.currency})</small>` : '';
             const div = document.createElement('div');
             div.className = "history-item";
-            div.innerHTML = `<small style="color:gray;">📅 ${e.date} ${e.time}</small><br>🎁 <b>${e.payer}</b> [${e.title}]<br><b>$${e.amount} 元</b>${currencyHint}`;
+            div.innerHTML = `<small style="color:gray;">📅 ${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b>${currencyHint}`;
             hist.appendChild(div);
         });
     }
@@ -876,10 +866,9 @@
         const preGroup = document.getElementById('preShareGroup');
         const localGroup = document.getElementById('localShareGroup');
         const prePersonalGroup = document.getElementById('prePersonalGroup');
-        const localPersonalGroup = document.getElementById('localPersonalGroup');
         
         preGroup.innerHTML = ""; localGroup.innerHTML = "";
-        prePersonalGroup.innerHTML = ""; localPersonalGroup.innerHTML = "";
+        prePersonalGroup.innerHTML = "";
 
         trip.members.forEach(m => {
             preSelect.add(new Option(m, m));
@@ -887,14 +876,13 @@
             preGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="preCb" value="${m}" checked>${m}</label>`;
             localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="localCb" value="${m}" checked>${m}</label>`;
             prePersonalGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="preOwnCb" value="${m}">${m}</label>`;
-            localPersonalGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="localOwnCb" value="${m}">${m}</label>`;
         });
 
         // 渲染明細歷史與加總
         trip.expenses.sort((a,b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time));
         
         let preTotalSum = 0, preShareSum = 0, preOwnSum = 0;
-        let localTotalSum = 0, localShareSum = 0, localOwnSum = 0;
+        let localTotalSum = 0, localShareSum = 0;
         
         const preHist = document.getElementById('preHistoryList');
         const localHist = document.getElementById('localHistoryList');
@@ -916,14 +904,11 @@
                 }
                 preHist.appendChild(div);
             } else {
+                // 🔒 個人私物完全跳過，不顯示在「當地日常」共用清單，也不計入統計（只有本人在「個人記帳」頁看得到）
+                if (e.costType === 'personal') return;
                 localTotalSum += e.amount;
-                if (e.costType === 'personal') {
-                    localOwnSum += e.amount;
-                    div.innerHTML = `${delBtn} <small style="color:gray;">📅 ${e.date}</small><br>👤 <b>${e.payer}</b> 私物 [${e.title}] <span class="type-badge" style="background:#7b1fa2">個人私物</span><br><b>$${e.amount} 元 (NTD)</b> <small style="color:gray;">(原幣:${e.rawAmount} ${e.currency})</small>`;
-                } else {
-                    localShareSum += e.amount;
-                    div.innerHTML = `${delBtn} <small style="color:gray;">📅 ${e.date}</small><br>🍜 <b>${e.payer}</b> 代墊 [${e.title}] <span class="type-badge" style="background:#e65100">大家平分</span><br><b>$${e.amount} 元 (NTD)</b> <small style="color:gray;">(原幣:${e.rawAmount} ${e.currency})</small><br><small style="color:#555;">分攤: ${e.participants.join(',')}</small>`;
-                }
+                localShareSum += e.amount;
+                div.innerHTML = `${delBtn} <small style="color:gray;">📅 ${e.date}</small><br>🍜 <b>${e.payer}</b> 代墊 [${e.title}] <span class="type-badge" style="background:#e65100">大家平分</span><br><b>$${e.amount} 元 (NTD)</b> <small style="color:gray;">(原幣:${e.rawAmount} ${e.currency})</small><br><small style="color:#555;">分攤: ${e.participants.join(',')}</small>`;
                 localHist.appendChild(div);
             }
         });
@@ -933,7 +918,6 @@
         document.getElementById('preOwnSum').innerText = `$${preOwnSum}`;
         document.getElementById('localTotalSum').innerText = `$${localTotalSum}`;
         document.getElementById('localShareSum').innerText = `$${localShareSum}`;
-        document.getElementById('localOwnSum').innerText = `$${localOwnSum}`;
         
         generateDayTags();
         refreshPersonalPage();
@@ -971,7 +955,7 @@
                 trip.expenses.push({ type, costType, title, payer, amount, participants, date, time });
             }
         } else {
-            costType = document.getElementById('localCostType').value;
+            costType = 'share'; // 當地日常只處理大家代墊，個人花費請到「個人記帳」頁
             title = document.getElementById('localTitle').value.trim();
             rawAmount = parseFloat(document.getElementById('localAmount').value) || 0;
             currency = document.getElementById('localCurrency').value;
@@ -981,19 +965,11 @@
 
             if (!title || amount <= 0 || !date) return alert('請完整填寫項目與金額！⭐');
 
-            if (costType === 'personal') {
-                let ownCbs = document.querySelectorAll('input[name="localOwnCb"]:checked');
-                if(!ownCbs.length) return alert('請勾選這是誰的個人費用！');
-                ownCbs.forEach(cb => {
-                    trip.expenses.push({ type, costType, title, payer: cb.value, amount, rawAmount, currency, participants: [], date, time });
-                });
-            } else {
-                let payer = document.getElementById('localPayerSelect').value;
-                let cbs = document.querySelectorAll('input[name="localCb"]:checked');
-                if(!cbs.length) return alert('大家平分開銷至少需要勾選一個人！');
-                let participants = []; cbs.forEach(cb => participants.push(cb.value));
-                trip.expenses.push({ type, costType, title, payer, amount, rawAmount, currency, participants, date, time });
-            }
+            let payer = document.getElementById('localPayerSelect').value;
+            let cbs = document.querySelectorAll('input[name="localCb"]:checked');
+            if(!cbs.length) return alert('大家平分開銷至少需要勾選一個人！');
+            let participants = []; cbs.forEach(cb => participants.push(cb.value));
+            trip.expenses.push({ type, costType, title, payer, amount, rawAmount, currency, participants, date, time });
         }
 
         // 清空輸入
