@@ -362,7 +362,8 @@
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
-            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>　👑 ${e.payer}${shareInfo}</div>`;
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : '';
+            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
         });
     }
 

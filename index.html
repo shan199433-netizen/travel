@@ -469,11 +469,12 @@
         trip.scheduleData[trip.currentDayTab].push({ time, desc, memo }); trip.scheduleData[trip.currentDayTab].sort((a,b) => a.time.localeCompare(b.time));
         document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = ""; renderTimeline(); save();
     }
-    function deleteScheduleItem(idx) { db.trips[db.currentIdx].scheduleData[db.currentDayTab].splice(idx, 1); renderTimeline(); save(); }
+    function deleteScheduleItem(idx) { const trip = db.trips[db.currentIdx]; trip.scheduleData[trip.currentDayTab].splice(idx, 1); renderTimeline(); save(); }
     function renderTimeline() {
         const listDiv = document.getElementById('timelineDisplayList'); listDiv.innerHTML = "";
         if (db.currentIdx === -1 || !db.trips.length) return;
-        const items = db.trips[db.currentIdx].scheduleData[db.currentDayTab] || [];
+        const trip = db.trips[db.currentIdx];
+        const items = (trip.scheduleData || {})[trip.currentDayTab] || [];
         if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; return; }
         items.forEach((item, idx) => {
             listDiv.innerHTML += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; <span style="font-weight:bold;">${item.desc}</span>${item.memo ? '<br><small>📝 ' + item.memo + '</small>' : ''}</div>`;
@@ -607,7 +608,8 @@
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
-            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteExpense(${realIdx})">❌</button><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>　👑 ${e.payer}${shareInfo}</div>`;
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : '';
+            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteExpense(${realIdx})">❌</button><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
         });
     }
 
