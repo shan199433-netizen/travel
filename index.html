@@ -319,6 +319,7 @@
         .guest-mode #page-trip select,
         .guest-mode #page-pre input,
         .guest-mode #page-pre select,
+        .guest-mode #page-pre textarea,
         .guest-mode #page-local input,
         .guest-mode #page-local select,
         .guest-mode #page-schedule input,
@@ -377,7 +378,24 @@
 
     <!-- ================= 頁面 2：🎟️ 行前花費 ================= -->
     <div id="page-pre" class="page">
-        <!-- 數據統計看板 -->
+        <!-- 📌 1. 行前重要資訊：班機 / 民宿 / 行前準備（可自由編輯修改） -->
+        <div class="comic-card" style="background:#fff8e1;">
+            <div class="card-title">📌 行前重要資訊（可編輯）</div>
+
+            <label>✈️ 班機資訊</label>
+            <textarea id="infoFlight" rows="3" placeholder="去程：酷航 TR899 07/10 08:30 桃園→那霸&#10;回程：酷航 TR898 07/14 19:00 那霸→桃園&#10;訂單編號 AX123"></textarea>
+
+            <label>🏠 民宿 / 住宿地址</label>
+            <textarea id="infoHotel" rows="3" placeholder="民宿名稱、地址、電話、Check-in 時間、房號密碼..."></textarea>
+
+            <label>📝 行前準備（退稅流程 / 天氣 / 提醒）</label>
+            <textarea id="infoPrep" rows="4" placeholder="退稅：機場 T2 三樓退稅櫃檯，需帶護照+收據&#10;天氣：這幾天約 26~31°C，偶陣雨，記得帶薄外套與雨具&#10;要帶：轉接頭、藥品、行動電源..."></textarea>
+
+            <button class="comic-btn btn-green" onclick="savePreInfo()" style="margin-top:10px;">💾 儲存 / 更新資訊</button>
+            <p id="preInfoSavedHint" style="font-size:12.5px; color:#2e7d32; margin:8px 0 0 0; min-height:16px;"></p>
+        </div>
+
+        <!-- 📊 2. 數據統計看板 -->
         <div class="comic-card" style="background: #fafafa;">
             <div class="card-title">📊 【行前】花費錢包統計</div>
             <div class="dashboard">
@@ -387,6 +405,20 @@
             </div>
         </div>
 
+        <!-- 📋 3. 行前明細歷史 -->
+        <div class="comic-card">
+            <div class="card-title">📋 行前明細歷史 (公帳自付全公開)</div>
+            <div id="preHistoryList"></div>
+        </div>
+
+        <!-- 🧮 4. 行前大算盤結算 -->
+        <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;">
+            <div class="card-title">🧮 行前大算盤結算（誰該給誰錢）</div>
+            <p style="font-size:12.5px; color:#555; margin:0 0 10px 0;">💡 只要有人新增代墊明細，這裡會<b>自動更新</b>，拿到分享連結的人打開就能直接看到，不用再按任何按鈕！</p>
+            <div id="preSettlementDisplay" style="margin-top: 5px;"></div>
+        </div>
+
+        <!-- 🎟️ 5. 登記行前開銷 -->
         <div class="comic-card">
             <div class="card-title">🎟️ 登記行前開銷 (台幣)</div>
             <label>🍨 支出模式</label>
@@ -395,43 +427,35 @@
                 <option value="personal">👤 個人自付 (自己花自己的，透明展示不拆帳)</option>
             </select>
 
+            <!-- 項目名稱 / 金額 / 誰先代墊 同一行 -->
             <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
-                <div style="flex:1.6; min-width:0;">
+                <div style="flex:1; min-width:0;">
                     <label>🎈 項目名稱</label>
-                    <input type="text" id="preTitle" placeholder="買機票、訂房、買網卡...">
+                    <input type="text" id="preTitle" placeholder="機票、訂房...">
                 </div>
                 <div style="flex:1; min-width:0;">
-                    <label>💰 金額 (台幣)</label>
+                    <label>💰 金額</label>
                     <input type="number" id="preAmount" placeholder="金額">
+                </div>
+                <div style="flex:1; min-width:0;" id="prePayerInline">
+                    <label>👑 誰先代墊</label>
+                    <select id="prePayerSelect"></select>
                 </div>
             </div>
 
-            <!-- 👑 聯動核心精修：依據模式切換顯示 -->
-            <div id="prePayerBlock">
-                <label>👑 誰先代墊這筆錢？</label>
-                <select id="prePayerSelect"></select>
-                
+            <!-- 大家代墊模式：誰要平分 -->
+            <div id="preShareBlock">
                 <label>💞 誰要共同平分這筆錢？</label>
                 <div id="preShareGroup" class="checkbox-group"></div>
             </div>
 
+            <!-- 個人自付模式：這是誰的 -->
             <div id="prePersonalBlock" style="display:none;">
                 <label>👤 這是「誰」自付的個人費用？(可多選，會為每個人各自記一筆)</label>
                 <div id="prePersonalGroup" class="checkbox-group"></div>
             </div>
 
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
-        </div>
-
-        <div class="comic-card">
-            <div class="card-title">📋 行前明細歷史 (公帳自付全公開)</div>
-            <div id="preHistoryList"></div>
-        </div>
-
-        <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;">
-            <div class="card-title">🧮 行前大算盤單獨結算</div>
-            <button class="comic-btn btn-blue" onclick="calculateDebts('pre')">🔮 計算行前誰該給誰錢</button>
-            <div id="preSettlementDisplay" style="margin-top: 15px;"></div>
         </div>
     </div>
 
@@ -452,7 +476,7 @@
             <input type="date" id="localDate" value="2026-07-11">
 
             <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
-                <div style="flex:1.2; min-width:0;">
+                <div style="flex:1; min-width:0;">
                     <label>金額</label>
                     <input type="number" id="localAmount" placeholder="金額">
                 </div>
@@ -475,13 +499,18 @@
             </div>
             <p id="twdLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#ff5722; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
 
-            <label>🍡 消費項目</label>
-            <input type="text" id="localTitle" placeholder="吃拉麵、泰式按摩、買伴手禮...">
-
-            <!-- 👑 聯動核心精修：當地日常只處理大家代墊 -->
+            <!-- 👑 聯動核心精修：當地日常只處理大家代墊；消費項目與代墊人同一行 -->
             <div id="localPayerBlock">
-                <label>👑 誰先代墊的？</label>
-                <select id="localPayerSelect"></select>
+                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;">
+                        <label>🍡 消費項目</label>
+                        <input type="text" id="localTitle" placeholder="拉麵、按摩、伴手禮...">
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <label>👑 誰先代墊的？</label>
+                        <select id="localPayerSelect"></select>
+                    </div>
+                </div>
                 <label>💞 誰要共同分攤？</label>
                 <div id="localShareGroup" class="checkbox-group"></div>
             </div>
@@ -495,9 +524,9 @@
         </div>
 
         <div class="comic-card" style="background: #fffde7; border: 3px solid #333;">
-            <div class="card-title">🧮 當地日常獨立結算</div>
-            <button class="comic-btn btn-orange" onclick="calculateDebts('local')">🔮 計算當地誰該給誰錢</button>
-            <div id="localSettlementDisplay" style="margin-top: 15px;"></div>
+            <div class="card-title">🧮 當地日常結算（誰該給誰錢）</div>
+            <p style="font-size:12.5px; color:#555; margin:0 0 10px 0;">💡 只要有人新增代墊明細，這裡會<b>自動更新</b>，拿到分享連結的人打開就能直接看到，不用再按任何按鈕！</p>
+            <div id="localSettlementDisplay" style="margin-top: 5px;"></div>
         </div>
     </div>
 
@@ -534,23 +563,26 @@
             <div class="card-title">👤 個人記帳（旅伴自由填寫）</div>
             <p style="font-size:13px; color:#666; margin-top:0;">選自己的名字，記下自己買的伴手禮、私人花費，只有自己看得到，不會影響大家的公帳結算唷！</p>
 
-            <label>🙋 我是誰？</label>
-            <select id="personalNameSelect" onchange="refreshPersonalPage()"></select>
-
             <label>📅 日期</label>
             <input type="date" id="personalDate" value="2026-07-10">
-            <label>🕒 時間</label>
-            <input type="time" id="personalTime" value="12:00">
 
-            <label>🍡 買了什麼？</label>
-            <input type="text" id="personalTitle" placeholder="伴手禮、藥妝、自己吃的下午茶...">
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;">
+                    <label>🙋 我是誰？</label>
+                    <select id="personalNameSelect" onchange="refreshPersonalPage()"></select>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <label>🍡 買了什麼？</label>
+                    <input type="text" id="personalTitle" placeholder="伴手禮、藥妝...">
+                </div>
+            </div>
 
-            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                <div style="flex:2">
+            <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;">
                     <label>金額</label>
                     <input type="number" id="personalAmount" placeholder="輸入金額">
                 </div>
-                <div style="flex:1.8">
+                <div style="flex:1; min-width:0;">
                     <label>🌐 幣別</label>
                     <select id="personalCurrency" onchange="updatePersonalExchangeHint()">
                         <option value="TWD">🇹🇼 台幣 TWD</option>
@@ -576,6 +608,57 @@
             <div class="card-title">📋 我的個人私物紀錄</div>
             <div id="personalHistoryList"></div>
         </div>
+
+        <!-- 🛍️ 幫別人代購紀錄（只是備忘紀錄，不影響公帳結算） -->
+        <div class="comic-card" style="background:#e8f5e9;">
+            <div class="card-title">🛍️ 幫別人代購紀錄</div>
+            <p style="font-size:13px; color:#666; margin-top:0;">記錄「我幫誰買了什麼」，方便回國對帳。這只是私人備忘，不會自動算進大家的公帳唷！</p>
+
+            <label>📅 日期</label>
+            <input type="date" id="proxyDate" value="2026-07-10">
+
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;">
+                    <label>🙋 幫誰代購？</label>
+                    <input type="text" id="proxyFor" placeholder="小明、熊大...">
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <label>🍡 代購了什麼？</label>
+                    <input type="text" id="proxyTitle" placeholder="藥妝、酒...">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;">
+                    <label>金額</label>
+                    <input type="number" id="proxyAmount" placeholder="輸入金額">
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <label>🌐 幣別</label>
+                    <select id="proxyCurrency" onchange="updateProxyExchangeHint()">
+                        <option value="TWD">🇹🇼 台幣 TWD</option>
+                        <option value="JPY">🇯🇵 日圓 JPY</option>
+                        <option value="THB">🇹🇭 泰銖 THB</option>
+                        <option value="KRW">🇰🇷 韓元 KRW</option>
+                        <option value="USD">🇺🇸 美元 USD</option>
+                        <option value="EUR">🇪🇺 歐元 EUR</option>
+                        <option value="CNY">🇨🇳 人民幣 CNY</option>
+                        <option value="VND">🇻🇳 越南盾 VND</option>
+                        <option value="HKD">🇭🇰 港幣 HKD</option>
+                        <option value="SGD">🇸🇬 新幣 SGD</option>
+                        <option value="MYR">🇲🇾 馬幣 MYR</option>
+                    </select>
+                </div>
+            </div>
+            <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
+
+            <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
+        </div>
+
+        <div class="comic-card">
+            <div class="card-title">📋 我幫別人代購的清單</div>
+            <div id="proxyHistoryList"></div>
+        </div>
     </div>
 
     <!-- 底部固定五大導覽列按鈕 -->
@@ -584,7 +667,7 @@
             <div class="nav-icon">🐻</div><div>專案成員</div>
         </div>
         <div class="nav-item" onclick="switchTab('pre', this)">
-            <div class="nav-icon">🎫</div><div>行前花費</div>
+            <div class="nav-icon">🎫</div><div>行前總覽</div>
         </div>
         <div class="nav-item" onclick="switchTab('local', this)">
             <div class="nav-icon">🍡</div><div>當地日常</div>
@@ -637,6 +720,7 @@
         }
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
+        document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
 
         // 🔥 即時監聽雲端資料，只要有人（包含旅伴）新增資料，這裡會自動更新畫面
         cloudDoc.onSnapshot((docSnap) => {
@@ -730,8 +814,10 @@
     // 👑 聯動精修：行前模式切換
     function togglePreCostUI() {
         const type = document.getElementById('preCostType').value;
-        document.getElementById('prePayerBlock').style.display = (type === 'personal') ? 'none' : 'block';
-        document.getElementById('prePersonalBlock').style.display = (type === 'personal') ? 'block' : 'none';
+        const isPersonal = (type === 'personal');
+        document.getElementById('prePayerInline').style.display = isPersonal ? 'none' : 'block';
+        document.getElementById('preShareBlock').style.display = isPersonal ? 'none' : 'block';
+        document.getElementById('prePersonalBlock').style.display = isPersonal ? 'block' : 'none';
     }
 
     function updateTripDates() {
@@ -788,6 +874,9 @@
         renderTimeline(); save();
     }
 
+    // 目前正在編輯的時間軸項目 index（-1 表示沒有在編輯）
+    let editingSchedIdx = -1;
+
     function renderTimeline() {
         const listDiv = document.getElementById('timelineDisplayList');
         listDiv.innerHTML = "";
@@ -796,17 +885,80 @@
         const items = trip.scheduleData[trip.currentDayTab] || [];
         if(items.length === 0) {
             listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也，快把出發班機、景點填上來！🌸</p>";
+            editingSchedIdx = -1;
             return;
         }
         items.forEach((item, idx) => {
-            let memoStr = item.memo ? `<br><small style="color:#777; background:#fff9c4; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:3px;">📝 備忘：${item.memo}</small>` : '';
-            listDiv.innerHTML += `
-                <div class="timeline-item">
-                    <button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button>
+            const wrap = document.createElement('div');
+            wrap.className = "timeline-item";
+
+            if (idx === editingSchedIdx && !isGuest) {
+                // ✏️ 編輯狀態：用輸入框讓使用者自由修改（用 DOM 設值，避免引號/換行破版）
+                wrap.style.background = "#fffbea";
+                wrap.style.borderRadius = "10px";
+                wrap.style.padding = "10px 12px";
+
+                const tIn = document.createElement('input');
+                tIn.type = "time"; tIn.value = item.time;
+                const dIn = document.createElement('input');
+                dIn.type = "text"; dIn.value = item.desc; dIn.placeholder = "活動項目";
+                const mIn = document.createElement('textarea');
+                mIn.rows = 2; mIn.value = item.memo || ""; mIn.placeholder = "備忘小筆記"; mIn.style.borderRadius = "8px";
+
+                const btnRow = document.createElement('div');
+                btnRow.style.display = "flex"; btnRow.style.gap = "8px"; btnRow.style.marginTop = "4px";
+                const saveB = document.createElement('button');
+                saveB.className = "comic-btn btn-green";
+                saveB.style.cssText = "padding:8px; font-size:14px; box-shadow:2px 2px 0px #333;";
+                saveB.innerText = "💾 儲存修改";
+                saveB.onclick = () => saveScheduleEdit(idx, tIn.value, dIn.value, mIn.value);
+                const cancelB = document.createElement('button');
+                cancelB.className = "comic-btn";
+                cancelB.style.cssText = "padding:8px; font-size:14px; box-shadow:2px 2px 0px #333; background:#eee;";
+                cancelB.innerText = "取消";
+                cancelB.onclick = () => cancelScheduleEdit();
+                btnRow.appendChild(saveB); btnRow.appendChild(cancelB);
+
+                wrap.appendChild(tIn); wrap.appendChild(dIn); wrap.appendChild(mIn); wrap.appendChild(btnRow);
+            } else {
+                // 一般顯示：附「編輯 ✏️」與「刪除 ❌」按鈕
+                let memoStr = item.memo ? `<br><small style="color:#777; background:#fff9c4; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:3px;">📝 備忘：${item.memo}</small>` : '';
+                const editBtn = isGuest ? '' : `<button class="delete-btn" style="color:#1976d2; margin-right:4px;" onclick="editScheduleItem(${idx})">✏️</button>`;
+                const delBtn = isGuest ? '' : `<button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button>`;
+                wrap.innerHTML = `
+                    ${delBtn}${editBtn}
                     <b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; 
-                    <span style="font-weight:bold;">${item.desc}</span>${memoStr}
-                </div>`;
+                    <span style="font-weight:bold;">${item.desc}</span>${memoStr}`;
+            }
+            listDiv.appendChild(wrap);
         });
+    }
+
+    // ✏️ 進入編輯狀態
+    function editScheduleItem(idx) {
+        if (guestGuard()) return;
+        editingSchedIdx = idx;
+        renderTimeline();
+    }
+
+    // ✏️ 取消編輯
+    function cancelScheduleEdit() {
+        editingSchedIdx = -1;
+        renderTimeline();
+    }
+
+    // ✏️ 儲存編輯後的內容
+    function saveScheduleEdit(idx, time, desc, memo) {
+        if (guestGuard()) return;
+        desc = (desc || "").trim();
+        if (!desc) return alert('活動項目不能空白唷！');
+        let trip = db.trips[db.currentIdx];
+        const arr = trip.scheduleData[trip.currentDayTab];
+        if (!arr || !arr[idx]) { editingSchedIdx = -1; return; }
+        arr[idx] = { time, desc, memo: (memo || "").trim() };
+        arr.sort((a,b) => a.time.localeCompare(b.time));
+        editingSchedIdx = -1;
+        renderTimeline(); save();
     }
 
     function updateExchangeHint() {
@@ -838,12 +990,11 @@
         const currency = document.getElementById('personalCurrency').value;
         const amount = updatePersonalExchangeHint();
         const date = document.getElementById('personalDate').value;
-        const time = document.getElementById('personalTime').value;
 
         if (!payer) return alert('請先選擇你是誰！🙋');
-        if (!title || amount <= 0 || !date || !time) return alert('請完整填寫項目與金額！⭐');
+        if (!title || amount <= 0 || !date) return alert('請完整填寫項目與金額！⭐');
 
-        trip.expenses.push({ type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time });
+        trip.expenses.push({ type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" });
 
         document.getElementById('personalTitle').value = "";
         document.getElementById('personalAmount').value = "";
@@ -863,6 +1014,9 @@
         trip.members.forEach(m => nameSelect.add(new Option(m, m)));
         if (trip.members.includes(prevVal)) nameSelect.value = prevVal;
 
+        // 🛍️ 一併刷新「幫別人代購」的下拉與清單（放在下方 early return 之前）
+        refreshProxyList();
+
         const hist = document.getElementById('personalHistoryList');
         hist.innerHTML = "";
         // 🔒 隱私設計：只顯示「目前選的這個人」自己的私物花費，不會看到別人買了什麼
@@ -880,6 +1034,77 @@
             div.innerHTML = `<small style="color:gray;">📅 ${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b>${currencyHint}`;
             hist.appendChild(div);
         });
+    }
+
+    // 🛍️ 代購頁：匯率換算提示
+    function updateProxyExchangeHint() {
+        const amt = parseFloat(document.getElementById('proxyAmount').value) || 0;
+        const cur = document.getElementById('proxyCurrency').value;
+        const twd = Math.round(amt * rates[cur]);
+        document.getElementById('proxyLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`;
+        return twd;
+    }
+
+    // 🛍️ 新增一筆「我幫別人代購」的紀錄（純備忘，不進公帳結算）
+    function addProxyExpense() {
+        if (db.currentIdx === -1 || db.trips.length === 0) return alert('目前還沒有任何行程分類，請等記帳的人先建立行程！');
+        let trip = db.trips[db.currentIdx];
+        if (trip.members.length === 0) return alert('目前沒有任何隊員，請等記帳的人先加入成員！🎒');
+
+        const payer = document.getElementById('personalNameSelect').value; // 代購者＝目前「我是誰」
+        const forWho = document.getElementById('proxyFor').value.trim();     // 幫誰買（自由輸入）
+        const title = document.getElementById('proxyTitle').value.trim();
+        const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0;
+        const currency = document.getElementById('proxyCurrency').value;
+        const amount = updateProxyExchangeHint();
+        const date = document.getElementById('proxyDate').value;
+
+        if (!payer) return alert('請先在上方選擇「我是誰」！🙋');
+        if (!forWho) return alert('請輸入你幫誰代購！');
+        if (!title || amount <= 0 || !date) return alert('請完整填寫代購項目與金額！⭐');
+
+        trip.expenses.push({ type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" });
+
+        document.getElementById('proxyFor').value = "";
+        document.getElementById('proxyTitle').value = "";
+        document.getElementById('proxyAmount').value = "";
+        document.getElementById('proxyLiveHint').innerText = "🍦 換算台幣：約 $0 元";
+        refreshAll(); save();
+        alert('代購紀錄已記下囉！🛍️');
+    }
+
+    // 🛍️ 刪除一筆代購紀錄
+    function deleteProxyItem(realIdx) {
+        let trip = db.trips[db.currentIdx];
+        if (confirm('確定刪除這筆代購紀錄嗎？')) {
+            trip.expenses.splice(realIdx, 1);
+            refreshAll(); save();
+        }
+    }
+
+    // 🛍️ 刷新代購清單（以「我是誰」為視角，列出我幫別人買的東西）
+    function refreshProxyList() {
+        if (db.currentIdx === -1 || db.trips.length === 0) return;
+        let trip = db.trips[db.currentIdx];
+
+        const myName = document.getElementById('personalNameSelect').value;
+        const list = document.getElementById('proxyHistoryList');
+        list.innerHTML = "";
+        if (!myName) { list.innerHTML = "<p style='color:gray; font-size:14px;'>請先在上方選擇你的名字～</p>"; return; }
+
+        // 全表掃描取得真實 index，只顯示「我」代購的紀錄
+        let found = false;
+        trip.expenses.forEach((e, realIdx) => {
+            if (e.type !== 'proxy' || e.payer !== myName) return;
+            found = true;
+            const currencyHint = e.currency && e.currency !== 'TWD' ? ` <small style="color:gray;">(原幣:${e.rawAmount} ${e.currency})</small>` : '';
+            const div = document.createElement('div');
+            div.className = "history-item";
+            div.innerHTML = `<button class="delete-btn" onclick="deleteProxyItem(${realIdx})">❌</button>
+                <small style="color:gray;">📅 ${e.date}</small><br>🛍️ 幫 <b>${e.forWho}</b> 買 [${e.title}]<br><b>$${e.amount} 元</b>${currencyHint}`;
+            list.appendChild(div);
+        });
+        if (!found) list.innerHTML = "<p style='color:gray; font-size:14px;'>你還沒有幫別人代購的紀錄唷～</p>";
     }
 
     function refreshAll() {
@@ -944,6 +1169,9 @@
         preHist.innerHTML = ""; localHist.innerHTML = "";
 
         trip.expenses.forEach((e, index) => {
+            // 🛍️ 代購紀錄只在「個人記帳」頁單獨顯示，不進行前／當地公帳與統計
+            if (e.type === 'proxy') return;
+
             const div = document.createElement('div');
             div.className = "history-item";
             const delBtn = `<button class="delete-btn" onclick="deleteExpenseItem(${index})">❌</button>`;
@@ -976,6 +1204,40 @@
         
         generateDayTags();
         refreshPersonalPage();
+
+        // 🔄 結算即時同步：資料一有更新就自動重算，分享連結打開就直接看到，不用手動按
+        calculateDebts('pre');
+        calculateDebts('local');
+        // 📌 載入行前重要資訊（班機/民宿/準備）
+        loadPreInfo();
+    }
+
+    // 📌 行前重要資訊：載入到欄位（打字中不覆蓋，避免打到一半被雲端同步蓋掉）
+    function loadPreInfo() {
+        if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
+        let trip = db.trips[db.currentIdx];
+        const info = trip.preInfo || { flight: "", hotel: "", prep: "" };
+        const map = { infoFlight: info.flight || "", infoHotel: info.hotel || "", infoPrep: info.prep || "" };
+        for (const id in map) {
+            const el = document.getElementById(id);
+            if (el && document.activeElement !== el) el.value = map[id];
+        }
+    }
+
+    // 📌 儲存行前重要資訊
+    function savePreInfo() {
+        if (guestGuard()) return;
+        if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return alert('請先建立並選擇一個行程分類！🎒');
+        let trip = db.trips[db.currentIdx];
+        trip.preInfo = {
+            flight: document.getElementById('infoFlight').value,
+            hotel: document.getElementById('infoHotel').value,
+            prep: document.getElementById('infoPrep').value
+        };
+        save();
+        const hint = document.getElementById('preInfoSavedHint');
+        hint.innerText = '✅ 已儲存！旅伴打開分享連結就看得到最新資訊';
+        setTimeout(() => { hint.innerText = ''; }, 2500);
     }
 
     function addExpense(type) {
@@ -1044,7 +1306,8 @@
     }
 
     function calculateDebts(targetType) {
-        if (guestGuard()) return;
+        // 純顯示結算結果，不會修改任何資料，因此讓拿到分享連結的旅伴也能自動看到
+        if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
         let trip = db.trips[db.currentIdx];
         let balances = {};
         trip.members.forEach(m => balances[m] = 0);
