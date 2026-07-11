@@ -337,6 +337,29 @@
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
         </div>
         <div class="comic-card"><div class="card-title">📋 我的個人私物紀錄</div><div id="personalHistoryList"></div></div>
+
+        <div class="comic-card" style="background:#e8f5e9;">
+            <div class="card-title">🛍️ 幫別人代購紀錄</div>
+            <label>📅 日期</label><input type="date" id="proxyDate" value="2026-07-10">
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>🙋 幫誰代購？</label><input type="text" id="proxyFor" placeholder="小明、熊大..."></div>
+                <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="proxyTitle" placeholder="藥妝、酒..."></div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                    <select id="proxyCurrency" onchange="updateProxyExchangeHint()">
+                        <option value="TWD">🇹🇼 台幣 TWD</option><option value="JPY">🇯🇵 日圓 JPY</option><option value="THB">🇹🇭 泰銖 THB</option>
+                        <option value="KRW">🇰🇷 韓元 KRW</option><option value="USD">🇺🇸 美元 USD</option><option value="EUR">🇪🇺 歐元 EUR</option>
+                        <option value="CNY">🇨🇳 人民幣 CNY</option><option value="VND">🇻🇳 越南盾 VND</option><option value="HKD">🇰🇷 港幣 HKD</option>
+                        <option value="SGD">🇸🇬 新幣 SGD</option><option value="MYR">MYR</option>
+                    </select>
+                </div>
+            </div>
+            <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
+            <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
+        </div>
+        <div class="comic-card"><div class="card-title">📋 我幫別人代購的清單</div><div id="proxyHistoryList"></div></div>
     </div>
 
     <div class="nav-bar">
@@ -379,6 +402,7 @@
         const localItems = getLocalPersonalExpenses();
         if (!localItems.length || !db.trips.length || db.currentIdx === -1) return;
         let trip = db.trips[db.currentIdx];
+        if (!trip.expenses) trip.expenses = [];
         localItems.forEach(li => {
             const exists = trip.expenses.some(e => e.title === li.title && e.amount === li.amount && e.date === li.date && e.payer === li.payer && e.costType === li.costType);
             if (!exists) trip.expenses.push(li);
@@ -388,6 +412,7 @@
     window.onload = function() {
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
+        document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
         cloudDoc.onSnapshot((docSnap) => {
             if (docSnap.exists) db = docSnap.data(); else cloudDoc.set(db);
             mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll();
@@ -453,6 +478,8 @@
     }
     function updateExchangeHint() { const amt = parseFloat(document.getElementById('localAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('localCurrency').value]); document.getElementById('twdLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
     function updatePersonalExchangeHint() { const amt = parseFloat(document.getElementById('personalAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('personalCurrency').value]); document.getElementById('personalLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
+    function updateProxyExchangeHint() { const amt = parseFloat(document.getElementById('proxyAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('proxyCurrency').value]); document.getElementById('proxyLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
+
     function addPersonalExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
         let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
@@ -460,16 +487,37 @@
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value;
         if (!title || amount <= 0 || !date) return alert('請填寫完整！');
         const newExp = { type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
+        if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); save(); alert('記好了！');
     }
     function deletePersonalExpense(realIdx) { db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); save(); }
+
+    function addProxyExpense() {
+        if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
+        const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
+        const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
+        const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value;
+        if (!forWho) return alert('請輸入幫誰代購！'); if (!title || amount <= 0 || !date) return alert('請填寫完整！');
+        const newProxy = { type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
+        if (!trip.expenses) trip.expenses = [];
+        trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); save(); alert('代購記好了！');
+    }
+    function deleteProxyItem(realIdx) { db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); save(); }
+
     function refreshPersonalPage() {
         let myName = getMyIdentity(); document.getElementById('myIdentityDisplay').innerText = myName || "未設定";
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
-        trip.expenses.forEach((e, realIdx) => {
+        (trip.expenses || []).forEach((e, realIdx) => {
             if (e.costType === 'personal' && e.payer === myName) {
                 hist.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deletePersonalExpense(${realIdx})">❌</button><small>${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b></div>`;
+            }
+        });
+        const proxyList = document.getElementById('proxyHistoryList'); proxyList.innerHTML = "";
+        (trip.expenses || []).forEach((e, realIdx) => {
+            if (e.type === 'proxy' && e.payer === myName) {
+                proxyList.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteProxyItem(${realIdx})">❌</button><small>${e.date}</small><br>🛍️ 幫 <b>${e.forWho}</b> 買 [${e.title}]<br><b>$${e.amount} 元</b></div>`;
             }
         });
     }
@@ -481,6 +529,25 @@
         const memDiv = document.getElementById('curTripMembers'); memDiv.innerHTML = "";
         trip.members.forEach(m => memDiv.innerHTML += `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m} <span style="color:red; cursor:pointer;" onclick="deleteMember('${m}')">x</span></span>`);
         generateDayTags(); refreshPersonalPage(); loadPreInfo();
+        
+        const preSel = document.getElementById('prePayerSelect');
+        const localSel = document.getElementById('localPayerSelect');
+        if(preSel && localSel) {
+            preSel.innerHTML = ""; localSel.innerHTML = "";
+            trip.members.forEach(m => {
+                preSel.innerHTML += `<option value="${m}">${m}</option>`;
+                localSel.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+        const preGroup = document.getElementById('preShareGroup');
+        const localGroup = document.getElementById('localShareGroup');
+        if(preGroup && localGroup) {
+            preGroup.innerHTML = ""; localGroup.innerHTML = "";
+            trip.members.forEach(m => {
+                preGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`;
+                localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`;
+            });
+        }
     }
     function loadPreInfo() {
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
