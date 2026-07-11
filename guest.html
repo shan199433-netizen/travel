@@ -90,7 +90,7 @@
         .guest-banner { background: var(--main-purple); border-bottom: 3px solid var(--border-color); padding: 8px 10px; font-size: 13px; text-align: center; font-weight: bold; }
         .info-view { display: block; white-space: pre-wrap; word-break: break-word; background: #fffdf9; border: 2px dashed var(--border-color); border-radius: 14px; padding: 13px 14px; margin: 7px 0 12px 0; font-size: 15px; line-height: 1.75; color: var(--text-main); }
         
-        /* 🔒 徹底隱藏分享版不需要的管理、編輯功能 */
+        /* 🔒 強制隱藏所有主控專案建立與公帳編輯按鈕 */
         .master-only { display: none !important; }
     </style>
 </head>
@@ -178,7 +178,6 @@
         </div>
         <div class="comic-card"><div class="card-title">📋 我的個人私物紀錄</div><div id="personalHistoryList"></div></div>
 
-        <!-- 🛍️ 補回代購區塊 -->
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">🛍️ 幫別人代購紀錄</div>
             <label>📅 日期</label><input type="date" id="proxyDate" value="2026-07-10">
@@ -244,99 +243,3 @@
         if (!localItems.length || !db.trips.length || db.currentIdx === -1) return;
         let trip = db.trips[db.currentIdx];
         localItems.forEach(li => {
-            const exists = trip.expenses.some(e => e.title === li.title && e.amount === li.amount && e.date === li.date && e.payer === li.payer && e.costType === li.costType);
-            if (!exists) trip.expenses.push(li);
-        });
-    }
-
-    window.onload = function() {
-        document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
-        document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
-        cloudDoc.onSnapshot((docSnap) => {
-            if (docSnap.exists) db = docSnap.data();
-            mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll();
-        }, (err) => { mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll(); });
-    };
-
-    function selectTrip(idx) { db.currentIdx = idx; refreshAll(); }
-    function generateDayTags() {
-        if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
-        const start = new Date(trip.startDate); const end = new Date(trip.endDate);
-        const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-        const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
-        for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
-            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})">🐾 Day ${i}</div>`;
-        }
-        renderTimeline();
-    }
-    function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; generateDayTags(); }
-    function renderTimeline() {
-        const listDiv = document.getElementById('timelineDisplayList'); listDiv.innerHTML = "";
-        if (db.currentIdx === -1 || !db.trips.length) return;
-        const items = db.trips[db.currentIdx].scheduleData[db.currentDayTab] || [];
-        if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; return; }
-        items.forEach((item) => {
-            listDiv.innerHTML += `<div class="timeline-item"><b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; <span style="font-weight:bold;">${item.desc}</span>${item.memo ? '<br><small>📝 ' + item.memo + '</small>' : ''}</div>`;
-        });
-    }
-    function updatePersonalExchangeHint() { const amt = parseFloat(document.getElementById('personalAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('personalCurrency').value]); document.getElementById('personalLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
-    function updateProxyExchangeHint() { const amt = parseFloat(document.getElementById('proxyAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('proxyCurrency').value]); document.getElementById('proxyLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
-    
-    function addPersonalExpense() {
-        if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
-        const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
-        const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value;
-        if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newExp = { type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
-        trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); alert('記好了！');
-    }
-    function deletePersonalExpense(realIdx) { db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); }
-    
-    function addProxyExpense() {
-        if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
-        const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
-        const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
-        const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value;
-        if (!forWho) return alert('請輸入幫誰代購！'); if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newProxy = { type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
-        trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); alert('代購記好了！');
-    }
-    function deleteProxyItem(realIdx) { db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); }
-
-    function refreshPersonalPage() {
-        let myName = getMyIdentity(); document.getElementById('myIdentityDisplay').innerText = myName || "未設定";
-        if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
-        
-        const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
-        trip.expenses.forEach((e, realIdx) => {
-            if (e.costType === 'personal' && e.payer === myName) {
-                hist.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deletePersonalExpense(${realIdx})">❌</button><small>${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b></div>`;
-            }
-        });
-        
-        const proxyList = document.getElementById('proxyHistoryList'); proxyList.innerHTML = "";
-        trip.expenses.forEach((e, realIdx) => {
-            if (e.type === 'proxy' && e.payer === myName) {
-                proxyList.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteProxyItem(${realIdx})">❌</button><small>${e.date}</small><br>🛍️ 幫 <b>${e.forWho}</b> 買 [${e.title}]<br><b>$${e.amount} 元</b></div>`;
-            }
-        });
-    }
-    function refreshAll() {
-        const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
-        db.trips.forEach((t, i) => container.innerHTML += `<div class="trip-tag ${i === db.currentIdx ? 'active' : ''}" onclick="selectTrip(${i})">🎈 ${t.name}</div>`);
-        if (db.currentIdx === -1 || !db.trips.length) return;
-        let trip = db.trips[db.currentIdx]; document.getElementById('curTripName').innerText = trip.name;
-        document.getElementById('curTripMembers').innerHTML = trip.members.map(m => `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m}</span>`).join('') || "暫無成員";
-        
-        document.getElementById('infoFlightView').textContent = trip.preInfo?.flight || "（尚未填寫）";
-        document.getElementById('infoHotelView').textContent = trip.preInfo?.hotel || "（尚未填寫）";
-        document.getElementById('infoPrepView').textContent = trip.preInfo?.prep || "（尚未填寫）";
-        
-        generateDayTags(); refreshPersonalPage();
-    }
-    function switchTab(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
-</script>
-</body>
-</html>
