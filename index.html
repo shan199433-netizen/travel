@@ -457,7 +457,7 @@
         }
         renderTimeline();
     }
-    function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; generateDayTags(); save(); }
+    function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; editingScheduleIdx = null; generateDayTags(); save(); }
     function addScheduleItem() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
         let trip = db.trips[db.currentIdx]; const time = document.getElementById('schedTime').value;
@@ -470,6 +470,21 @@
         document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = ""; renderTimeline(); save();
     }
     function deleteScheduleItem(idx) { const trip = db.trips[db.currentIdx]; trip.scheduleData[trip.currentDayTab].splice(idx, 1); renderTimeline(); save(); }
+    let editingScheduleIdx = null;
+    function editScheduleItem(idx) { editingScheduleIdx = idx; renderTimeline(); }
+    function cancelEditSchedule() { editingScheduleIdx = null; renderTimeline(); }
+    function saveScheduleItem(idx) {
+        const trip = db.trips[db.currentIdx];
+        const items = trip.scheduleData[trip.currentDayTab];
+        const item = items[idx];
+        const newTime = document.getElementById('editSchedTime_' + idx).value;
+        const newDesc = document.getElementById('editSchedDesc_' + idx).value.trim();
+        const newMemo = document.getElementById('editSchedMemo_' + idx).value.trim();
+        if (!newDesc) return alert('活動項目不能空白！');
+        item.time = newTime || item.time; item.desc = newDesc; item.memo = newMemo;
+        items.sort((a,b) => a.time.localeCompare(b.time));
+        editingScheduleIdx = null; renderTimeline(); save();
+    }
     function renderTimeline() {
         const listDiv = document.getElementById('timelineDisplayList'); listDiv.innerHTML = "";
         if (db.currentIdx === -1 || !db.trips.length) return;
@@ -477,7 +492,19 @@
         const items = (trip.scheduleData || {})[trip.currentDayTab] || [];
         if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; return; }
         items.forEach((item, idx) => {
-            listDiv.innerHTML += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; <span style="font-weight:bold;">${item.desc}</span>${item.memo ? '<br><small>📝 ' + item.memo + '</small>' : ''}</div>`;
+            if (editingScheduleIdx === idx) {
+                listDiv.innerHTML += `<div class="timeline-item" style="background:#fffde7; border-radius:8px; padding:8px;">
+                    <label style="font-size:12px;">🕒 時間</label><input type="time" id="editSchedTime_${idx}" value="${item.time}">
+                    <input type="text" id="editSchedDesc_${idx}" value="${item.desc.replace(/"/g,'&quot;')}" placeholder="活動項目" style="margin-top:4px;">
+                    <textarea id="editSchedMemo_${idx}" placeholder="補充備忘小筆記" rows="2" style="margin-top:5px; border-radius:8px;">${(item.memo||'').replace(/</g,'&lt;')}</textarea>
+                    <div style="margin-top:6px;">
+                        <button class="comic-btn btn-blue" style="padding:6px 10px; font-size:13px;" onclick="saveScheduleItem(${idx})">✅ 儲存</button>
+                        <button class="comic-btn" style="padding:6px 10px; font-size:13px;" onclick="cancelEditSchedule()">取消</button>
+                    </div>
+                </div>`;
+            } else {
+                listDiv.innerHTML += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; <span style="font-weight:bold;">${item.desc}</span>${item.memo ? '<br><small>📝 ' + item.memo + '</small>' : ''}</div>`;
+            }
         });
     }
     function updateExchangeHint() { const amt = parseFloat(document.getElementById('localAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('localCurrency').value]); document.getElementById('twdLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
