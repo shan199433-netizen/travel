@@ -398,8 +398,8 @@
         <div class="comic-card" style="background: #fafafa;">
             <div class="card-title">📊 【行前】花費錢包統計</div>
             <div class="dashboard">
-                <div class="dash-item" style="background: #ffecb3;">總花費<br><span id="preTotalSum" style="color:red;">$0</span></div>
-                <div class="dash-item" style="background: #c8e6c9;">他人代墊<br><span id="preShareSum" style="color:green;">$0</span></div>
+                <div class="dash-item" style="background: #ffecb3;">每人約花<br><span id="preTotalSum" style="color:red;">$0</span></div>
+                <div class="dash-item" style="background: #c8e6c9;">代墊(每人)<br><span id="preShareSum" style="color:green;">$0</span></div>
                 <div class="dash-item" style="background: #e1f5fe;">個人自付<br><span id="preOwnSum" style="color:blue;">$0</span></div>
             </div>
         </div>
@@ -423,7 +423,7 @@
             <label>🍨 支出模式</label>
             <select id="preCostType" onchange="togglePreCostUI()">
                 <option value="share">🤝 大家代墊 (代墊幫大家付，事後拆帳)</option>
-                <option value="personal">👤 個人自付 (自己花自己的，透明展示不拆帳)</option>
+                <option value="personal">👤 個人自付 (單人預估公定價，透明展示)</option>
             </select>
 
             <!-- 項目名稱 / 金額 / 誰先代墊 同一行 -->
@@ -448,10 +448,12 @@
                 <div id="preShareGroup" class="checkbox-group"></div>
             </div>
 
-            <!-- 個人自付模式：這是誰的 -->
-            <div id="prePersonalBlock" style="display:none;">
-                <label>👤 這是「誰」自付的個人費用？(可多選，會為每個人各自記一筆)</label>
-                <div id="prePersonalGroup" class="checkbox-group"></div>
+            <!-- 個人自付模式：這是誰的 (已改為不選人，記單筆預估) -->
+            <div id="prePersonalBlock" style="display:none; padding-top:5px;">
+                <div style="background: #e3f2fd; padding: 10px; border-radius: 12px; font-size: 13.5px; color: #0277bd; line-height: 1.6;">
+                    💡 <b>個人自付將記為「每人預估花費」</b><br>
+                    直接輸入單人的費用（例如機票 10680）即可。明細不會重複洗版，且會自動加總到上方的「每人約花」看板中唷！
+                </div>
             </div>
 
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
@@ -1147,23 +1149,21 @@
         
         const preGroup = document.getElementById('preShareGroup');
         const localGroup = document.getElementById('localShareGroup');
-        const prePersonalGroup = document.getElementById('prePersonalGroup');
         
         preGroup.innerHTML = ""; localGroup.innerHTML = "";
-        prePersonalGroup.innerHTML = "";
 
         trip.members.forEach(m => {
             preSelect.add(new Option(m, m));
             localSelect.add(new Option(m, m));
             preGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="preCb" value="${m}" checked>${m}</label>`;
             localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="localCb" value="${m}" checked>${m}</label>`;
-            prePersonalGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="preOwnCb" value="${m}">${m}</label>`;
         });
 
         // 渲染明細歷史與加總
         trip.expenses.sort((a,b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time));
         
-        let preTotalSum = 0, preShareSum = 0, preOwnSum = 0;
+        let preTotalSum = 0, preOwnSum = 0, preAverageShare = 0;
+        let preShareSum = 0; 
         let localTotalSum = 0, localShareSum = 0;
         
         const preHist = document.getElementById('preHistoryList');
@@ -1179,12 +1179,13 @@
             const delBtn = isGuest ? '' : `<button class="delete-btn" onclick="deleteExpenseItem(${index})">❌</button>`;
 
             if (e.type === 'pre') {
-                preTotalSum += e.amount;
                 if (e.costType === 'personal') {
                     preOwnSum += e.amount;
-                    div.innerHTML = `${delBtn} <small style="color:gray;">📅 ${e.date}</small><br>👤 <b>${e.payer}</b> 自付 [${e.title}] <span class="type-badge" style="background:#0288d1">個人自付</span><br><b>$${e.amount} 元</b>`;
+                    div.innerHTML = `${delBtn} <small style="color:gray;">📅 ${e.date}</small><br>👤 <b>大家</b> 自付 [${e.title}] <span class="type-badge" style="background:#0288d1">個人自付</span><br><b>$${e.amount} 元</b>`;
                 } else {
-                    preShareSum += e.amount;
+                    if (e.participants.length > 0) {
+                        preAverageShare += (e.amount / e.participants.length);
+                    }
                     div.innerHTML = `${delBtn} <small style="color:gray;">📅 ${e.date}</small><br>🤝 <b>${e.payer}</b> 代墊 [${e.title}] <span class="type-badge" style="background:#2e7d32">大家平分</span><br><b>$${e.amount} 元</b><br><small style="color:#555;">分攤: ${e.participants.join(',')}</small>`;
                 }
                 preHist.appendChild(div);
@@ -1197,6 +1198,9 @@
                 localHist.appendChild(div);
             }
         });
+
+        preShareSum = Math.round(preAverageShare);
+        preTotalSum = Math.round(preOwnSum + preAverageShare);
 
         document.getElementById('preTotalSum').innerText = `$${preTotalSum}`;
         document.getElementById('preShareSum').innerText = `$${preShareSum}`;
@@ -1270,12 +1274,8 @@
             if (!title || amount <= 0) return alert('請完整填寫項目與金額！⭐');
 
             if (costType === 'personal') {
-                // 👑 核心精修：個人自付直接遍歷勾選的人，為每個人建立獨立名目
-                let ownCbs = document.querySelectorAll('input[name="preOwnCb"]:checked');
-                if(!ownCbs.length) return alert('請勾選這是誰的個人費用！');
-                ownCbs.forEach(cb => {
-                    trip.expenses.push({ type, costType, title, payer: cb.value, amount, participants: [], date, time });
-                });
+                // 👑 核心精修：個人自付改為單一公定價，不再遍歷勾選
+                trip.expenses.push({ type, costType, title, payer: '大家', amount, participants: [], date, time });
             } else {
                 let payer = document.getElementById('prePayerSelect').value;
                 let cbs = document.querySelectorAll('input[name="preCb"]:checked');
