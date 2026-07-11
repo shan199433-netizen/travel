@@ -308,13 +308,21 @@
         /* 🔒 分享版（旅伴連結）：隱藏所有輸入/編輯區塊，只保留檢視內容
            （統計、明細、結算、成員名單、行程時間軸、行前資訊） */
         .guest-mode .master-only { display: none !important; }
-        /* 行前重要資訊在分享版為唯讀：內容看得到、改不了，並淡化輸入框外觀更像純文字 */
-        .guest-mode #infoFlight,
-        .guest-mode #infoHotel,
-        .guest-mode #infoPrep {
+        /* 行前重要資訊：主控版用可編輯輸入框；共享版改成純文字整段攤開（自動撐高、無捲軸） */
+        .info-view { display: none; }
+        .guest-mode .info-edit { display: none; }
+        .guest-mode .info-view {
+            display: block;
+            white-space: pre-wrap;
+            word-break: break-word;
             background: #fffdf9;
-            border-style: dashed;
-            cursor: default;
+            border: 2px dashed var(--border-color);
+            border-radius: 14px;
+            padding: 13px 14px;
+            margin: 7px 0 12px 0;
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--text-main);
         }
 
         .guest-banner {
@@ -368,16 +376,19 @@
     <div id="page-pre" class="page">
         <!-- 📌 1. 行前重要資訊：班機 / 民宿 / 行前準備（可自由編輯修改） -->
         <div class="comic-card" style="background:#fff8e1;">
-            <div class="card-title">📌 行前重要資訊（可編輯）</div>
+            <div class="card-title">📌 行前重要資訊</div>
 
             <label>✈️ 班機資訊</label>
-            <textarea id="infoFlight" rows="3" placeholder="去程：酷航 TR899 07/10 08:30 桃園→那霸&#10;回程：酷航 TR898 07/14 19:00 那霸→桃園&#10;訂單編號 AX123"></textarea>
+            <textarea id="infoFlight" class="info-edit" rows="3" placeholder="去程：酷航 TR899 07/10 08:30 桃園→那霸&#10;回程：酷航 TR898 07/14 19:00 那霸→桃園&#10;訂單編號 AX123"></textarea>
+            <div id="infoFlightView" class="info-view"></div>
 
             <label>🏠 民宿 / 住宿地址</label>
-            <textarea id="infoHotel" rows="3" placeholder="民宿名稱、地址、電話、Check-in 時間、房號密碼..."></textarea>
+            <textarea id="infoHotel" class="info-edit" rows="3" placeholder="民宿名稱、地址、電話、Check-in 時間、房號密碼..."></textarea>
+            <div id="infoHotelView" class="info-view"></div>
 
             <label>📝 行前準備（退稅流程 / 天氣 / 提醒）</label>
-            <textarea id="infoPrep" rows="4" placeholder="退稅：機場 T2 三樓退稅櫃檯，需帶護照+收據&#10;天氣：這幾天約 26~31°C，偶陣雨，記得帶薄外套與雨具&#10;要帶：轉接頭、藥品、行動電源..."></textarea>
+            <textarea id="infoPrep" class="info-edit" rows="4" placeholder="退稅：機場 T2 三樓退稅櫃檯，需帶護照+收據&#10;天氣：這幾天約 26~31°C，偶陣雨，記得帶薄外套與雨具&#10;要帶：轉接頭、藥品、行動電源..."></textarea>
+            <div id="infoPrepView" class="info-view"></div>
 
             <button class="comic-btn btn-green master-only" onclick="savePreInfo()" style="margin-top:10px;">💾 儲存 / 更新資訊</button>
             <p id="preInfoSavedHint" class="master-only" style="font-size:12.5px; color:#2e7d32; margin:8px 0 0 0; min-height:16px;"></p>
@@ -507,7 +518,7 @@
         </div>
 
         <div class="comic-card">
-            <div class="card-title">📋 當地明細歷史 (可刪除)</div>
+            <div class="card-title">📋 當地明細歷史</div>
             <div id="localHistoryList"></div>
         </div>
 
@@ -705,11 +716,6 @@
             banner.className = 'guest-banner';
             banner.innerText = '👋 分享版：可瀏覽各頁資訊，僅「個人記帳」頁能輸入自己的花費';
             document.querySelector('.app-phone-container').insertBefore(banner, document.querySelector('.header-box').nextSibling);
-            // 行前重要資訊設為唯讀：內容看得到、改不了
-            ['infoFlight','infoHotel','infoPrep'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.readOnly = true;
-            });
         }
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
@@ -1217,6 +1223,16 @@
         for (const id in map) {
             const el = document.getElementById(id);
             if (el && document.activeElement !== el) el.value = map[id];
+        }
+        // 共享版純文字顯示（保留換行、自動撐高、無捲軸）
+        const viewMap = { infoFlightView: info.flight, infoHotelView: info.hotel, infoPrepView: info.prep };
+        for (const vid in viewMap) {
+            const vel = document.getElementById(vid);
+            if (vel) {
+                const txt = (viewMap[vid] || "").trim();
+                vel.textContent = txt || "（主控版尚未填寫此項）";
+                vel.style.color = txt ? "" : "#b8b2a4";
+            }
         }
     }
 
