@@ -361,7 +361,7 @@
         <div class="comic-card">
             <div class="card-title">🐱 成員小隊</div>
             <div class="master-only" style="display: flex; gap: 8px;">
-                <input type="text" id="newMemberInput" placeholder="輸入成員名字（如：小兔、熊大、喵喵）">
+                <input type="text" id="newMemberInput" placeholder="輸入成員名字（如:小兔、熊大）">
                 <button class="comic-btn" onclick="addMember()" style="width:90px; box-shadow:none; padding:5px;">加入</button>
             </div>
             <div style="margin-top: 20px; font-size:15px; line-height: 1.6;">
@@ -426,7 +426,6 @@
                 <option value="personal">👤 個人自付 (單人預估公定價，透明展示)</option>
             </select>
 
-            <!-- 項目名稱 / 金額 / 誰先代墊 同一行 -->
             <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;">
                     <label>🎈 項目名稱</label>
@@ -442,17 +441,15 @@
                 </div>
             </div>
 
-            <!-- 大家代墊模式：誰要平分 -->
             <div id="preShareBlock">
                 <label>💞 誰要共同平分這筆錢？</label>
                 <div id="preShareGroup" class="checkbox-group"></div>
             </div>
 
-            <!-- 個人自付模式：這是誰的 (已改為不選人，記單筆預估) -->
             <div id="prePersonalBlock" style="display:none; padding-top:5px;">
                 <div style="background: #e3f2fd; padding: 10px; border-radius: 12px; font-size: 13.5px; color: #0277bd; line-height: 1.6;">
                     💡 <b>個人自付將記為「每人預估花費」</b><br>
-                    直接輸入單人的費用（例如機票 10680）即可。明細不會重複洗版，且會自動加總到上方的「每人約花」看板中唷！
+                    直接輸入單人的費用（例如機票 10680）即可。
                 </div>
             </div>
 
@@ -500,12 +497,11 @@
             </div>
             <p id="twdLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#ff5722; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
 
-            <!-- 👑 聯動核心精修：當地日常只處理大家代墊；消費項目與代墊人同一行 -->
             <div id="localPayerBlock">
                 <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                     <div style="flex:1; min-width:0;">
                         <label>🍡 消費項目</label>
-                        <input type="text" id="localTitle" placeholder="拉麵、按摩、伴手禮...">
+                        <input type="text" id="localTitle" placeholder="拉麵、按摩...">
                     </div>
                     <div style="flex:1; min-width:0;">
                         <label>👑 誰先代墊的？</label>
@@ -526,7 +522,6 @@
 
         <div class="comic-card" style="background: #fffde7; border: 3px solid #333;">
             <div class="card-title">🧮 當地日常結算（誰該給誰錢）</div>
-            <p style="font-size:12.5px; color:#555; margin:0 0 10px 0;">💡 只要有人新增代墊明細，這裡會<b>自動更新</b>，拿到分享連結的人打開就能直接看到，不用再按任何按鈕！</p>
             <div id="localSettlementDisplay" style="margin-top: 5px;"></div>
         </div>
     </div>
@@ -549,8 +544,8 @@
                 <b style="font-size:14px;">➕ 新增規劃與備忘錄：</b>
                 <label style="font-size:12.5px; display:block; margin-top:6px;">🕒 時間</label>
                 <input type="time" id="schedTime" value="12:00">
-                <input type="text" id="schedDesc" placeholder="活動項目 (如：出發至那霸機場 ✈️)">
-                <textarea id="schedMemo" placeholder="補充備忘小筆記 (如：酷航訂單編號 AX123)" rows="2" style="margin-top:5px; border-radius:8px;"></textarea>
+                <input type="text" id="schedDesc" placeholder="活動項目">
+                <textarea id="schedMemo" placeholder="補充備忘小筆記" rows="2" style="margin-top:5px; border-radius:8px;"></textarea>
                 <button class="comic-btn btn-blue" onclick="addScheduleItem()" style="padding: 8px; margin-top: 5px; font-size:14px; box-shadow: 2px 2px 0px #333;">填入時間軸</button>
             </div>
 
@@ -562,7 +557,7 @@
     <div id="page-personal" class="page">
         <div class="comic-card" style="background: #f3e5f5;">
             <div class="card-title">👤 個人記帳（旅伴自由填寫）</div>
-            <p style="font-size:13px; color:#666; margin-top:0;">選自己的名字，記下自己買的伴手禮、私人花費，只有自己看得到，不會影響大家的公帳結算唷！</p>
+            <p style="font-size:13px; color:#666; margin-top:0;">選自己的名字，記下自己買的伴手禮、私人花費，只有自己看得到！</p>
 
             <label>📅 日期</label>
             <input type="date" id="personalDate" value="2026-07-10">
@@ -610,11 +605,8 @@
             <div id="personalHistoryList"></div>
         </div>
 
-        <!-- 🛍️ 幫別人代購紀錄（只是備忘紀錄，不影響公帳結算） -->
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">🛍️ 幫別人代購紀錄</div>
-            <p style="font-size:13px; color:#666; margin-top:0;">記錄「我幫誰買了什麼」，方便回國對帳。這只是私人備忘，不會自動算進大家的公帳唷！</p>
-
             <label>📅 日期</label>
             <input type="date" id="proxyDate" value="2026-07-10">
 
@@ -688,18 +680,21 @@
         EUR: 35.2, CNY: 4.5, VND: 0.0013, HKD: 4.15, SGD: 24.2, MYR: 7.3 
     };
     
-    // 多專案資料庫結構
     let db = {
         title: "🦊 我的萌寵五星旅遊手帳",
         currentIdx: -1,
         trips: []
     };
 
-    // 🔒 判斷這是不是「旅伴連結」打開的（網址後面加 ?guest=1）
+    // 🔒 修正 PWA 加入主畫面後參數遺失的問題：使用 sessionStorage 保持紀錄
     const urlParams = new URLSearchParams(window.location.search);
-    const isGuest = urlParams.get('guest') === '1';
+    let isGuest = urlParams.get('guest') === '1';
+    if (isGuest) {
+        sessionStorage.setItem('travel33_guest', '1');
+    } else if (sessionStorage.getItem('travel33_guest') === '1') {
+        isGuest = true;
+    }
 
-    // 🔥 貼上你自己在 Firebase 專案設定頁拿到的那段 config
     const firebaseConfig = {
         apiKey: "AIzaSyCe-YiHRMnTFRCW750ZUCS7HAfeE4rymAg",
         authDomain: "travel33-e9116.firebaseapp.com",
@@ -716,19 +711,17 @@
             document.body.classList.add('guest-mode');
             const banner = document.createElement('div');
             banner.className = 'guest-banner';
-            banner.innerText = '👋 分享版：可瀏覽各頁資訊，僅「個人記帳」頁能輸入自己的花費';
+            banner.innerText = '👋 分享版：可瀏覽各頁資訊，僅「個人記帳」頁能輸入及管理自己的花費';
             document.querySelector('.app-phone-container').insertBefore(banner, document.querySelector('.header-box').nextSibling);
         }
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
 
-        // 🔥 即時監聽雲端資料，只要有人（包含旅伴）新增資料，這裡會自動更新畫面
         cloudDoc.onSnapshot((docSnap) => {
             if (docSnap.exists) {
                 db = docSnap.data();
             } else {
-                // 第一次使用，把初始資料寫上雲端
                 cloudDoc.set(db);
             }
             document.getElementById('appTitle').innerText = db.title;
@@ -746,7 +739,6 @@
         });
     }
 
-    // 🔒 旅伴鎖死防呆：前4頁的新增/刪除/結算功能，旅伴一律不能執行
     function guestGuard() {
         if (isGuest) {
             alert('這裡只有你（記帳的人）能操作唷，旅伴請到「個人記帳」頁輸入自己的花費 🙏');
@@ -788,7 +780,7 @@
     function selectTrip(idx) {
         db.currentIdx = idx;
         refreshAll();
-        if (!isGuest) save(); // 旅伴（分享版）切換行程只在本地查看，不寫回雲端影響主控版
+        if (!isGuest) save();
     }
 
     function addMember() {
@@ -814,7 +806,6 @@
         }
     }
 
-    // 👑 聯動精修：行前模式切換
     function togglePreCostUI() {
         const type = document.getElementById('preCostType').value;
         const isPersonal = (type === 'personal');
@@ -852,7 +843,7 @@
         let trip = db.trips[db.currentIdx];
         trip.currentDayTab = dayNum;
         generateDayTags();
-        if (!isGuest) save(); // 旅伴（分享版）切天只在本地查看，不寫回雲端影響主控版
+        if (!isGuest) save();
     }
 
     function addScheduleItem() {
@@ -877,7 +868,6 @@
         renderTimeline(); save();
     }
 
-    // 目前正在編輯的時間軸項目 index（-1 表示沒有在編輯）
     let editingSchedIdx = -1;
 
     function renderTimeline() {
@@ -896,7 +886,6 @@
             wrap.className = "timeline-item";
 
             if (idx === editingSchedIdx && !isGuest) {
-                // ✏️ 編輯狀態：用輸入框讓使用者自由修改（用 DOM 設值，避免引號/換行破版）
                 wrap.style.background = "#fffbea";
                 wrap.style.borderRadius = "10px";
                 wrap.style.padding = "10px 12px";
@@ -924,7 +913,6 @@
 
                 wrap.appendChild(tIn); wrap.appendChild(dIn); wrap.appendChild(mIn); wrap.appendChild(btnRow);
             } else {
-                // 一般顯示：附「編輯 ✏️」與「刪除 ❌」按鈕
                 let memoStr = item.memo ? `<br><small style="color:#777; background:#fff9c4; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:3px;">📝 備忘：${item.memo}</small>` : '';
                 const editBtn = isGuest ? '' : `<button class="delete-btn" style="color:#1976d2; margin-right:4px;" onclick="editScheduleItem(${idx})">✏️</button>`;
                 const delBtn = isGuest ? '' : `<button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button>`;
@@ -937,20 +925,17 @@
         });
     }
 
-    // ✏️ 進入編輯狀態
     function editScheduleItem(idx) {
         if (guestGuard()) return;
         editingSchedIdx = idx;
         renderTimeline();
     }
 
-    // ✏️ 取消編輯
     function cancelScheduleEdit() {
         editingSchedIdx = -1;
         renderTimeline();
     }
 
-    // ✏️ 儲存編輯後的內容
     function saveScheduleEdit(idx, time, desc, memo) {
         if (guestGuard()) return;
         desc = (desc || "").trim();
@@ -972,7 +957,6 @@
         return twd;
     }
 
-    // 👤 個人記帳頁（旅伴專用）：匯率換算提示
     function updatePersonalExchangeHint() {
         const amt = parseFloat(document.getElementById('personalAmount').value) || 0;
         const cur = document.getElementById('personalCurrency').value;
@@ -981,11 +965,10 @@
         return twd;
     }
 
-    // 👤 個人記帳頁：新增自己的個人花費（旅伴也可使用，不受鎖死限制）
     function addPersonalExpense() {
-        if (db.currentIdx === -1 || db.trips.length === 0) return alert('目前還沒有任何行程分類，請等記帳的人先建立行程！');
+        if (db.currentIdx === -1 || db.trips.length === 0) return alert('目前還沒有任何行程分類！');
         let trip = db.trips[db.currentIdx];
-        if (trip.members.length === 0) return alert('目前沒有任何隊員，請等記帳的人先加入成員！🎒');
+        if (trip.members.length === 0) return alert('目前沒有任何隊員！🎒');
 
         const payer = document.getElementById('personalNameSelect').value;
         const title = document.getElementById('personalTitle').value.trim();
@@ -1003,10 +986,18 @@
         document.getElementById('personalAmount').value = "";
         document.getElementById('personalLiveHint').innerText = "🍦 換算台幣：約 $0 元";
         refreshAll(); save();
-        alert('記錄好囉，感謝你幫忙記帳！🎉');
+        alert('記錄好囉！🎉');
     }
 
-    // 👤 個人記帳頁：刷新姓名下拉選單與大家的個人私物歷史
+    function deletePersonalExpense(realIdx) {
+        let trip = db.trips[db.currentIdx];
+        if (confirm('確定刪除這筆個人記帳紀錄嗎？')) {
+            trip.expenses.splice(realIdx, 1);
+            refreshAll(); 
+            save();
+        }
+    }
+
     function refreshPersonalPage() {
         if (db.currentIdx === -1 || db.trips.length === 0) return;
         let trip = db.trips[db.currentIdx];
@@ -1017,29 +1008,29 @@
         trip.members.forEach(m => nameSelect.add(new Option(m, m)));
         if (trip.members.includes(prevVal)) nameSelect.value = prevVal;
 
-        // 🛍️ 一併刷新「幫別人代購」的下拉與清單（放在下方 early return 之前）
         refreshProxyList();
 
         const hist = document.getElementById('personalHistoryList');
         hist.innerHTML = "";
-        // 🔒 隱私設計：只顯示「目前選的這個人」自己的私物花費，不會看到別人買了什麼
         const myName = nameSelect.value;
-        const personalItems = trip.expenses.filter(e => e.costType === 'personal' && e.payer === myName);
+        const personalItems = trip.expenses.map((e, idx) => ({e, idx})).filter(item => item.e.costType === 'personal' && item.e.payer === myName);
+        
         if (!myName) { hist.innerHTML = "<p style='color:gray; font-size:14px;'>請先選擇你的名字～</p>"; return; }
         if (!personalItems.length) {
             hist.innerHTML = "<p style='color:gray; font-size:14px;'>你還沒有記錄過個人花費唷～</p>";
             return;
         }
-        personalItems.forEach(e => {
+        personalItems.forEach(item => {
+            const e = item.e;
+            const realIdx = item.idx;
             const currencyHint = e.currency && e.currency !== 'TWD' ? ` <small style="color:gray;">(原幣:${e.rawAmount} ${e.currency})</small>` : '';
             const div = document.createElement('div');
             div.className = "history-item";
-            div.innerHTML = `<small style="color:gray;">📅 ${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b>${currencyHint}`;
+            div.innerHTML = `<button class="delete-btn" onclick="deletePersonalExpense(${realIdx})">❌</button><small style="color:gray;">📅 ${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b>${currencyHint}`;
             hist.appendChild(div);
         });
     }
 
-    // 🛍️ 代購頁：匯率換算提示
     function updateProxyExchangeHint() {
         const amt = parseFloat(document.getElementById('proxyAmount').value) || 0;
         const cur = document.getElementById('proxyCurrency').value;
@@ -1048,14 +1039,13 @@
         return twd;
     }
 
-    // 🛍️ 新增一筆「我幫別人代購」的紀錄（純備忘，不進公帳結算）
     function addProxyExpense() {
-        if (db.currentIdx === -1 || db.trips.length === 0) return alert('目前還沒有任何行程分類，請等記帳的人先建立行程！');
+        if (db.currentIdx === -1 || db.trips.length === 0) return alert('目前還沒有任何行程分類！');
         let trip = db.trips[db.currentIdx];
-        if (trip.members.length === 0) return alert('目前沒有任何隊員，請等記帳的人先加入成員！🎒');
+        if (trip.members.length === 0) return alert('目前沒有任何隊員！🎒');
 
-        const payer = document.getElementById('personalNameSelect').value; // 代購者＝目前「我是誰」
-        const forWho = document.getElementById('proxyFor').value.trim();     // 幫誰買（自由輸入）
+        const payer = document.getElementById('personalNameSelect').value;
+        const forWho = document.getElementById('proxyFor').value.trim();
         const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0;
         const currency = document.getElementById('proxyCurrency').value;
@@ -1076,7 +1066,6 @@
         alert('代購紀錄已記下囉！🛍️');
     }
 
-    // 🛍️ 刪除一筆代購紀錄
     function deleteProxyItem(realIdx) {
         let trip = db.trips[db.currentIdx];
         if (confirm('確定刪除這筆代購紀錄嗎？')) {
@@ -1085,7 +1074,6 @@
         }
     }
 
-    // 🛍️ 刷新代購清單（以「我是誰」為視角，列出我幫別人買的東西）
     function refreshProxyList() {
         if (db.currentIdx === -1 || db.trips.length === 0) return;
         let trip = db.trips[db.currentIdx];
@@ -1095,7 +1083,6 @@
         list.innerHTML = "";
         if (!myName) { list.innerHTML = "<p style='color:gray; font-size:14px;'>請先在上方選擇你的名字～</p>"; return; }
 
-        // 全表掃描取得真實 index，只顯示「我」代購的紀錄
         let found = false;
         trip.expenses.forEach((e, realIdx) => {
             if (e.type !== 'proxy' || e.payer !== myName) return;
@@ -1134,7 +1121,7 @@
 
         const memDiv = document.getElementById('curTripMembers');
         memDiv.innerHTML = "";
-        if(trip.members.length === 0) memDiv.innerText = "暫無成員，請立刻在上方加人！";
+        if(trip.members.length === 0) memDiv.innerText = "暫無成員！";
         trip.members.forEach(m => {
             const delX = isGuest ? '' : ` <span style="color:red; cursor:pointer; font-weight:bold; margin-left:5px;" onclick="deleteMember('${m}')">x</span>`;
             memDiv.innerHTML += `<span style="display:inline-block; background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">
@@ -1142,7 +1129,6 @@
             </span>`;
         });
 
-        // 刷新所有多選與選單
         const preSelect = document.getElementById('prePayerSelect');
         const localSelect = document.getElementById('localPayerSelect');
         preSelect.innerHTML = ""; localSelect.innerHTML = "";
@@ -1159,7 +1145,6 @@
             localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" name="localCb" value="${m}" checked>${m}</label>`;
         });
 
-        // 渲染明細歷史與加總
         trip.expenses.sort((a,b) => (a.date + " " + a.time).localeCompare(b.date + " " + b.time));
         
         let preTotalSum = 0, preOwnSum = 0, preAverageShare = 0;
@@ -1171,7 +1156,6 @@
         preHist.innerHTML = ""; localHist.innerHTML = "";
 
         trip.expenses.forEach((e, index) => {
-            // 🛍️ 代購紀錄只在「個人記帳」頁單獨顯示，不進行前／當地公帳與統計
             if (e.type === 'proxy') return;
 
             const div = document.createElement('div');
@@ -1190,7 +1174,6 @@
                 }
                 preHist.appendChild(div);
             } else {
-                // 🔒 個人私物完全跳過，不顯示在「當地日常」共用清單，也不計入統計（只有本人在「個人記帳」頁看得到）
                 if (e.costType === 'personal') return;
                 localTotalSum += e.amount;
                 localShareSum += e.amount;
@@ -1211,14 +1194,11 @@
         generateDayTags();
         refreshPersonalPage();
 
-        // 🔄 結算即時同步：資料一有更新就自動重算，分享連結打開就直接看到，不用手動按
         calculateDebts('pre');
         calculateDebts('local');
-        // 📌 載入行前重要資訊（班機/民宿/準備）
         loadPreInfo();
     }
 
-    // 📌 行前重要資訊：載入到欄位（打字中不覆蓋，避免打到一半被雲端同步蓋掉）
     function loadPreInfo() {
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
         let trip = db.trips[db.currentIdx];
@@ -1228,7 +1208,6 @@
             const el = document.getElementById(id);
             if (el && document.activeElement !== el) el.value = map[id];
         }
-        // 共享版純文字顯示（保留換行、自動撐高、無捲軸）
         const viewMap = { infoFlightView: info.flight, infoHotelView: info.hotel, infoPrepView: info.prep };
         for (const vid in viewMap) {
             const vel = document.getElementById(vid);
@@ -1240,7 +1219,6 @@
         }
     }
 
-    // 📌 儲存行前重要資訊
     function savePreInfo() {
         if (guestGuard()) return;
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return alert('請先建立並選擇一個行程分類！🎒');
@@ -1259,7 +1237,7 @@
     function addExpense(type) {
         if (guestGuard()) return;
         let trip = db.trips[db.currentIdx];
-        if (trip.members.length === 0) return alert('目前沒有任何隊員，請回第一頁加入！🎒');
+        if (trip.members.length === 0) return alert('目前沒有任何隊員！🎒');
         
         let title, amount, date, time, costType;
         let rawAmount = 0, currency = 'TWD';
@@ -1268,13 +1246,12 @@
             costType = document.getElementById('preCostType').value;
             title = document.getElementById('preTitle').value.trim();
             amount = parseFloat(document.getElementById('preAmount').value) || 0;
-            date = new Date().toISOString().slice(0, 10); // 自動帶入今天日期，不用手動選
+            date = new Date().toISOString().slice(0, 10);
             time = "";
 
             if (!title || amount <= 0) return alert('請完整填寫項目與金額！⭐');
 
             if (costType === 'personal') {
-                // 👑 核心精修：個人自付改為單一公定價，不再遍歷勾選
                 trip.expenses.push({ type, costType, title, payer: '大家', amount, participants: [], date, time });
             } else {
                 let payer = document.getElementById('prePayerSelect').value;
@@ -1284,7 +1261,7 @@
                 trip.expenses.push({ type, costType, title, payer, amount, participants, date, time });
             }
         } else {
-            costType = 'share'; // 當地日常只處理大家代墊，個人花費請到「個人記帳」頁
+            costType = 'share';
             title = document.getElementById('localTitle').value.trim();
             rawAmount = parseFloat(document.getElementById('localAmount').value) || 0;
             currency = document.getElementById('localCurrency').value;
@@ -1301,7 +1278,6 @@
             trip.expenses.push({ type, costType, title, payer, amount, rawAmount, currency, participants, date, time });
         }
 
-        // 清空輸入
         if (type === 'pre') {
             document.getElementById('preTitle').value = ""; document.getElementById('preAmount').value = "";
         } else {
@@ -1318,7 +1294,6 @@
     }
 
     function calculateDebts(targetType) {
-        // 純顯示結算結果，不會修改任何資料，因此讓拿到分享連結的旅伴也能自動看到
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
         let trip = db.trips[db.currentIdx];
         let balances = {};
