@@ -408,7 +408,7 @@
                 proxyTotal += e.amount;
                 proxyList.innerHTML += `<div class="expense-grid-item">
                     <div class="expense-cell-date">${e.date}</div>
-                    <div class="proxy-cell-title">🙋 幫 <span class="proxy-tag proxy-tag-name">${e.forWho}</span> <span class="proxy-connector">買</span> <span class="proxy-tag proxy-tag-item">🍡 ${e.title}</span></div>
+                    <div class="proxy-cell-title">🙋 幫 <span class="proxy-tag proxy-tag-name">${e.forWho}</span> <span class="proxy-connector">買</span> <span class="proxy-tag proxy-tag-item">${e.title}</span></div>
                     ${formatAmountCell(e)}
                     <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
                 </div>`;
