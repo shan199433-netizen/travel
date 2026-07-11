@@ -305,30 +305,18 @@
         .type-badge { font-size: 11px; padding: 2px 6px; border-radius: 6px; color: white; font-weight: bold; margin-left: 5px; }
         .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; font-weight: bold; float: right; font-size: 16px; }
 
-        /* 🔒 旅伴鎖死模式：前4頁的按鈕/輸入框全部變灰，無法點擊 */
-        .guest-mode #page-trip button,
-        .guest-mode #page-pre button,
-        .guest-mode #page-local button,
-        .guest-mode #page-schedule button {
-            opacity: .35;
-            filter: grayscale(1);
-            cursor: not-allowed !important;
-            box-shadow: none !important;
+        /* 🔒 分享版（旅伴連結）：隱藏所有輸入/編輯區塊，只保留檢視內容
+           （統計、明細、結算、成員名單、行程時間軸、行前資訊） */
+        .guest-mode .master-only { display: none !important; }
+        /* 行前重要資訊在分享版為唯讀：內容看得到、改不了，並淡化輸入框外觀更像純文字 */
+        .guest-mode #infoFlight,
+        .guest-mode #infoHotel,
+        .guest-mode #infoPrep {
+            background: #fffdf9;
+            border-style: dashed;
+            cursor: default;
         }
-        .guest-mode #page-trip input,
-        .guest-mode #page-trip select,
-        .guest-mode #page-pre input,
-        .guest-mode #page-pre select,
-        .guest-mode #page-pre textarea,
-        .guest-mode #page-local input,
-        .guest-mode #page-local select,
-        .guest-mode #page-schedule input,
-        .guest-mode #page-schedule select,
-        .guest-mode #page-schedule textarea {
-            pointer-events: none;
-            opacity: .5;
-            background: #eee;
-        }
+
         .guest-banner {
             background: var(--main-purple);
             border-bottom: 3px solid var(--border-color);
@@ -348,7 +336,7 @@
     <!-- 頂部大標題 -->
     <div class="header-box">
         <span class="header-title" id="appTitle">🦊 33旅遊分帳</span>
-        <button class="edit-btn" onclick="editAppTitle()">✏️</button>
+        <button class="edit-btn master-only" onclick="editAppTitle()">✏️</button>
     </div>
 
     <!-- ================= 頁面 1：🏕️ 旅遊分類與成員 ================= -->
@@ -356,7 +344,7 @@
         <div class="comic-card">
             <div class="card-title">🏕️ 旅遊項目切換</div>
             <div class="trip-scroll-box" id="tripTagsContainer"></div>
-            <div style="display: flex; gap: 8px; margin-top: 15px;">
+            <div class="master-only" style="display: flex; gap: 8px; margin-top: 15px;">
                 <input type="text" id="newTripInput" placeholder="加新行程分類（如：2025泰國 🇹🇭）">
                 <button class="comic-btn btn-blue" onclick="createNewTrip()" style="width:90px; box-shadow:none; padding:5px;">新增</button>
             </div>
@@ -364,7 +352,7 @@
 
         <div class="comic-card">
             <div class="card-title">🐱 成員小隊</div>
-            <div style="display: flex; gap: 8px;">
+            <div class="master-only" style="display: flex; gap: 8px;">
                 <input type="text" id="newMemberInput" placeholder="輸入成員名字（如：小兔、熊大、喵喵）">
                 <button class="comic-btn" onclick="addMember()" style="width:90px; box-shadow:none; padding:5px;">加入</button>
             </div>
@@ -391,8 +379,8 @@
             <label>📝 行前準備（退稅流程 / 天氣 / 提醒）</label>
             <textarea id="infoPrep" rows="4" placeholder="退稅：機場 T2 三樓退稅櫃檯，需帶護照+收據&#10;天氣：這幾天約 26~31°C，偶陣雨，記得帶薄外套與雨具&#10;要帶：轉接頭、藥品、行動電源..."></textarea>
 
-            <button class="comic-btn btn-green" onclick="savePreInfo()" style="margin-top:10px;">💾 儲存 / 更新資訊</button>
-            <p id="preInfoSavedHint" style="font-size:12.5px; color:#2e7d32; margin:8px 0 0 0; min-height:16px;"></p>
+            <button class="comic-btn btn-green master-only" onclick="savePreInfo()" style="margin-top:10px;">💾 儲存 / 更新資訊</button>
+            <p id="preInfoSavedHint" class="master-only" style="font-size:12.5px; color:#2e7d32; margin:8px 0 0 0; min-height:16px;"></p>
         </div>
 
         <!-- 📊 2. 數據統計看板 -->
@@ -419,7 +407,7 @@
         </div>
 
         <!-- 🎟️ 5. 登記行前開銷 -->
-        <div class="comic-card">
+        <div class="comic-card master-only">
             <div class="card-title">🎟️ 登記行前開銷 (台幣)</div>
             <label>🍨 支出模式</label>
             <select id="preCostType" onchange="togglePreCostUI()">
@@ -469,7 +457,7 @@
             </div>
         </div>
 
-        <div class="comic-card">
+        <div class="comic-card master-only">
             <div class="card-title">🍜 當地日常消費記錄</div>
 
             <label>📅 日期</label>
@@ -532,7 +520,7 @@
 
     <!-- ================= 頁面 4：📅 本次行程表 ================= -->
     <div id="page-schedule" class="page">
-        <div class="comic-card">
+        <div class="comic-card master-only">
             <div class="card-title">📅 行程日期設定</div>
             <label style="font-size: 13px;">📅 出發日期</label>
             <input type="date" id="tripStartDate" value="2026-07-10" onchange="updateTripDates()">
@@ -544,7 +532,7 @@
             <div class="card-title">🗺️ 本次每日行程時間軸</div>
             <div class="day-scroll-box" id="dayTagsContainer"></div>
             
-            <div style="background: #fffdf5; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;">
+            <div class="master-only" style="background: #fffdf5; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;">
                 <b style="font-size:14px;">➕ 新增規劃與備忘錄：</b>
                 <label style="font-size:12.5px; display:block; margin-top:6px;">🕒 時間</label>
                 <input type="time" id="schedTime" value="12:00">
@@ -715,8 +703,13 @@
             document.body.classList.add('guest-mode');
             const banner = document.createElement('div');
             banner.className = 'guest-banner';
-            banner.innerText = '👋 旅伴連結：只能在「個人記帳」頁輸入花費喔！';
+            banner.innerText = '👋 分享版：可瀏覽各頁資訊，僅「個人記帳」頁能輸入自己的花費';
             document.querySelector('.app-phone-container').insertBefore(banner, document.querySelector('.header-box').nextSibling);
+            // 行前重要資訊設為唯讀：內容看得到、改不了
+            ['infoFlight','infoHotel','infoPrep'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.readOnly = true;
+            });
         }
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
@@ -755,6 +748,7 @@
     }
 
     function editAppTitle() {
+        if (guestGuard()) return;
         const t = prompt("修改新手帳標題：", db.title);
         if (t) { db.title = t; document.getElementById('appTitle').innerText = t; save(); }
     }
@@ -785,7 +779,8 @@
 
     function selectTrip(idx) {
         db.currentIdx = idx;
-        refreshAll(); save();
+        refreshAll();
+        if (!isGuest) save(); // 旅伴（分享版）切換行程只在本地查看，不寫回雲端影響主控版
     }
 
     function addMember() {
@@ -849,7 +844,7 @@
         let trip = db.trips[db.currentIdx];
         trip.currentDayTab = dayNum;
         generateDayTags();
-        save();
+        if (!isGuest) save(); // 旅伴（分享版）切天只在本地查看，不寫回雲端影響主控版
     }
 
     function addScheduleItem() {
@@ -1112,10 +1107,11 @@
         container.innerHTML = "";
         db.trips.forEach((t, i) => {
             const active = (i === db.currentIdx) ? 'active' : '';
+            const tripDelBtn = isGuest ? '' : `<button class="delete-trip-btn" onclick="deleteTrip(${i}, event)">❌</button>`;
             container.innerHTML += `
                 <div class="trip-tag ${active}" onclick="selectTrip(${i})">
                     🎈 ${t.name}
-                    <button class="delete-trip-btn" onclick="deleteTrip(${i}, event)">❌</button>
+                    ${tripDelBtn}
                 </div>`;
         });
 
@@ -1174,7 +1170,7 @@
 
             const div = document.createElement('div');
             div.className = "history-item";
-            const delBtn = `<button class="delete-btn" onclick="deleteExpenseItem(${index})">❌</button>`;
+            const delBtn = isGuest ? '' : `<button class="delete-btn" onclick="deleteExpenseItem(${index})">❌</button>`;
 
             if (e.type === 'pre') {
                 preTotalSum += e.amount;
