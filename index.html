@@ -459,9 +459,12 @@
     }
     function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; generateDayTags(); save(); }
     function addScheduleItem() {
+        if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
         let trip = db.trips[db.currentIdx]; const time = document.getElementById('schedTime').value;
         const desc = document.getElementById('schedDesc').value.trim(); const memo = document.getElementById('schedMemo').value.trim();
         if(!desc) return alert('請輸入活動項目！');
+        if(!trip.scheduleData) trip.scheduleData = {};
+        if(!trip.currentDayTab) trip.currentDayTab = 1;
         if(!trip.scheduleData[trip.currentDayTab]) trip.scheduleData[trip.currentDayTab] = [];
         trip.scheduleData[trip.currentDayTab].push({ time, desc, memo }); trip.scheduleData[trip.currentDayTab].sort((a,b) => a.time.localeCompare(b.time));
         document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = ""; renderTimeline(); save();
@@ -529,6 +532,12 @@
         const memDiv = document.getElementById('curTripMembers'); memDiv.innerHTML = "";
         trip.members.forEach(m => memDiv.innerHTML += `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m} <span style="color:red; cursor:pointer;" onclick="deleteMember('${m}')">x</span></span>`);
         generateDayTags(); refreshPersonalPage(); loadPreInfo();
+        renderExpenseHistory('pre', 'preHistoryList');
+        updatePreDashboard();
+        calcSettlement('pre', 'preSettlementDisplay');
+        renderExpenseHistory('local', 'localHistoryList');
+        updateLocalDashboard();
+        calcSettlement('local', 'localSettlementDisplay');
         
         const preSel = document.getElementById('prePayerSelect');
         const localSel = document.getElementById('localPayerSelect');
@@ -562,15 +571,100 @@
         save(); document.getElementById('preInfoSavedHint').innerText = '✅ 已儲存！'; setTimeout(() => document.getElementById('preInfoSavedHint').innerText = '', 2000);
     }
     function addExpense(type) {
+        if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
         let trip = db.trips[db.currentIdx]; if (!trip.members.length) return alert('無隊員！');
         let title = document.getElementById(type === 'pre' ? 'preTitle' : 'localTitle').value.trim();
         let amount = parseFloat(document.getElementById(type === 'pre' ? 'preAmount' : 'localAmount').value) || 0;
         if (!title || amount <= 0) return alert('填寫完整！');
         let payer = document.getElementById(type === 'pre' ? 'prePayerSelect' : 'localPayerSelect').value;
-        trip.expenses.push({ type, costType: 'share', title, payer, amount, participants: trip.members, date: new Date().toISOString().slice(0, 10), time: "" });
+        const isPersonal = type === 'pre' && document.getElementById('preCostType').value === 'personal';
+        const costType = isPersonal ? 'personal' : 'share';
+        const participants = isPersonal ? [] : trip.members;
+        if (!trip.expenses) trip.expenses = [];
+        trip.expenses.push({ type, costType, title, payer, amount, participants, date: new Date().toISOString().slice(0, 10), time: "" });
+        document.getElementById(type === 'pre' ? 'preTitle' : 'localTitle').value = "";
+        document.getElementById(type === 'pre' ? 'preAmount' : 'localAmount').value = "";
         refreshAll(); save();
     }
     function switchTab(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
+    // ↓↓↓ 補上原本缺少的「行前/當地」明細顯示、統計、結算邏輯 ↓↓↓
+    function deleteExpense(realIdx) { if(!confirm('確定刪除這筆紀錄嗎？')) return; db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); save(); }
+
+    function renderExpenseHistory(type, listId) {
+        const listDiv = document.getElementById(listId); if (!listDiv) return;
+        listDiv.innerHTML = "";
+        if (db.currentIdx === -1 || !db.trips.length) return;
+        const trip = db.trips[db.currentIdx];
+        const items = (trip.expenses || []).filter(e => e.type === type);
+        if (!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>"; return; }
+        // 由新到舊排列
+        items.slice().reverse().forEach(e => {
+            const realIdx = trip.expenses.indexOf(e);
+            const badge = e.costType === 'personal'
+                ? `<span class="type-badge" style="background:#7b1fa2;">個人自付</span>`
+                : `<span class="type-badge" style="background:#2e7d32;">代墊分攤</span>`;
+            const shareInfo = e.costType === 'share'
+                ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
+                : '';
+            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteExpense(${realIdx})">❌</button><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>　👑 ${e.payer}${shareInfo}</div>`;
+        });
+    }
+
+    function updatePreDashboard() {
+        if (db.currentIdx === -1 || !db.trips.length) return;
+        const trip = db.trips[db.currentIdx]; const members = trip.members.length || 1;
+        const items = (trip.expenses || []).filter(e => e.type === 'pre');
+        const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
+        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount, 0);
+        const perShare = Math.round(shareTotal / members);
+        document.getElementById('preShareSum').innerText = `$${perShare}`;
+        document.getElementById('preOwnSum').innerText = `$${Math.round(ownTotal)}`;
+        document.getElementById('preTotalSum').innerText = `$${perShare + Math.round(ownTotal)}`;
+    }
+
+    function updateLocalDashboard() {
+        if (db.currentIdx === -1 || !db.trips.length) return;
+        const trip = db.trips[db.currentIdx]; const members = trip.members.length || 1;
+        const items = (trip.expenses || []).filter(e => e.type === 'local');
+        const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
+        const total = items.reduce((s,e) => s + e.amount, 0);
+        document.getElementById('localTotalSum').innerText = `$${Math.round(total)}`;
+        document.getElementById('localShareSum').innerText = `$${Math.round(shareTotal / members)}`;
+    }
+
+    function calcSettlement(type, displayId) {
+        const displayDiv = document.getElementById(displayId); if (!displayDiv) return;
+        displayDiv.innerHTML = "";
+        if (db.currentIdx === -1 || !db.trips.length) return;
+        const trip = db.trips[db.currentIdx];
+        const balance = {};
+        (trip.members || []).forEach(m => balance[m] = 0);
+        (trip.expenses || []).filter(e => e.type === type && e.costType === 'share').forEach(e => {
+            const participants = (e.participants && e.participants.length) ? e.participants : trip.members;
+            const share = e.amount / (participants.length || 1);
+            if (balance[e.payer] === undefined) balance[e.payer] = 0;
+            balance[e.payer] += e.amount;
+            participants.forEach(p => { if (balance[p] === undefined) balance[p] = 0; balance[p] -= share; });
+        });
+        const creditors = [], debtors = [];
+        Object.keys(balance).forEach(m => {
+            const v = Math.round(balance[m]);
+            if (v > 0) creditors.push({ name: m, amt: v });
+            else if (v < 0) debtors.push({ name: m, amt: -v });
+        });
+        if (!creditors.length && !debtors.length) { displayDiv.innerHTML = "<p style='color:gray; font-size:14px;'>目前沒有需要結算的款項</p>"; return; }
+        creditors.sort((a,b) => b.amt - a.amt); debtors.sort((a,b) => b.amt - a.amt);
+        let html = ""; let i = 0, j = 0;
+        while (i < debtors.length && j < creditors.length) {
+            const pay = Math.min(debtors[i].amt, creditors[j].amt);
+            if (pay > 0) html += `<div style="padding:6px 0;">👉 <b>${debtors[i].name}</b> 要給 <b>${creditors[j].name}</b> <b style="color:#c0564a;">$${pay}</b></div>`;
+            debtors[i].amt -= pay; creditors[j].amt -= pay;
+            if (debtors[i].amt <= 0) i++;
+            if (creditors[j].amt <= 0) j++;
+        }
+        displayDiv.innerHTML = html || "<p style='color:gray; font-size:14px;'>目前沒有需要結算的款項</p>";
+    }
 </script>
 </body>
 </html>
