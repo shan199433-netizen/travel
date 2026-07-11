@@ -532,16 +532,16 @@
     <div id="page-personal" class="page">
         <div class="comic-card" style="background: #f3e5f5;">
             <div class="card-title">👤 個人記帳（旅伴自由填寫）</div>
-            <p style="font-size:13px; color:#666; margin-top:0;">選自己的名字，記下自己買的伴手禮、私人花費，本機與雲端強效雙向同步！</p>
+            <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div>🙋 <b>當前綁定身分：</b> <span id="myIdentityDisplay" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
+                <button class="comic-btn" style="width:auto; padding:5px 12px; font-size:13px; box-shadow:none; background:var(--main-purple);" onclick="promptSetMyIdentity()">切換/設定身分</button>
+            </div>
+            <p style="font-size:13px; color:#666; margin-top:0;">在此裝置鎖定你的名字，記下自己買的伴手禮與私人花費！</p>
 
             <label>📅 日期</label>
             <input type="date" id="personalDate" value="2026-07-10">
 
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;">
-                    <label>🙋 我是誰？</label>
-                    <select id="personalNameSelect" onchange="refreshPersonalPage()"></select>
-                </div>
                 <div style="flex:1; min-width:0;">
                     <label>🍡 買了什麼？</label>
                     <input type="text" id="personalTitle" placeholder="伴手禮、藥妝...">
@@ -679,7 +679,25 @@
     firebase.initializeApp(firebaseConfig);
     const cloudDoc = firebase.firestore().collection('travelApp').doc('sharedData');
 
-    // 🔒 強效本機同步管理：將訪客的個人記帳/代購儲存在 localStorage 避免重整遺失與權限錯誤
+    // 🔒 本機身分綁定管理
+    const MY_NAME_KEY = 'travel33_my_device_identity';
+    function getMyIdentity() {
+        return localStorage.getItem(MY_NAME_KEY) || '';
+    }
+    function setMyIdentity(name) {
+        localStorage.setItem(MY_NAME_KEY, name.trim());
+        refreshPersonalPage();
+    }
+    function promptSetMyIdentity() {
+        let cur = getMyIdentity();
+        let name = prompt("請輸入/修改你在本裝置鎖定的組員名字：", cur);
+        if (name && name.trim()) {
+            setMyIdentity(name.trim());
+            alert(`已成功將此裝置身分鎖定為：${name.trim()}`);
+        }
+    }
+
+    // 🔒 強效本機同步管理：將個人的記帳/代購儲存在 localStorage 避免重整遺失與權限錯誤
     const LOCAL_KEY = 'travel33_local_personal_data';
     function getLocalPersonalExpenses() {
         try {
@@ -693,7 +711,6 @@
     }
     function removeLocalPersonalExpenseByIndex(targetIdx) {
         let list = getLocalPersonalExpenses();
-        // 依照條件過濾或比對刪除
         list.splice(targetIdx, 1);
         localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
     }
@@ -977,14 +994,18 @@
         let trip = db.trips[db.currentIdx];
         if (trip.members.length === 0) return alert('目前沒有任何隊員！🎒');
 
-        const payer = document.getElementById('personalNameSelect').value;
+        const payer = getMyIdentity();
+        if (!payer) {
+            promptSetMyIdentity();
+            return;
+        }
+
         const title = document.getElementById('personalTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value;
         const amount = updatePersonalExchangeHint();
         const date = document.getElementById('personalDate').value;
 
-        if (!payer) return alert('請先選擇你是誰！🙋');
         if (!title || amount <= 0 || !date) return alert('請完整填寫項目與金額！⭐');
 
         const newExp = { type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
@@ -1003,7 +1024,6 @@
         if (confirm('確定刪除這筆個人記帳紀錄嗎？')) {
             const target = trip.expenses[realIdx];
             trip.expenses.splice(realIdx, 1);
-            // 同步移除本機
             let localList = getLocalPersonalExpenses();
             localList = localList.filter(l => !(l.title === target.title && l.amount === target.amount && l.date === target.date && l.payer === target.payer));
             localStorage.setItem(LOCAL_KEY, JSON.stringify(localList));
@@ -1013,23 +1033,22 @@
     }
 
     function refreshPersonalPage() {
+        let myName = getMyIdentity();
+        const idDisplay = document.getElementById('myIdentityDisplay');
+        if (idDisplay) {
+            idDisplay.innerText = myName ? myName : "未設定（請點右側按鈕）";
+        }
+
         if (db.currentIdx === -1 || db.trips.length === 0) return;
         let trip = db.trips[db.currentIdx];
-
-        const nameSelect = document.getElementById('personalNameSelect');
-        const prevVal = nameSelect.value;
-        nameSelect.innerHTML = "";
-        trip.members.forEach(m => nameSelect.add(new Option(m, m)));
-        if (trip.members.includes(prevVal)) nameSelect.value = prevVal;
 
         refreshProxyList();
 
         const hist = document.getElementById('personalHistoryList');
         hist.innerHTML = "";
-        const myName = nameSelect.value;
         const personalItems = trip.expenses.map((e, idx) => ({e, idx})).filter(item => item.e.costType === 'personal' && item.e.payer === myName);
         
-        if (!myName) { hist.innerHTML = "<p style='color:gray; font-size:14px;'>請先選擇你的名字～</p>"; return; }
+        if (!myName) { hist.innerHTML = "<p style='color:gray; font-size:14px;'>請先點選右上角「切換/設定身分」設定你的名字～</p>"; return; }
         if (!personalItems.length) {
             hist.innerHTML = "<p style='color:gray; font-size:14px;'>你還沒有記錄過個人花費唷～</p>";
             return;
@@ -1058,7 +1077,12 @@
         let trip = db.trips[db.currentIdx];
         if (trip.members.length === 0) return alert('目前沒有任何隊員！🎒');
 
-        const payer = document.getElementById('personalNameSelect').value;
+        const payer = getMyIdentity();
+        if (!payer) {
+            promptSetMyIdentity();
+            return;
+        }
+
         const forWho = document.getElementById('proxyFor').value.trim();
         const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0;
@@ -1066,7 +1090,6 @@
         const amount = updateProxyExchangeHint();
         const date = document.getElementById('proxyDate').value;
 
-        if (!payer) return alert('請先在上方選擇「我是誰」！🙋');
         if (!forWho) return alert('請輸入你幫誰代購！');
         if (!title || amount <= 0 || !date) return alert('請完整填寫代購項目與金額！⭐');
 
@@ -1098,10 +1121,10 @@
         if (db.currentIdx === -1 || db.trips.length === 0) return;
         let trip = db.trips[db.currentIdx];
 
-        const myName = document.getElementById('personalNameSelect').value;
+        const myName = getMyIdentity();
         const list = document.getElementById('proxyHistoryList');
         list.innerHTML = "";
-        if (!myName) { list.innerHTML = "<p style='color:gray; font-size:14px;'>請先在上方選擇你的名字～</p>"; return; }
+        if (!myName) { list.innerHTML = "<p style='color:gray; font-size:14px;'>請先設定你的名字～</p>"; return; }
 
         let found = false;
         trip.expenses.forEach((e, realIdx) => {
