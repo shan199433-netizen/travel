@@ -144,7 +144,7 @@
             </div>
         </div>
         <div class="comic-card"><div class="card-title">📋 當地明細歷史</div><div id="localHistoryList"></div></div>
-        <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地結算</div><div id="localSettlementDisplay"></div></div>
+        <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay"></div></div>
     </div>
 
     <div id="page-schedule" class="page">
@@ -260,6 +260,8 @@
         let trip = db.trips[db.currentIdx];
         if (!trip.expenses) trip.expenses = [];
         localItems.forEach(li => {
+            // 修正舊版程式的資料：個人私物消費紀錄曾被誤存為 type:'local'，導致混進「當地日常」頁面，這裡順手修正
+            if (li.type === 'local' && li.costType === 'personal') li.type = 'personalItem';
             const exists = li.id
                 ? trip.expenses.some(e => e.id === li.id)
                 : trip.expenses.some(e => e.title === li.title && e.amount === li.amount && e.date === li.date && e.payer === li.payer && e.costType === li.costType);
@@ -317,10 +319,10 @@
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newExp = { id: genId(), type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
+        const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); alert('記好了！');
-        document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
+        document.getElementById('personalDate').value = ""; document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
     }
     function deletePersonalExpense(id) {
         if(!confirm('確定刪除這筆紀錄嗎？')) return;
@@ -341,7 +343,7 @@
         const newProxy = { id: genId(), type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); alert('代購記好了！');
-        document.getElementById('proxyFor').value = ""; document.getElementById('proxyTitle').value = ""; document.getElementById('proxyAmount').value = "";
+        document.getElementById('proxyFor').value = ""; document.getElementById('proxyDate').value = ""; document.getElementById('proxyTitle').value = ""; document.getElementById('proxyAmount').value = "";
     }
     function deleteProxyItem(id) {
         if(!confirm('確定刪除這筆紀錄嗎？')) return;
@@ -388,12 +390,21 @@
         trip.expenses.forEach(e => { if (!e.id) { e.id = genId(); changed = true; } });
         return changed;
     }
+    // 修正舊版程式遺留下來、被誤存為 type:'local' 的個人私物消費紀錄，
+    // 讓「當地日常」頁面（分帳專用）不再被個人記帳的私物紀錄污染（分享版唯讀，僅修正本機顯示，不寫回雲端）
+    function fixLegacyPersonalItemType(trip) {
+        if (!trip || !trip.expenses) return false;
+        let changed = false;
+        trip.expenses.forEach(e => { if (e.type === 'local' && e.costType === 'personal') { e.type = 'personalItem'; changed = true; } });
+        return changed;
+    }
     function refreshAll() {
         const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
         db.trips.forEach((t, i) => container.innerHTML += `<div class="trip-tag ${i === db.currentIdx ? 'active' : ''}" onclick="selectTrip(${i})">🎈 ${t.name}</div>`);
         if (db.currentIdx === -1 || !db.trips.length) return;
         let trip = db.trips[db.currentIdx];
         ensureExpenseIds(trip);
+        fixLegacyPersonalItemType(trip);
         document.getElementById('curTripName').innerText = trip.name;
         document.getElementById('curTripMembers').innerHTML = (trip.members || []).map(m => `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m}</span>`).join('') || "暫無成員";
         

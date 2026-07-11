@@ -417,6 +417,8 @@
         let trip = db.trips[db.currentIdx];
         if (!trip.expenses) trip.expenses = [];
         localItems.forEach(li => {
+            // 修正舊版程式的資料：個人私物消費紀錄曾被誤存為 type:'local'，導致混進「當地日常」頁面，這裡順手修正
+            if (li.type === 'local' && li.costType === 'personal') li.type = 'personalItem';
             // 有唯一ID的用ID精準比對；沒有ID的舊資料則退回舊的模糊比對，確保舊資料仍相容
             const exists = li.id
                 ? trip.expenses.some(e => e.id === li.id)
@@ -429,6 +431,14 @@
         if (!trip || !trip.expenses) return false;
         let changed = false;
         trip.expenses.forEach(e => { if (!e.id) { e.id = genId(); changed = true; } });
+        return changed;
+    }
+    // 修正舊版程式遺留下來、被誤存為 type:'local' 的個人私物消費紀錄，
+    // 讓「當地日常」頁面（分帳專用）不再被個人記帳的私物紀錄污染
+    function fixLegacyPersonalItemType(trip) {
+        if (!trip || !trip.expenses) return false;
+        let changed = false;
+        trip.expenses.forEach(e => { if (e.type === 'local' && e.costType === 'personal') { e.type = 'personalItem'; changed = true; } });
         return changed;
     }
 
@@ -548,10 +558,10 @@
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newExp = { id: genId(), type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
+        const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); save(); alert('記好了！');
-        document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
+        document.getElementById('personalDate').value = ""; document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
     }
     function deletePersonalExpense(id) {
         if(!confirm('確定刪除這筆紀錄嗎？')) return;
@@ -572,7 +582,7 @@
         const newProxy = { id: genId(), type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); save(); alert('代購記好了！');
-        document.getElementById('proxyFor').value = ""; document.getElementById('proxyTitle').value = ""; document.getElementById('proxyAmount').value = "";
+        document.getElementById('proxyFor').value = ""; document.getElementById('proxyDate').value = ""; document.getElementById('proxyTitle').value = ""; document.getElementById('proxyAmount').value = "";
     }
     function deleteProxyItem(id) {
         if(!confirm('確定刪除這筆紀錄嗎？')) return;
@@ -618,6 +628,7 @@
         if (db.currentIdx === -1 || !db.trips.length) return;
         let trip = db.trips[db.currentIdx];
         if (ensureExpenseIds(trip)) save();
+        if (fixLegacyPersonalItemType(trip)) save();
         document.getElementById('curTripName').innerText = trip.name;
         const memDiv = document.getElementById('curTripMembers'); memDiv.innerHTML = "";
         trip.members.forEach(m => memDiv.innerHTML += `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m} <span style="color:red; cursor:pointer;" onclick="deleteMember('${m}')">x</span></span>`);
