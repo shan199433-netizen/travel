@@ -169,6 +169,23 @@
         .checkbox-label input { width: auto; margin: 0; flex-shrink: 0; }
         .type-badge { font-size: 11px; padding: 2px 6px; border-radius: 6px; color: white; font-weight: bold; margin-left: 5px; }
         .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; font-weight: bold; float: right; font-size: 16px; }
+
+        /* 個人記帳／代購清單：每筆紀錄改成「日期／內容／金額」分格顯示，取代原本一長串文字 */
+        .total-badge { font-size: 13px; font-weight: bold; white-space: nowrap; }
+        .expense-grid-item {
+            display: grid; grid-template-columns: 54px 1fr auto 22px; gap: 8px; align-items: center;
+            padding: 10px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14px;
+        }
+        .expense-grid-item:last-child { border-bottom: none; }
+        .expense-cell-date {
+            font-size: 12px; font-weight: 500; text-align: center; color: var(--text-soft);
+            background: var(--bg-color); border: 1.5px solid rgba(53,50,44,0.25); border-radius: 8px;
+            padding: 5px 2px; line-height: 1.25; word-break: break-word;
+        }
+        .expense-cell-title { font-weight: 500; line-height: 1.4; word-break: break-word; }
+        .expense-cell-sub { display: block; font-size: 11px; color: var(--text-soft); font-weight: 400; }
+        .expense-cell-amount { text-align: right; font-weight: bold; white-space: nowrap; font-size: 13.5px; line-height: 1.3; }
+        @media (max-width: 420px) { .expense-grid-item { grid-template-columns: 46px 1fr auto 20px; font-size: 13px; } }
         .info-view { display: none; }
     </style>
 </head>
@@ -328,7 +345,7 @@
             <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
         </div>
-        <div class="comic-card"><div class="card-title">📋 我的個人私物紀錄</div><div id="personalHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></div><div id="personalHistoryList"></div></div>
 
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">🛍️ 幫別人代購紀錄</div>
@@ -346,7 +363,7 @@
             <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
         </div>
-        <div class="comic-card"><div class="card-title">📋 我幫別人代購的清單</div><div id="proxyHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></div><div id="proxyHistoryList"></div></div>
     </div>
 
     <div class="nav-bar">
@@ -597,30 +614,41 @@
         let myName = getMyIdentity(); document.getElementById('myIdentityDisplay').innerText = myName || "未設定";
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
+        let personalTotal = 0;
         (trip.expenses || []).forEach((e) => {
             if (e.costType === 'personal' && e.payer === myName && e.type !== 'proxy') {
-                hist.innerHTML += `<div class="history-item" style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span>📅 ${e.date}　🎁 ${e.title}　${formatOrigAmount(e)}</span>
+                personalTotal += e.amount;
+                hist.innerHTML += `<div class="expense-grid-item">
+                    <div class="expense-cell-date">${e.date}</div>
+                    <div class="expense-cell-title">🎁 ${e.title}</div>
+                    ${formatAmountCell(e)}
                     <button class="delete-btn" style="float:none;" onclick="deletePersonalExpense('${e.id}')">❌</button>
                 </div>`;
             }
         });
+        document.getElementById('personalTotalSum').innerText = `💰 目前總花費：$${Math.round(personalTotal)}`;
+
         const proxyList = document.getElementById('proxyHistoryList'); proxyList.innerHTML = "";
+        let proxyTotal = 0;
         (trip.expenses || []).forEach((e) => {
             if (e.type === 'proxy' && e.payer === myName) {
-                proxyList.innerHTML += `<div class="history-item" style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span>📅 ${e.date}　🛍️ 幫${e.forWho}買 ${e.title}　${formatOrigAmount(e)}</span>
+                proxyTotal += e.amount;
+                proxyList.innerHTML += `<div class="expense-grid-item">
+                    <div class="expense-cell-date">${e.date}</div>
+                    <div class="expense-cell-title">🙋 幫 ${e.forWho} 買<span class="expense-cell-sub">🍡 ${e.title}</span></div>
+                    ${formatAmountCell(e)}
                     <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
                 </div>`;
             }
         });
+        document.getElementById('proxyTotalSum').innerText = `💰 目前總花費：$${Math.round(proxyTotal)}`;
     }
-    // 統一產生「原幣金額 → 換算台幣」的顯示文字，沒有幣別資訊的舊資料則只顯示台幣金額
-    function formatOrigAmount(e) {
+    // 產生金額格子：原幣金額顯示在上方小字，換算後的台幣金額顯示在下方（沒有幣別資訊的舊資料則只顯示台幣金額）
+    function formatAmountCell(e) {
         if (e.currency && e.currency !== 'TWD' && typeof e.rawAmount === 'number') {
-            return `💴 ${e.rawAmount} ${e.currency} → NT$${Math.round(e.amount)}`;
+            return `<div class="expense-cell-amount"><span class="expense-cell-sub">${e.rawAmount} ${e.currency}</span>NT$${Math.round(e.amount)}</div>`;
         }
-        return `💴 NT$${Math.round(e.amount)}`;
+        return `<div class="expense-cell-amount">NT$${Math.round(e.amount)}</div>`;
     }
     function refreshAll() {
         const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
