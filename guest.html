@@ -158,17 +158,14 @@
                 <div>🙋 <b>我的身分：</b> <span id="myIdentityDisplay" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
                 <button class="comic-btn" style="width:auto; padding:5px 12px; font-size:13px; box-shadow:none; background:var(--main-purple);" onclick="promptSetMyIdentity()">設定身分</button>
             </div>
-            <label>📅 日期</label><input type="date" id="personalDate" value="2026-07-10">
-            <label>🍡 買了什麼？</label><input type="text" id="personalTitle" placeholder="伴手禮、藥妝...">
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10"></div>
+                <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="personalTitle" placeholder="伴手禮、藥妝..."></div>
+            </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
-                    <select id="personalCurrency" onchange="updatePersonalExchangeHint()">
-                        <option value="TWD">🇹🇼 台幣 TWD</option><option value="JPY">🇯🇵 日圓 JPY</option><option value="THB">🇹🇭 泰銖 THB</option>
-                        <option value="KRW">🇰🇷 韓元 KRW</option><option value="USD">🇺🇸 美元 USD</option><option value="EUR">🇪🇺 歐元 EUR</option>
-                        <option value="CNY">🇨🇳 人民幣 CNY</option><option value="VND">🇻🇳 越南盾 VND</option><option value="HKD">🇰🇷 港幣 HKD</option>
-                        <option value="SGD">🇸🇬 新幣 SGD</option><option value="MYR">MYR</option>
-                    </select>
+                    <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
             <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
@@ -178,20 +175,15 @@
 
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">🛍️ 幫別人代購紀錄</div>
-            <label>📅 日期</label><input type="date" id="proxyDate" value="2026-07-10">
+            <label>🙋 幫誰代購？</label><input type="text" id="proxyFor" placeholder="小明、熊大...">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>🙋 幫誰代購？</label><input type="text" id="proxyFor" placeholder="小明、熊大..."></div>
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="proxyDate" placeholder="例如 7/10"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="proxyTitle" placeholder="藥妝、酒..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
-                    <select id="proxyCurrency" onchange="updateProxyExchangeHint()">
-                        <option value="TWD">🇹🇼 台幣 TWD</option><option value="JPY">🇯🇵 日圓 JPY</option><option value="THB">🇹🇭 泰銖 THB</option>
-                        <option value="KRW">🇰🇷 韓元 KRW</option><option value="USD">🇺🇸 美元 USD</option><option value="EUR">🇪🇺 歐元 EUR</option>
-                        <option value="CNY">🇨🇳 人民幣 CNY</option><option value="VND">🇻🇳 越南盾 VND</option><option value="HKD">🇰🇷 港幣 HKD</option>
-                        <option value="SGD">🇸🇬 新幣 SGD</option><option value="MYR">MYR</option>
-                    </select>
+                    <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
             </div>
             <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
@@ -211,6 +203,25 @@
 
 <script>
     const rates = { TWD: 1.0, JPY: 0.22, THB: 0.90, KRW: 0.024, USD: 32.5, EUR: 35.2, CNY: 4.5, VND: 0.0013, HKD: 4.15, SGD: 24.2, MYR: 7.3 };
+    // 幣別清單需與主控版保持一致（修正HKD國旗、補上MYR中文名）
+    const CURRENCIES = [
+        { v: 'TWD', f: '🇹🇼', n: '台幣' },
+        { v: 'JPY', f: '🇯🇵', n: '日圓' },
+        { v: 'THB', f: '🇹🇭', n: '泰銖' },
+        { v: 'KRW', f: '🇰🇷', n: '韓元' },
+        { v: 'USD', f: '🇺🇸', n: '美元' },
+        { v: 'EUR', f: '🇪🇺', n: '歐元' },
+        { v: 'CNY', f: '🇨🇳', n: '人民幣' },
+        { v: 'VND', f: '🇻🇳', n: '越南盾' },
+        { v: 'HKD', f: '🇭🇰', n: '港幣' },
+        { v: 'SGD', f: '🇸🇬', n: '新幣' },
+        { v: 'MYR', f: '🇲🇾', n: '馬幣' }
+    ];
+    function populateCurrencySelects() {
+        const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
+        document.querySelectorAll('select.currency-select').forEach(sel => { sel.innerHTML = html; });
+    }
+    function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
     const MY_NAME_KEY = 'travel33_my_device_identity';
 
@@ -236,18 +247,28 @@
     const LOCAL_KEY = 'travel33_local_personal_data';
     function getLocalPersonalExpenses() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; } catch(e) { return []; } }
     function saveLocalPersonalExpense(exp) { let list = getLocalPersonalExpenses(); list.push(exp); localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); }
+    // 刪除紀錄時，同步把本機備份（localStorage）裡對應的那一筆也清掉，
+    // 否則重新整理頁面時 mergeLocalData() 會把剛刪除的紀錄誤判成「還沒同步」而自動復原
+    function removeLocalPersonalExpense(id) {
+        if (!id) return;
+        let list = getLocalPersonalExpenses().filter(li => li.id !== id);
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
+    }
     function mergeLocalData() {
         const localItems = getLocalPersonalExpenses();
         if (!localItems.length || !db.trips.length || db.currentIdx === -1) return;
         let trip = db.trips[db.currentIdx];
         if (!trip.expenses) trip.expenses = [];
         localItems.forEach(li => {
-            const exists = trip.expenses.some(e => e.title === li.title && e.amount === li.amount && e.date === li.date && e.payer === li.payer && e.costType === li.costType);
+            const exists = li.id
+                ? trip.expenses.some(e => e.id === li.id)
+                : trip.expenses.some(e => e.title === li.title && e.amount === li.amount && e.date === li.date && e.payer === li.payer && e.costType === li.costType);
             if (!exists) trip.expenses.push(li);
         });
     }
 
     window.onload = function() {
+        populateCurrencySelects();
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
         cloudDoc.onSnapshot((docSnap) => {
@@ -265,9 +286,15 @@
         const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
         const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
-            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})">🐾 Day ${i}</div>`;
+            const label = formatDayDate(start, i);
+            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})">🐾 Day${i}${label ? ' ('+label+')' : ''}</div>`;
         }
         renderTimeline();
+    }
+    function formatDayDate(start, dayNum) {
+        if (isNaN(start.getTime())) return '';
+        const d = new Date(start.getTime()); d.setDate(d.getDate() + (dayNum - 1));
+        return `${d.getMonth() + 1}/${d.getDate()}`;
     }
     function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; generateDayTags(); }
     function renderTimeline() {
@@ -288,50 +315,86 @@
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
         let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
-        const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value;
+        const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newExp = { type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
+        const newExp = { id: genId(), type: 'local', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); alert('記好了！');
+        document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
     }
-    function deletePersonalExpense(realIdx) { db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); }
+    function deletePersonalExpense(id) {
+        if(!confirm('確定刪除這筆紀錄嗎？')) return;
+        const trip = db.trips[db.currentIdx];
+        const idx = trip.expenses.findIndex(e => e.id === id);
+        if (idx > -1) trip.expenses.splice(idx, 1);
+        removeLocalPersonalExpense(id);
+        refreshAll();
+    }
     
     function addProxyExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
         let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
         const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
-        const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value;
+        const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value.trim();
         if (!forWho) return alert('請輸入幫誰代購！'); if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newProxy = { type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
+        const newProxy = { id: genId(), type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); alert('代購記好了！');
+        document.getElementById('proxyFor').value = ""; document.getElementById('proxyTitle').value = ""; document.getElementById('proxyAmount').value = "";
     }
-    function deleteProxyItem(realIdx) { db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); }
+    function deleteProxyItem(id) {
+        if(!confirm('確定刪除這筆紀錄嗎？')) return;
+        const trip = db.trips[db.currentIdx];
+        const idx = trip.expenses.findIndex(e => e.id === id);
+        if (idx > -1) trip.expenses.splice(idx, 1);
+        removeLocalPersonalExpense(id);
+        refreshAll();
+    }
 
     function refreshPersonalPage() {
         let myName = getMyIdentity(); document.getElementById('myIdentityDisplay').innerText = myName || "未設定";
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         
         const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
-        (trip.expenses || []).forEach((e, realIdx) => {
+        (trip.expenses || []).forEach((e) => {
             if (e.costType === 'personal' && e.payer === myName) {
-                hist.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deletePersonalExpense(${realIdx})">❌</button><small>${e.date}</small><br>🎁 [${e.title}]<br><b>$${e.amount} 元</b></div>`;
+                hist.innerHTML += `<div class="history-item" style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span>📅 ${e.date}　🎁 ${e.title}　${formatOrigAmount(e)}</span>
+                    <button class="delete-btn" style="float:none;" onclick="deletePersonalExpense('${e.id}')">❌</button>
+                </div>`;
             }
         });
         
         const proxyList = document.getElementById('proxyHistoryList'); proxyList.innerHTML = "";
-        (trip.expenses || []).forEach((e, realIdx) => {
+        (trip.expenses || []).forEach((e) => {
             if (e.type === 'proxy' && e.payer === myName) {
-                proxyList.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteProxyItem(${realIdx})">❌</button><small>${e.date}</small><br>🛍️ 幫 <b>${e.forWho}</b> 買 [${e.title}]<br><b>$${e.amount} 元</b></div>`;
+                proxyList.innerHTML += `<div class="history-item" style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span>📅 ${e.date}　🛍️ 幫${e.forWho}買 ${e.title}　${formatOrigAmount(e)}</span>
+                    <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
+                </div>`;
             }
         });
+    }
+    function formatOrigAmount(e) {
+        if (e.currency && e.currency !== 'TWD' && typeof e.rawAmount === 'number') {
+            return `💴 ${e.rawAmount} ${e.currency} → NT$${Math.round(e.amount)}`;
+        }
+        return `💴 NT$${Math.round(e.amount)}`;
+    }
+    function ensureExpenseIds(trip) {
+        if (!trip || !trip.expenses) return false;
+        let changed = false;
+        trip.expenses.forEach(e => { if (!e.id) { e.id = genId(); changed = true; } });
+        return changed;
     }
     function refreshAll() {
         const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
         db.trips.forEach((t, i) => container.innerHTML += `<div class="trip-tag ${i === db.currentIdx ? 'active' : ''}" onclick="selectTrip(${i})">🎈 ${t.name}</div>`);
         if (db.currentIdx === -1 || !db.trips.length) return;
-        let trip = db.trips[db.currentIdx]; document.getElementById('curTripName').innerText = trip.name;
+        let trip = db.trips[db.currentIdx];
+        ensureExpenseIds(trip);
+        document.getElementById('curTripName').innerText = trip.name;
         document.getElementById('curTripMembers').innerHTML = (trip.members || []).map(m => `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m}</span>`).join('') || "暫無成員";
         
         document.getElementById('infoFlightView').textContent = trip.preInfo?.flight || "（尚未填寫）";
@@ -344,7 +407,7 @@
         calcSettlement('pre', 'preSettlementDisplay');
         renderExpenseHistory('local', 'localHistoryList');
         updateLocalDashboard();
-        calcSettlement('local', 'localSettlementDisplay');
+        renderLocalDailySettlement();
     }
 
     // ↓↓↓ 補上原本缺少的「行前/當地」明細顯示、統計、結算邏輯（唯讀，無刪除按鈕） ↓↓↓
@@ -420,6 +483,58 @@
             if (creditors[j].amt <= 0) j++;
         }
         displayDiv.innerHTML = html || "<p style='color:gray; font-size:14px;'>目前沒有需要結算的款項</p>";
+    }
+
+    function calcSettlementForDate(members, expensesOnDate) {
+        const balance = {}; members.forEach(m => balance[m] = 0);
+        expensesOnDate.forEach(e => {
+            const participants = (e.participants && e.participants.length) ? e.participants : members;
+            const share = e.amount / (participants.length || 1);
+            if (balance[e.payer] === undefined) balance[e.payer] = 0;
+            balance[e.payer] += e.amount;
+            participants.forEach(p => { if (balance[p] === undefined) balance[p] = 0; balance[p] -= share; });
+        });
+        const creditors = [], debtors = [];
+        Object.keys(balance).forEach(m => {
+            const v = Math.round(balance[m]);
+            if (v > 0) creditors.push({ name: m, amt: v });
+            else if (v < 0) debtors.push({ name: m, amt: -v });
+        });
+        if (!creditors.length && !debtors.length) return "<p style='color:gray; font-size:13.5px; margin:4px 0;'>這天沒有需要結算的款項</p>";
+        creditors.sort((a,b) => b.amt - a.amt); debtors.sort((a,b) => b.amt - a.amt);
+        let html = ""; let i = 0, j = 0;
+        while (i < debtors.length && j < creditors.length) {
+            const pay = Math.min(debtors[i].amt, creditors[j].amt);
+            if (pay > 0) html += `<div style="padding:4px 0; font-size:14px;">👉 <b>${debtors[i].name}</b> 要給 <b>${creditors[j].name}</b> <b style="color:#c0564a;">$${pay}</b></div>`;
+            debtors[i].amt -= pay; creditors[j].amt -= pay;
+            if (debtors[i].amt <= 0) i++;
+            if (creditors[j].amt <= 0) j++;
+        }
+        return html || "<p style='color:gray; font-size:13.5px; margin:4px 0;'>這天沒有需要結算的款項</p>";
+    }
+    // 分享版為唯讀檢視，只顯示每日結算結果與是否已結算，不提供標記按鈕
+    function renderLocalDailySettlement() {
+        const displayDiv = document.getElementById('localSettlementDisplay'); if (!displayDiv) return;
+        displayDiv.innerHTML = "";
+        if (db.currentIdx === -1 || !db.trips.length) return;
+        const trip = db.trips[db.currentIdx];
+        const shareItems = (trip.expenses || []).filter(e => e.type === 'local' && e.costType === 'share');
+        if (!shareItems.length) { displayDiv.innerHTML = "<p style='color:gray; font-size:14px;'>目前還沒有需要分攤的當地花費</p>"; return; }
+        const dates = [...new Set(shareItems.map(e => e.date))].sort();
+        let html = "";
+        dates.forEach(date => {
+            const itemsOnDate = shareItems.filter(e => e.date === date);
+            const isSettled = !!(trip.settledDates && trip.settledDates[date]);
+            const settlementHtml = calcSettlementForDate(trip.members || [], itemsOnDate);
+            html += `<div style="border:2px solid var(--border-color); border-radius:14px; padding:10px 12px; margin-bottom:10px; background:${isSettled ? '#f1f8e9' : '#fff'};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <b style="font-size:14.5px;">📅 ${date}</b>
+                    ${isSettled ? '<span style="font-size:12.5px; color:#2e7d32; font-weight:bold;">✅ 已結算</span>' : '<span style="font-size:12.5px; color:#999;">尚未結算</span>'}
+                </div>
+                ${settlementHtml}
+            </div>`;
+        });
+        displayDiv.innerHTML = html;
     }
     function switchTab(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 </script>
