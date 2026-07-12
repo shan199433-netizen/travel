@@ -175,6 +175,14 @@
             display: inline-block; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
             padding: 2px 12px; font-size: 13.5px; font-weight: 500; margin-right: 8px; letter-spacing: 0.5px;
         }
+        .timeline-time-badge.no-time { background: #e8e3d6; color: var(--text-soft); }
+
+        /* 24小時制時間選擇（自訂下拉選單，避免手機瀏覽器依裝置語系把time欄位改成12小時制AM/PM顯示） */
+        .time-toggle-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; cursor: pointer; margin-top: 6px; }
+        .time-toggle-label input[type="checkbox"] { width: auto; margin: 0; }
+        .time-select-row { display: flex; align-items: center; gap: 6px; margin: 7px 0 10px 0; }
+        .time-select-row select { width: auto; flex: 1; margin: 0; }
+        .time-select-row .time-colon { font-weight: bold; font-size: 16px; padding: 0 2px; }
 
         .color-swatch-row { display: flex; gap: 8px; margin: 6px 0 2px 0; flex-wrap: wrap; }
         .color-swatch {
@@ -349,8 +357,13 @@
             <div class="day-scroll-box" id="dayTagsContainer"></div>
             <div style="background: #fffdf5; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;">
                 <b style="font-size:14px;">➕ 新增規劃與備忘錄：</b>
-                <label style="font-size:12.5px; display:block; margin-top:6px;">🕒 時間</label>
-                <input type="time" id="schedTime" value="12:00">
+                <label class="time-toggle-label">
+                    <input type="checkbox" id="schedTimeEnabled" checked onchange="document.getElementById('schedTimeInputWrap').style.display=this.checked?'flex':'none'">
+                    🕒 設定時間（取消勾選＝不指定時間）
+                </label>
+                <div id="schedTimeInputWrap" class="time-select-row">
+                    <select id="schedHour"></select><span class="time-colon">:</span><select id="schedMinute"></select>
+                </div>
                 <input type="text" id="schedDesc" placeholder="活動項目">
                 <div id="descColorRow" class="color-swatch-row"></div>
                 <textarea id="schedMemo" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;"></textarea>
@@ -499,6 +512,8 @@
 
     window.onload = function() {
         populateCurrencySelects();
+        document.getElementById('schedHour').innerHTML = hourOptionsHtml('12');
+        document.getElementById('schedMinute').innerHTML = minuteOptionsHtml('00');
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
@@ -624,26 +639,48 @@
         ta.focus();
         ta.setSelectionRange(cursorPos, cursorPos);
     }
-    // 依時間分凌晨／白天／晚上，讓時間軸新增行程後可以分段顯示
+    // 依時間分凌晨／白天／晚上，讓時間軸新增行程後可以分段顯示；沒有指定時間的項目歸類成「未定時間」
     function getTimePeriod(timeStr) {
-        if (!timeStr) return '';
+        if (!timeStr) return '🗒️ 未定時間';
         const hour = parseInt(timeStr.split(':')[0], 10);
-        if (isNaN(hour)) return '';
+        if (isNaN(hour)) return '🗒️ 未定時間';
         if (hour < 6) return '🌌 凌晨';
         if (hour < 17) return '☀️ 白天';
         return '🌙 晚上';
     }
+    // 產生24小時制的「時」「分」下拉選單選項（不依賴裝置語系，避免被顯示成12小時制AM/PM）
+    function hourOptionsHtml(selected) {
+        let html = '';
+        for (let h = 0; h < 24; h++) { const v = String(h).padStart(2, '0'); html += `<option value="${v}"${v === selected ? ' selected' : ''}>${v}</option>`; }
+        return html;
+    }
+    function minuteOptionsHtml(selected) {
+        let html = '';
+        for (let m = 0; m < 60; m++) { const v = String(m).padStart(2, '0'); html += `<option value="${v}"${v === selected ? ' selected' : ''}>${v}</option>`; }
+        return html;
+    }
+    // 排序：有指定時間的依時間排序在前；沒有指定時間的項目統一排到最後面
+    function sortScheduleItems(items) {
+        items.sort((a, b) => {
+            if (!a.time && !b.time) return 0;
+            if (!a.time) return 1;
+            if (!b.time) return -1;
+            return a.time.localeCompare(b.time);
+        });
+    }
 
     function addScheduleItem() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
-        let trip = db.trips[db.currentIdx]; const time = document.getElementById('schedTime').value;
+        let trip = db.trips[db.currentIdx];
+        const timeEnabled = document.getElementById('schedTimeEnabled').checked;
+        const time = timeEnabled ? (document.getElementById('schedHour').value + ':' + document.getElementById('schedMinute').value) : '';
         const desc = document.getElementById('schedDesc').value.trim(); const memo = document.getElementById('schedMemo').value.trim();
         if(!desc) return alert('請輸入活動項目！');
         if(!trip.scheduleData) trip.scheduleData = {};
         if(!trip.currentDayTab) trip.currentDayTab = 1;
         if(!trip.scheduleData[trip.currentDayTab]) trip.scheduleData[trip.currentDayTab] = [];
         trip.scheduleData[trip.currentDayTab].push({ time, desc, memo, descColor: selectedDescColor });
-        trip.scheduleData[trip.currentDayTab].sort((a,b) => a.time.localeCompare(b.time));
+        sortScheduleItems(trip.scheduleData[trip.currentDayTab]);
         document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = "";
         selectedDescColor = 'black';
         renderTimeline(); save();
@@ -660,13 +697,14 @@
         const trip = db.trips[db.currentIdx];
         const items = trip.scheduleData[trip.currentDayTab];
         const item = items[idx];
-        const newTime = document.getElementById('editSchedTime_' + idx).value;
+        const timeEnabled = document.getElementById('editSchedTimeEnabled_' + idx).checked;
+        const newTime = timeEnabled ? (document.getElementById('editSchedHour_' + idx).value + ':' + document.getElementById('editSchedMinute_' + idx).value) : '';
         const newDesc = document.getElementById('editSchedDesc_' + idx).value.trim();
         const newMemo = document.getElementById('editSchedMemo_' + idx).value.trim();
         if (!newDesc) return alert('活動項目不能空白！');
-        item.time = newTime || item.time; item.desc = newDesc; item.memo = newMemo;
+        item.time = newTime; item.desc = newDesc; item.memo = newMemo;
         item.descColor = editingDescColor; delete item.memoColor;
-        items.sort((a,b) => a.time.localeCompare(b.time));
+        sortScheduleItems(items);
         editingScheduleIdx = null; renderTimeline(); save();
     }
     function renderTimeline() {
@@ -680,8 +718,17 @@
             const period = getTimePeriod(item.time);
             if (period && period !== lastPeriod) { html += `<div class="timeline-period-tag">${period}</div>`; lastPeriod = period; }
             if (editingScheduleIdx === idx) {
+                const hasTime = !!item.time;
+                const editHour = hasTime ? item.time.split(':')[0] : '12';
+                const editMinute = hasTime ? item.time.split(':')[1] : '00';
                 html += `<div class="timeline-item" style="background:#fffde7; border-radius:8px; padding:8px;">
-                    <label style="font-size:12px;">🕒 時間</label><input type="time" id="editSchedTime_${idx}" value="${item.time}">
+                    <label class="time-toggle-label">
+                        <input type="checkbox" id="editSchedTimeEnabled_${idx}" ${hasTime ? 'checked' : ''} onchange="document.getElementById('editSchedTimeWrap_${idx}').style.display=this.checked?'flex':'none'">
+                        🕒 設定時間（取消勾選＝不指定時間）
+                    </label>
+                    <div id="editSchedTimeWrap_${idx}" class="time-select-row" style="display:${hasTime ? 'flex' : 'none'};">
+                        <select id="editSchedHour_${idx}">${hourOptionsHtml(editHour)}</select><span class="time-colon">:</span><select id="editSchedMinute_${idx}">${minuteOptionsHtml(editMinute)}</select>
+                    </div>
                     <input type="text" id="editSchedDesc_${idx}" value="${item.desc.replace(/"/g,'&quot;')}" placeholder="活動項目" style="margin-top:4px;">
                     <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">🎨 活動項目顏色</div>
                     <div class="color-swatch-row">${colorSwatchHtml(editingDescColor, 'setEditDescColor')}</div>
@@ -702,7 +749,8 @@
                 const memoOrLinkHtml = memoHtml
                     ? '<span class="item-memo" style="color:var(--text-main);">📝 ' + memoHtml + legacyLinkHtml + '</span>'
                     : (legacyLinkHtml ? '<span class="item-memo">' + legacyLinkHtml + '</span>' : '');
-                html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge">${item.time}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
+                const timeLabel = item.time ? item.time : '未定時間';
+                html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge${item.time ? '' : ' no-time'}">${timeLabel}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
             }
         });
         listDiv.innerHTML = html;
