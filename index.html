@@ -157,8 +157,31 @@
         
         .delete-trip-btn { background: none; border: none; color: #c0564a; cursor: pointer; font-weight: bold; padding: 0 2px; }
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
-        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 15px; line-height: 1.7; }
+        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 18px; line-height: 1.7; }
         .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
+        .timeline-item .item-desc { font-weight: bold; font-size: 15px; }
+        .timeline-item .item-memo { display: block; margin-top: 4px; font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+        .item-link {
+            font-size: 13px; font-weight: 400; color: #4a95c9; text-decoration: underline;
+            text-underline-offset: 2px; word-break: break-all;
+        }
+
+        .timeline-period-tag {
+            display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 2px solid var(--border-color);
+            border-radius: 20px; padding: 4px 14px; font-size: 12.5px; font-weight: 500; color: var(--text-main);
+            margin: 4px 0 12px -10px;
+        }
+        .timeline-time-badge {
+            display: inline-block; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
+            padding: 2px 12px; font-size: 13.5px; font-weight: 500; margin-right: 8px; letter-spacing: 0.5px;
+        }
+
+        .color-swatch-row { display: flex; gap: 8px; margin: 6px 0 2px 0; flex-wrap: wrap; }
+        .color-swatch {
+            width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border-color); cursor: pointer;
+            display: inline-block; box-sizing: border-box; transition: transform .1s ease, box-shadow .1s ease;
+        }
+        .color-swatch.active { box-shadow: 0 0 0 3px rgba(255,217,141,0.9); transform: scale(1.15); }
         
         .checkbox-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 8px 0; }
         .checkbox-label {
@@ -329,7 +352,11 @@
                 <label style="font-size:12.5px; display:block; margin-top:6px;">🕒 時間</label>
                 <input type="time" id="schedTime" value="12:00">
                 <input type="text" id="schedDesc" placeholder="活動項目">
-                <textarea id="schedMemo" placeholder="補充備忘小筆記" rows="2" style="margin-top:5px; border-radius:8px;"></textarea>
+                <div id="descColorRow" class="color-swatch-row"></div>
+                <textarea id="schedMemo" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;"></textarea>
+                <div style="text-align:right; margin-top:2px;">
+                    <button type="button" class="comic-btn btn-blue" style="width:auto; padding:6px 14px; font-size:12.5px; box-shadow:2px 2px 0px #333;" onclick="insertLinkIntoMemo('schedMemo')">🔗 插入連結</button>
+                </div>
                 <button class="comic-btn btn-blue" onclick="addScheduleItem()" style="padding: 8px; margin-top: 5px; font-size:14px; box-shadow: 2px 2px 0px #333;">填入時間軸</button>
             </div>
             <div id="timelineDisplayList" style="margin-top: 20px;"></div>
@@ -516,7 +543,7 @@
         const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
             const label = formatDayDate(start, i);
-            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})">🐾 Day${i}${label ? ' ('+label+')' : ''}</div>`;
+            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})"><b>Day${i}</b>${label ? '︱'+label : ''}</div>`;
         }
         renderTimeline();
     }
@@ -527,6 +554,86 @@
         return `${d.getMonth() + 1}/${d.getDate()}`;
     }
     function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; editingScheduleIdx = null; generateDayTags(); save(); }
+
+    // 活動項目／備忘小筆記 顏色選項（黑/灰/粉/紫/藍/綠/橘）
+    const scheduleColorPalette = { black:'#35322c', gray:'#8a8578', pink:'#e0699b', purple:'#9b6bc4', blue:'#4a95c9', green:'#5cb37f', orange:'#e0923f' };
+    const scheduleColorNames = { black:'黑', gray:'灰', pink:'粉', purple:'紫', blue:'藍', green:'綠', orange:'橘' };
+    let selectedDescColor = 'black';
+    let editingDescColor = 'black';
+
+    function colorSwatchHtml(selectedKey, onClickFn) {
+        return Object.keys(scheduleColorPalette).map(key =>
+            `<span class="color-swatch ${selectedKey === key ? 'active' : ''}" style="background:${scheduleColorPalette[key]}" title="${scheduleColorNames[key]}" onclick="${onClickFn}('${key}')"></span>`
+        ).join('');
+    }
+    function renderAddColorPickers() {
+        const descRow = document.getElementById('descColorRow'); if (descRow) descRow.innerHTML = colorSwatchHtml(selectedDescColor, 'setAddDescColor');
+    }
+    function setAddDescColor(key) { selectedDescColor = key; renderAddColorPickers(); }
+    function setEditDescColor(key) { editingDescColor = key; renderTimeline(); }
+    function escapeHtml(str) { return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function escapeAttr(str) { return (str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function normalizeUrl(url) { return /^https?:\/\//i.test(url) ? url : 'https://' + url; }
+    // 網址顯示用的簡短標籤，優先顯示網域名稱（去掉 www.），失敗則退回原網址
+    function shortenUrlLabel(url) {
+        try { return new URL(normalizeUrl(url)).hostname.replace(/^www\./, ''); }
+        catch (e) { return url; }
+    }
+    // 把備忘小筆記裡的網址自動轉成可點擊連結，支援：
+    // 1) 直接貼上的 https://... 純網址（自動偵測，可以有多個）
+    // 2) [顯示文字](網址) 這種輕量 markdown 語法，可自訂連結文字（也可以有多個）
+    function linkifyMemo(text) {
+        if (!text) return '';
+        const re = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)/g;
+        let result = ''; let lastIndex = 0; let match;
+        while ((match = re.exec(text)) !== null) {
+            result += escapeHtml(text.slice(lastIndex, match.index));
+            if (match[1] && match[2]) {
+                result += '<a class="item-link" href="' + escapeAttr(normalizeUrl(match[2])) + '" target="_blank" rel="noopener noreferrer">🔗 ' + escapeHtml(match[1]) + '</a>';
+            } else if (match[3]) {
+                result += '<a class="item-link" href="' + escapeAttr(normalizeUrl(match[3])) + '" target="_blank" rel="noopener noreferrer">🔗 ' + escapeHtml(shortenUrlLabel(match[3])) + '</a>';
+            }
+            lastIndex = re.lastIndex;
+        }
+        result += escapeHtml(text.slice(lastIndex));
+        return result.replace(/\n/g, '<br>');
+    }
+    // 輔助插入連結：有選字就只問網址（選字當顯示文字），沒選字就依序問顯示文字和網址，
+    // 插入 [顯示文字](網址) 到目前游標位置。用 textarea 原生的 selectionStart/selectionEnd，
+    // 就算手指移開去點按鈕，選取範圍也不會被清空，比 contenteditable 穩定很多。
+    function insertLinkIntoMemo(textareaId) {
+        const ta = document.getElementById(textareaId);
+        if (!ta) return;
+        const start = ta.selectionStart, end = ta.selectionEnd;
+        const selectedText = ta.value.slice(start, end);
+        let label, url;
+        if (selectedText) {
+            url = prompt('幫「' + selectedText + '」貼上網址：', 'https://');
+            if (!url) return;
+            label = selectedText;
+        } else {
+            label = prompt('連結顯示文字（例如：HDEX官網）：', '');
+            if (label === null) return;
+            url = prompt('貼上網址：', 'https://');
+            if (!url) return;
+            if (!label) label = url;
+        }
+        const markdown = '[' + label + '](' + url + ')';
+        ta.value = ta.value.slice(0, start) + markdown + ta.value.slice(end);
+        const cursorPos = start + markdown.length;
+        ta.focus();
+        ta.setSelectionRange(cursorPos, cursorPos);
+    }
+    // 依時間分凌晨／白天／晚上，讓時間軸新增行程後可以分段顯示
+    function getTimePeriod(timeStr) {
+        if (!timeStr) return '';
+        const hour = parseInt(timeStr.split(':')[0], 10);
+        if (isNaN(hour)) return '';
+        if (hour < 6) return '🌌 凌晨';
+        if (hour < 17) return '☀️ 白天';
+        return '🌙 晚上';
+    }
+
     function addScheduleItem() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
         let trip = db.trips[db.currentIdx]; const time = document.getElementById('schedTime').value;
@@ -535,12 +642,19 @@
         if(!trip.scheduleData) trip.scheduleData = {};
         if(!trip.currentDayTab) trip.currentDayTab = 1;
         if(!trip.scheduleData[trip.currentDayTab]) trip.scheduleData[trip.currentDayTab] = [];
-        trip.scheduleData[trip.currentDayTab].push({ time, desc, memo }); trip.scheduleData[trip.currentDayTab].sort((a,b) => a.time.localeCompare(b.time));
-        document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = ""; renderTimeline(); save();
+        trip.scheduleData[trip.currentDayTab].push({ time, desc, memo, descColor: selectedDescColor });
+        trip.scheduleData[trip.currentDayTab].sort((a,b) => a.time.localeCompare(b.time));
+        document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = "";
+        selectedDescColor = 'black';
+        renderTimeline(); save();
     }
     function deleteScheduleItem(idx) { const trip = db.trips[db.currentIdx]; trip.scheduleData[trip.currentDayTab].splice(idx, 1); renderTimeline(); save(); }
     let editingScheduleIdx = null;
-    function editScheduleItem(idx) { editingScheduleIdx = idx; renderTimeline(); }
+    function editScheduleItem(idx) {
+        const trip = db.trips[db.currentIdx]; const item = trip.scheduleData[trip.currentDayTab][idx];
+        editingScheduleIdx = idx; editingDescColor = item.descColor || 'black';
+        renderTimeline();
+    }
     function cancelEditSchedule() { editingScheduleIdx = null; renderTimeline(); }
     function saveScheduleItem(idx) {
         const trip = db.trips[db.currentIdx];
@@ -551,30 +665,48 @@
         const newMemo = document.getElementById('editSchedMemo_' + idx).value.trim();
         if (!newDesc) return alert('活動項目不能空白！');
         item.time = newTime || item.time; item.desc = newDesc; item.memo = newMemo;
+        item.descColor = editingDescColor; delete item.memoColor;
         items.sort((a,b) => a.time.localeCompare(b.time));
         editingScheduleIdx = null; renderTimeline(); save();
     }
     function renderTimeline() {
-        const listDiv = document.getElementById('timelineDisplayList'); listDiv.innerHTML = "";
-        if (db.currentIdx === -1 || !db.trips.length) return;
+        const listDiv = document.getElementById('timelineDisplayList');
+        if (db.currentIdx === -1 || !db.trips.length) { listDiv.innerHTML = ""; renderAddColorPickers(); return; }
         const trip = db.trips[db.currentIdx];
         const items = (trip.scheduleData || {})[trip.currentDayTab] || [];
-        if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; return; }
+        if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; renderAddColorPickers(); return; }
+        let html = ""; let lastPeriod = null;
         items.forEach((item, idx) => {
+            const period = getTimePeriod(item.time);
+            if (period && period !== lastPeriod) { html += `<div class="timeline-period-tag">${period}</div>`; lastPeriod = period; }
             if (editingScheduleIdx === idx) {
-                listDiv.innerHTML += `<div class="timeline-item" style="background:#fffde7; border-radius:8px; padding:8px;">
+                html += `<div class="timeline-item" style="background:#fffde7; border-radius:8px; padding:8px;">
                     <label style="font-size:12px;">🕒 時間</label><input type="time" id="editSchedTime_${idx}" value="${item.time}">
                     <input type="text" id="editSchedDesc_${idx}" value="${item.desc.replace(/"/g,'&quot;')}" placeholder="活動項目" style="margin-top:4px;">
-                    <textarea id="editSchedMemo_${idx}" placeholder="補充備忘小筆記" rows="2" style="margin-top:5px; border-radius:8px;">${(item.memo||'').replace(/</g,'&lt;')}</textarea>
+                    <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">🎨 活動項目顏色</div>
+                    <div class="color-swatch-row">${colorSwatchHtml(editingDescColor, 'setEditDescColor')}</div>
+                    <textarea id="editSchedMemo_${idx}" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;">${(item.memo||'').replace(/</g,'&lt;')}</textarea>
+                    <div style="text-align:right; margin-top:2px;">
+                        <button type="button" class="comic-btn btn-blue" style="width:auto; padding:6px 14px; font-size:12.5px; box-shadow:2px 2px 0px #333;" onclick="insertLinkIntoMemo('editSchedMemo_${idx}')">🔗 插入連結</button>
+                    </div>
                     <div style="margin-top:6px;">
                         <button class="comic-btn btn-blue" style="padding:6px 10px; font-size:13px;" onclick="saveScheduleItem(${idx})">✅ 儲存</button>
                         <button class="comic-btn" style="padding:6px 10px; font-size:13px;" onclick="cancelEditSchedule()">取消</button>
                     </div>
                 </div>`;
             } else {
-                listDiv.innerHTML += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; <span style="font-weight:bold;">${item.desc}</span>${item.memo ? '<br><small>📝 ' + item.memo + '</small>' : ''}</div>`;
+                const descColor = scheduleColorPalette[item.descColor] || scheduleColorPalette.black;
+                // item.link/item.linkLabel 是舊版資料格式的相容顯示（新項目已改用備忘錄內自動連結）
+                const legacyLinkHtml = item.link ? ' <a class="item-link" href="' + escapeAttr(normalizeUrl(item.link)) + '" target="_blank" rel="noopener noreferrer">🔗 ' + escapeHtml(item.linkLabel || item.link) + '</a>' : '';
+                const memoHtml = item.memo ? linkifyMemo(item.memo) : '';
+                const memoOrLinkHtml = memoHtml
+                    ? '<span class="item-memo" style="color:var(--text-main);">📝 ' + memoHtml + legacyLinkHtml + '</span>'
+                    : (legacyLinkHtml ? '<span class="item-memo">' + legacyLinkHtml + '</span>' : '');
+                html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge">${item.time}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
             }
         });
+        listDiv.innerHTML = html;
+        renderAddColorPickers();
     }
     function updateExchangeHint() { const amt = parseFloat(document.getElementById('localAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('localCurrency').value]); document.getElementById('twdLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
     function updatePersonalExchangeHint() { const amt = parseFloat(document.getElementById('personalAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('personalCurrency').value]); document.getElementById('personalLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }

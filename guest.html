@@ -86,7 +86,23 @@
         .day-tag.active { background: var(--main-orange); font-weight: 500; }
         
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
-        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 15px; }
+        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 18px; line-height: 1.7; }
+        .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
+        .timeline-item .item-desc { font-weight: bold; font-size: 15px; }
+        .timeline-item .item-memo { display: block; margin-top: 4px; font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+        .item-link {
+            font-size: 13px; font-weight: 400; color: #4a95c9; text-decoration: underline;
+            text-underline-offset: 2px; word-break: break-all;
+        }
+        .timeline-period-tag {
+            display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 2px solid var(--border-color);
+            border-radius: 20px; padding: 4px 14px; font-size: 12.5px; font-weight: 500; color: var(--text-main);
+            margin: 4px 0 12px -10px;
+        }
+        .timeline-time-badge {
+            display: inline-block; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
+            padding: 2px 12px; font-size: 13.5px; font-weight: 500; margin-right: 8px; letter-spacing: 0.5px;
+        }
         .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; float: right; font-size: 16px; font-weight: bold; }
 
         /* 個人記帳／代購清單：每筆紀錄改成「日期／內容／金額」分格顯示，取代原本一長串文字 */
@@ -317,7 +333,7 @@
         const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
             const label = formatDayDate(start, i);
-            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})">🐾 Day${i}${label ? ' ('+label+')' : ''}</div>`;
+            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})"><b>Day${i}</b>${label ? '︱'+label : ''}</div>`;
         }
         renderTimeline();
     }
@@ -327,6 +343,43 @@
         return `${d.getMonth() + 1}/${d.getDate()}`;
     }
     function switchDayTab(dayNum) { db.trips[db.currentIdx].currentDayTab = dayNum; generateDayTags(); }
+    // 活動項目／備忘小筆記 顏色對照（與主控版一致，僅顯示用）
+    const scheduleColorPalette = { black:'#35322c', gray:'#8a8578', pink:'#e0699b', purple:'#9b6bc4', blue:'#4a95c9', green:'#5cb37f', orange:'#e0923f' };
+    function escapeHtml(str) { return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function escapeAttr(str) { return (str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function normalizeUrl(url) { return /^https?:\/\//i.test(url) ? url : 'https://' + url; }
+    // 網址顯示用的簡短標籤，優先顯示網域名稱（去掉 www.），失敗則退回原網址
+    function shortenUrlLabel(url) {
+        try { return new URL(normalizeUrl(url)).hostname.replace(/^www\./, ''); }
+        catch (e) { return url; }
+    }
+    // 把備忘小筆記裡的網址自動轉成可點擊連結，支援：
+    // 1) 直接貼上的 https://... 純網址（自動偵測，可以有多個）
+    // 2) [顯示文字](網址) 這種輕量 markdown 語法，可自訂連結文字（也可以有多個）
+    function linkifyMemo(text) {
+        if (!text) return '';
+        const re = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+)/g;
+        let result = ''; let lastIndex = 0; let match;
+        while ((match = re.exec(text)) !== null) {
+            result += escapeHtml(text.slice(lastIndex, match.index));
+            if (match[1] && match[2]) {
+                result += '<a class="item-link" href="' + escapeAttr(normalizeUrl(match[2])) + '" target="_blank" rel="noopener noreferrer">🔗 ' + escapeHtml(match[1]) + '</a>';
+            } else if (match[3]) {
+                result += '<a class="item-link" href="' + escapeAttr(normalizeUrl(match[3])) + '" target="_blank" rel="noopener noreferrer">🔗 ' + escapeHtml(shortenUrlLabel(match[3])) + '</a>';
+            }
+            lastIndex = re.lastIndex;
+        }
+        result += escapeHtml(text.slice(lastIndex));
+        return result.replace(/\n/g, '<br>');
+    }
+    function getTimePeriod(timeStr) {
+        if (!timeStr) return '';
+        const hour = parseInt(timeStr.split(':')[0], 10);
+        if (isNaN(hour)) return '';
+        if (hour < 6) return '🌌 凌晨';
+        if (hour < 17) return '☀️ 白天';
+        return '🌙 晚上';
+    }
     function renderTimeline() {
         const listDiv = document.getElementById('timelineDisplayList'); listDiv.innerHTML = "";
         if (db.currentIdx === -1 || !db.trips.length) return;
@@ -334,9 +387,20 @@
         const schedule = trip.scheduleData || {};
         const items = schedule[trip.currentDayTab] || [];
         if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; return; }
+        let html = ""; let lastPeriod = null;
         items.forEach((item) => {
-            listDiv.innerHTML += `<div class="timeline-item"><b style="color:#ff5722; font-size:16px;">${item.time}</b> &nbsp;&nbsp; <span style="font-weight:bold;">${item.desc}</span>${item.memo ? '<br><small>📝 ' + item.memo + '</small>' : ''}</div>`;
+            const period = getTimePeriod(item.time);
+            if (period && period !== lastPeriod) { html += `<div class="timeline-period-tag">${period}</div>`; lastPeriod = period; }
+            const descColor = scheduleColorPalette[item.descColor] || scheduleColorPalette.black;
+            // item.link/item.linkLabel 是舊版資料格式的相容顯示（新項目已改用備忘錄內自動連結）
+            const legacyLinkHtml = item.link ? ' <a class="item-link" href="' + escapeAttr(normalizeUrl(item.link)) + '" target="_blank" rel="noopener noreferrer">🔗 ' + escapeHtml(item.linkLabel || item.link) + '</a>' : '';
+            const memoHtml = item.memo ? linkifyMemo(item.memo) : '';
+            const memoOrLinkHtml = memoHtml
+                ? '<span class="item-memo" style="color:var(--text-main);">📝 ' + memoHtml + legacyLinkHtml + '</span>'
+                : (legacyLinkHtml ? '<span class="item-memo">' + legacyLinkHtml + '</span>' : '');
+            html += `<div class="timeline-item"><span class="timeline-time-badge">${item.time}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
         });
+        listDiv.innerHTML = html;
     }
     function updatePersonalExchangeHint() { const amt = parseFloat(document.getElementById('personalAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('personalCurrency').value]); document.getElementById('personalLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
     function updateProxyExchangeHint() { const amt = parseFloat(document.getElementById('proxyAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('proxyCurrency').value]); document.getElementById('proxyLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
