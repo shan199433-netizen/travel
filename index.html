@@ -172,10 +172,10 @@
             margin: 4px 0 12px -10px;
         }
         .timeline-time-badge {
-            display: inline-block; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
+            display: inline-block; min-width: 44px; text-align: center; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
             padding: 2px 12px; font-size: 13.5px; font-weight: 500; margin-right: 8px; letter-spacing: 0.5px;
         }
-        .timeline-time-badge.no-time { background: #e8e3d6; color: var(--text-soft); }
+        .timeline-time-badge.no-time { background: transparent; border: none; padding: 0 8px 0 0; font-size: 17px; min-width: auto; }
 
         /* 24小時制時間選擇（自訂下拉選單，避免手機瀏覽器依裝置語系把time欄位改成12小時制AM/PM顯示） */
         .time-toggle-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; cursor: pointer; margin-top: 6px; }
@@ -641,9 +641,9 @@
     }
     // 依時間分凌晨／白天／晚上，讓時間軸新增行程後可以分段顯示；沒有指定時間的項目歸類成「未定時間」
     function getTimePeriod(timeStr) {
-        if (!timeStr) return '🗒️ 未定時間';
+        if (!timeStr) return '';
         const hour = parseInt(timeStr.split(':')[0], 10);
-        if (isNaN(hour)) return '🗒️ 未定時間';
+        if (isNaN(hour)) return '';
         if (hour < 6) return '🌌 凌晨';
         if (hour < 17) return '☀️ 白天';
         return '🌙 晚上';
@@ -749,7 +749,7 @@
                 const memoOrLinkHtml = memoHtml
                     ? '<span class="item-memo" style="color:var(--text-main);">📝 ' + memoHtml + legacyLinkHtml + '</span>'
                     : (legacyLinkHtml ? '<span class="item-memo">' + legacyLinkHtml + '</span>' : '');
-                const timeLabel = item.time ? item.time : '未定時間';
+                const timeLabel = item.time ? item.time : '➖';
                 html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge${item.time ? '' : ' no-time'}">${timeLabel}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
             }
         });
