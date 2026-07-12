@@ -317,8 +317,8 @@
     <div id="page-schedule" class="page">
         <div class="comic-card">
             <div class="card-title">📅 行程日期設定</div>
-            <label style="font-size: 13px;">📅 出發日期</label><input type="date" id="tripStartDate" value="2026-07-10" onchange="updateTripDates()">
-            <label style="font-size: 13px;">📅 回程日期</label><input type="date" id="tripEndDate" value="2026-07-14" onchange="updateTripDates()">
+            <label style="font-size: 13px;">📅 出發日期</label><input type="date" id="tripStartDate" value="" onchange="updateTripDates()">
+            <label style="font-size: 13px;">📅 回程日期</label><input type="date" id="tripEndDate" value="" onchange="updateTripDates()">
         </div>
 
         <div class="comic-card">
@@ -486,7 +486,7 @@
     function createNewTrip() {
         const input = document.getElementById('newTripInput'); const name = input.value.trim();
         if (!name) return alert('請輸入分類名稱！🌻');
-        db.trips.push({ name, startDate: "2026-07-10", endDate: "2026-07-14", currentDayTab: 1, scheduleData: {}, members: [], expenses: [] });
+        db.trips.push({ name, startDate: "", endDate: "", currentDayTab: 1, scheduleData: {}, members: [], expenses: [] });
         db.currentIdx = db.trips.length - 1; input.value = ""; refreshAll(); save();
     }
     function deleteTrip(idx, event) { event.stopPropagation(); if(confirm(`確定刪除整趟行程分類嗎？`)) { db.trips.splice(idx, 1); if(db.currentIdx >= db.trips.length) db.currentIdx = db.trips.length - 1; refreshAll(); save(); } }
@@ -669,6 +669,12 @@
         if (ensureExpenseIds(trip)) save();
         if (fixLegacyPersonalItemType(trip)) save();
         document.getElementById('curTripName').innerText = trip.name;
+        const tripStartInput = document.getElementById('tripStartDate');
+        const tripEndInput = document.getElementById('tripEndDate');
+        if (tripStartInput && tripEndInput) {
+            tripStartInput.value = trip.startDate || '';
+            tripEndInput.value = trip.endDate || '';
+        }
         const memDiv = document.getElementById('curTripMembers'); memDiv.innerHTML = "";
         trip.members.forEach(m => memDiv.innerHTML += `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m} <span style="color:red; cursor:pointer;" onclick="deleteMember('${m}')">x</span></span>`);
         generateDayTags(); refreshPersonalPage(); loadPreInfo();
