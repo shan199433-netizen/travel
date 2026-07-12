@@ -268,7 +268,7 @@
     }
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
-    const MY_NAME_KEY = 'travel33_my_device_identity';
+    const MY_NAME_KEY = 'travel33_my_device_identity_guest';
 
     function getMyIdentity() { return localStorage.getItem(MY_NAME_KEY) || ''; }
     function setMyIdentity(name) { localStorage.setItem(MY_NAME_KEY, name.trim()); refreshPersonalPage(); }
@@ -289,7 +289,7 @@
     firebase.initializeApp(firebaseConfig);
     const cloudDoc = firebase.firestore().collection('travelApp').doc('sharedData');
 
-    const LOCAL_KEY = 'travel33_local_personal_data';
+    const LOCAL_KEY = 'travel33_local_personal_data_guest';
     function getLocalPersonalExpenses() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; } catch(e) { return []; } }
     function saveLocalPersonalExpense(exp) { let list = getLocalPersonalExpenses(); list.push(exp); localStorage.setItem(LOCAL_KEY, JSON.stringify(list)); }
     // 刪除紀錄時，同步把本機備份（localStorage）裡對應的那一筆也清掉，
