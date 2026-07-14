@@ -135,6 +135,38 @@
         .proxy-tag-item { background: var(--main-yellow); }
         .guest-banner { background: var(--main-purple); border-bottom: 3px solid var(--border-color); padding: 8px 10px; font-size: 13px; text-align: center; font-weight: bold; }
         .info-view { display: block; white-space: pre-wrap; word-break: break-word; background: #fffdf9; border: 2px dashed var(--border-color); border-radius: 14px; padding: 13px 14px; margin: 7px 0 12px 0; font-size: 15px; line-height: 1.75; color: var(--text-main); }
+
+        /* 收合／展開 按鈕 */
+        .collapse-btn {
+            background: #fff; border: 2px solid var(--border-color); border-radius: 10px;
+            width: 30px; height: 30px; font-size: 13px; cursor: pointer; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; padding: 0; margin: 0;
+            -webkit-tap-highlight-color: transparent; transition: transform .08s ease;
+        }
+        .collapse-btn:active { transform: translate(1px, 1px); }
+        .card-title-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+
+        /* 個人行李清單 */
+        .baggage-col-wrap { display: flex; flex-direction: column; gap: 20px; }
+        @media (min-width: 520px) { .baggage-col-wrap { flex-direction: row; } .baggage-col { flex: 1; min-width: 0; } }
+        .baggage-col-title { font-weight: 500; font-size: 14.5px; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .baggage-item {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14px;
+        }
+        .baggage-item:last-child { border-bottom: none; }
+        .baggage-check-label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; }
+        .baggage-item-text { word-break: break-word; line-height: 1.4; }
+        .baggage-item-text.done { text-decoration: line-through; color: var(--text-soft); }
+        .baggage-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .baggage-item-actions button {
+            background: none; border: none; cursor: pointer; font-size: 14px; padding: 3px 5px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .baggage-add-row { display: flex; gap: 6px; margin-top: 8px; }
+        .baggage-add-row input { margin: 0; flex: 1; padding: 11px 12px; font-size: 14px; }
+        .baggage-add-row button { width: auto; padding: 0 16px; box-shadow: none; border-radius: 12px; }
+        .baggage-empty-hint { font-size: 13px; color: var(--text-soft); padding: 8px 2px; }
     </style>
 </head>
 <body class="guest-mode">
@@ -163,10 +195,15 @@
 
     <div id="page-pre" class="page">
         <div class="comic-card" style="background:#fff8e1;">
-            <div class="card-title">📌 行前重要資訊</div>
+            <div class="card-title">
+                <span class="card-title-left">📌 行前重要資訊</span>
+                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾</button>
+            </div>
+            <div id="preInfoBody">
             <label>✈️ 班機資訊</label><div id="infoFlightView" class="info-view"></div>
             <label>🏠 民宿 / 住宿地址</label><div id="infoHotelView" class="info-view"></div>
             <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
+            </div>
         </div>
         <div class="comic-card" style="background: #fafafa;">
             <div class="card-title">📊 【行前】花費錢包統計</div>
@@ -176,8 +213,33 @@
                 <div class="dash-item" style="background: #e1f5fe;">個人自付<br><span id="preOwnSum" style="color:blue;">$0</span></div>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title">📋 行前明細歷史</div><div id="preHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 行前明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾</button></div><div id="preHistoryList"></div></div>
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;"><div class="card-title">🧮 行前結算</div><div id="preSettlementDisplay"></div></div>
+
+        <div class="comic-card" style="background:#fff3e0;">
+            <div class="card-title">
+                <span class="card-title-left">🧳 個人行李清單</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0;">僅存本機裝置，不會同步雲端 ☁️❌，此分享版可自由編輯此清單</p>
+            <div class="baggage-col-wrap">
+                <div class="baggage-col">
+                    <div class="baggage-col-title">🎒 隨身行李</div>
+                    <div id="baggageCarryList"></div>
+                    <div class="baggage-add-row">
+                        <input type="text" id="baggageCarryInput" placeholder="新增隨身行李項目...">
+                        <button class="comic-btn btn-blue" onclick="addBaggageItem('carry')">➕ 新增</button>
+                    </div>
+                </div>
+                <div class="baggage-col">
+                    <div class="baggage-col-title">🧳 托運行李</div>
+                    <div id="baggageCheckedList"></div>
+                    <div class="baggage-add-row">
+                        <input type="text" id="baggageCheckedInput" placeholder="新增托運行李項目...">
+                        <button class="comic-btn btn-blue" onclick="addBaggageItem('checked')">➕ 新增</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="page-local" class="page">
@@ -188,7 +250,7 @@
                 <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title">📋 當地明細歷史</div><div id="localHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾</button></div><div id="localHistoryList"></div></div>
         <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay"></div></div>
     </div>
 
@@ -216,7 +278,7 @@
             <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
         </div>
-        <div class="comic-card"><div class="card-title"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></div><div id="personalHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾</button></div><div id="personalHistoryList"></div></div>
 
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">🛍️ 幫別人代購紀錄</div>
@@ -234,7 +296,7 @@
             <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
         </div>
-        <div class="comic-card"><div class="card-title"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></div><div id="proxyHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾</button></div><div id="proxyHistoryList"></div></div>
     </div>
 
     <div class="nav-bar">
@@ -288,6 +350,90 @@
     };
     firebase.initializeApp(firebaseConfig);
     const cloudDoc = firebase.firestore().collection('travelApp').doc('sharedData');
+
+    // 收合／展開：純顯示切換，不影響底下資料渲染邏輯（renderExpenseHistory 等仍照常運作）
+    function toggleCollapse(id, btn) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const isCollapsed = el.style.display === 'none';
+        el.style.display = isCollapsed ? '' : 'none';
+        if (btn) btn.textContent = isCollapsed ? '▾' : '▸';
+    }
+
+    // 🧳 個人行李清單（分享版）：完全存於本機 localStorage，不寫入 Firebase，依 db.currentIdx 區分不同行程，分享版可自由操作此清單
+    // （escapeHtml 沿用檔案下方既有的共用函式，避免重複定義）
+    const BAGGAGE_KEY = 'travel33_baggage_guest';
+    function genBaggageId() { return 'b_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6); }
+    function getBaggageStore() { try { return JSON.parse(localStorage.getItem(BAGGAGE_KEY)) || {}; } catch (e) { return {}; } }
+    function saveBaggageStore(store) { localStorage.setItem(BAGGAGE_KEY, JSON.stringify(store)); }
+    function getBaggageList() {
+        const store = getBaggageStore();
+        const key = String(db.currentIdx);
+        if (!store[key]) store[key] = { carry: [], checked: [] };
+        if (!store[key].carry) store[key].carry = [];
+        if (!store[key].checked) store[key].checked = [];
+        return store[key];
+    }
+    function setBaggageList(list) {
+        const store = getBaggageStore();
+        store[String(db.currentIdx)] = list;
+        saveBaggageStore(store);
+    }
+    function addBaggageItem(kind) {
+        if (db.currentIdx === -1 || !db.trips.length) return alert('請先選擇一個行程分類！');
+        const inputId = kind === 'carry' ? 'baggageCarryInput' : 'baggageCheckedInput';
+        const input = document.getElementById(inputId);
+        const name = input.value.trim();
+        if (!name) return;
+        const list = getBaggageList();
+        list[kind].push({ id: genBaggageId(), name, done: false });
+        setBaggageList(list);
+        input.value = "";
+        renderBaggageList();
+    }
+    function toggleBaggageDone(kind, id) {
+        const list = getBaggageList();
+        const item = list[kind].find(i => i.id === id);
+        if (item) item.done = !item.done;
+        setBaggageList(list);
+        renderBaggageList();
+    }
+    function editBaggageItem(kind, id) {
+        const list = getBaggageList();
+        const item = list[kind].find(i => i.id === id);
+        if (!item) return;
+        const name = prompt('修改行李項目名稱：', item.name);
+        if (name && name.trim()) { item.name = name.trim(); setBaggageList(list); renderBaggageList(); }
+    }
+    function deleteBaggageItem(kind, id) {
+        if (!confirm('確定刪除這個行李項目嗎？')) return;
+        const list = getBaggageList();
+        list[kind] = list[kind].filter(i => i.id !== id);
+        setBaggageList(list);
+        renderBaggageList();
+    }
+    function renderBaggageItems(kind, listId) {
+        const el = document.getElementById(listId);
+        if (!el) return;
+        if (db.currentIdx === -1 || !db.trips.length) { el.innerHTML = '<div class="baggage-empty-hint">尚未選擇行程分類</div>'; return; }
+        const items = getBaggageList()[kind] || [];
+        if (!items.length) { el.innerHTML = '<div class="baggage-empty-hint">尚未新增項目</div>'; return; }
+        el.innerHTML = items.map(i => `
+            <div class="baggage-item">
+                <label class="baggage-check-label">
+                    <input type="checkbox" ${i.done ? 'checked' : ''} onchange="toggleBaggageDone('${kind}','${i.id}')">
+                    <span class="baggage-item-text ${i.done ? 'done' : ''}">${escapeHtml(i.name)}</span>
+                </label>
+                <span class="baggage-item-actions">
+                    <button onclick="editBaggageItem('${kind}','${i.id}')">✏️</button>
+                    <button onclick="deleteBaggageItem('${kind}','${i.id}')">❌</button>
+                </span>
+            </div>`).join('');
+    }
+    function renderBaggageList() {
+        renderBaggageItems('carry', 'baggageCarryList');
+        renderBaggageItems('checked', 'baggageCheckedList');
+    }
 
     const LOCAL_KEY = 'travel33_local_personal_data_guest';
     function getLocalPersonalExpenses() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY)) || []; } catch(e) { return []; } }
@@ -517,7 +663,7 @@
         document.getElementById('infoHotelView').textContent = trip.preInfo?.hotel || "（尚未填寫）";
         document.getElementById('infoPrepView').textContent = trip.preInfo?.prep || "（尚未填寫）";
         
-        generateDayTags(); refreshPersonalPage();
+        generateDayTags(); refreshPersonalPage(); renderBaggageList();
         renderExpenseHistory('pre', 'preHistoryList');
         updatePreDashboard();
         calcSettlement('pre', 'preSettlementDisplay');
