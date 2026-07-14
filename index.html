@@ -245,14 +245,18 @@
         @media (min-width: 520px) { .baggage-col-wrap { flex-direction: row; } .baggage-col { flex: 1; min-width: 0; } }
         .baggage-col-title { font-weight: 500; font-size: 14.5px; margin-bottom: 6px; letter-spacing: 0.5px; }
         .baggage-item {
-            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+            display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px;
             padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14px;
         }
         .baggage-item:last-child { border-bottom: none; }
-        .baggage-check-label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; }
-        .baggage-item-text { word-break: break-word; line-height: 1.4; }
+        .baggage-check-label { display: flex; align-items: flex-start; gap: 8px; flex: 1 1 auto; min-width: 0; cursor: pointer; }
+        /* 全域 input 樣式會給 checkbox 加上大量 padding/margin，手機窄螢幕下會把文字擠歪甚至重疊，這裡強制歸零 */
+        .baggage-check-label input[type="checkbox"] {
+            width: 18px; height: 18px; min-width: 18px; padding: 0; margin: 2px 0 0 0; flex-shrink: 0;
+        }
+        .baggage-item-text { word-break: break-word; line-height: 1.5; flex: 1 1 auto; min-width: 0; }
         .baggage-item-text.done { text-decoration: line-through; color: var(--text-soft); }
-        .baggage-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .baggage-item-actions { display: flex; gap: 2px; flex-shrink: 0; margin-left: auto; }
         .baggage-item-actions button {
             background: none; border: none; cursor: pointer; font-size: 14px; padding: 3px 5px;
             -webkit-tap-highlight-color: transparent;
