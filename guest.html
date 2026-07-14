@@ -197,9 +197,9 @@
         <div class="comic-card" style="background:#fff8e1;">
             <div class="card-title">
                 <span class="card-title-left">📌 行前重要資訊</span>
-                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾</button>
+                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▸</button>
             </div>
-            <div id="preInfoBody">
+            <div id="preInfoBody" style="display:none;">
             <label>✈️ 班機資訊</label><div id="infoFlightView" class="info-view"></div>
             <label>🏠 民宿 / 住宿地址</label><div id="infoHotelView" class="info-view"></div>
             <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
@@ -213,13 +213,15 @@
                 <div class="dash-item" style="background: #e1f5fe;">個人自付<br><span id="preOwnSum" style="color:blue;">$0</span></div>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 行前明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾</button></div><div id="preHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 行前明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button></div><div id="preHistoryList" style="display:none;"></div></div>
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;"><div class="card-title">🧮 行前結算</div><div id="preSettlementDisplay"></div></div>
 
         <div class="comic-card" style="background:#fff3e0;">
             <div class="card-title">
                 <span class="card-title-left">🧳 個人行李清單</span>
+                <button class="collapse-btn" onclick="toggleCollapse('baggageBody', this)">▸</button>
             </div>
+            <div id="baggageBody" style="display:none;">
             <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0;">僅存本機裝置，不會同步雲端 ☁️❌，此分享版可自由編輯此清單</p>
             <div class="baggage-col-wrap">
                 <div class="baggage-col">
@@ -239,6 +241,7 @@
                     </div>
                 </div>
             </div>
+            </div>
         </div>
     </div>
 
@@ -250,7 +253,7 @@
                 <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾</button></div><div id="localHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▸</button></div><div id="localHistoryList" style="display:none;"></div></div>
         <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay"></div></div>
     </div>
 
@@ -278,7 +281,7 @@
             <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾</button></div><div id="personalHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▸</button></div><div id="personalHistoryList" style="display:none;"></div></div>
 
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">🛍️ 幫別人代購紀錄</div>
@@ -296,7 +299,7 @@
             <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾</button></div><div id="proxyHistoryList"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" style="display:none;"></div></div>
     </div>
 
     <div class="nav-bar">
