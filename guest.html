@@ -151,10 +151,11 @@
         /* 個人記帳／代購清單：每筆紀錄改成「日期／內容／金額」分格顯示，取代原本一長串文字 */
         .total-badge { font-size: 13px; font-weight: bold; white-space: nowrap; }
         .expense-grid-item {
-            display: grid; grid-template-columns: 54px 1fr auto 22px; gap: 8px; align-items: center;
+            display: grid; grid-template-columns: 54px 1fr auto 46px; gap: 8px; align-items: center;
             padding: 10px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14px;
         }
         .expense-grid-item:last-child { border-bottom: none; }
+        .expense-cell-actions { display: flex; gap: 2px; justify-content: flex-end; }
         .expense-cell-date {
             font-size: 12px; font-weight: 600; text-align: center; color: var(--text-soft);
             background: var(--bg-color); border: 1.5px solid rgba(53,50,44,0.25); border-radius: 8px;
@@ -163,7 +164,13 @@
         .expense-cell-title { font-weight: 600; line-height: 1.4; word-break: break-word; }
         .expense-cell-sub { display: block; font-size: 11px; color: var(--text-soft); font-weight: 400; }
         .expense-cell-amount { text-align: right; font-weight: bold; white-space: nowrap; font-size: 13.5px; line-height: 1.3; }
-        @media (max-width: 420px) { .expense-grid-item { grid-template-columns: 46px 1fr auto 20px; font-size: 13px; } }
+        @media (max-width: 420px) { .expense-grid-item { grid-template-columns: 46px 1fr auto 42px; font-size: 13px; } }
+
+        /* 個人記帳／代購 編輯表單：點✏️後把該筆紀錄換成可編輯的表單區塊 */
+        .expense-edit-form { background: #fffde7; border: 2px dashed var(--border-color); border-radius: 12px; padding: 10px 10px 2px; margin: 6px 0; }
+        .expense-edit-form label { font-size: 12.5px; }
+        .expense-edit-actions { display: flex; gap: 8px; margin: 4px 0 8px; }
+        .expense-edit-actions button { flex: 1; padding: 9px; font-size: 13.5px; border-radius: 10px; }
 
         /* 代購清單：幫誰／買什麼 同一行顯示，並用色塊標籤讓兩者更顯眼 */
         .proxy-cell-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-weight: 600; line-height: 1.5; }
@@ -379,7 +386,7 @@
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
     </div>
 
     <div class="nav-bar">
@@ -543,6 +550,15 @@
         let list = getLocalPersonalExpenses().filter(li => li.id !== id);
         localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
     }
+    // 編輯個人記帳/代購時，除了更新記憶體中的 trip.expenses，也要同步更新本機備份，
+    // 否則下次雲端資料有更新（onSnapshot 觸發）時，mergeLocalData() 會用舊的本機備份把剛剛的編輯蓋回去
+    function updateLocalPersonalExpense(exp) {
+        if (!exp || !exp.id) return;
+        let list = getLocalPersonalExpenses();
+        const idx = list.findIndex(li => li.id === exp.id);
+        if (idx > -1) list[idx] = exp; else list.push(exp);
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
+    }
     // 代購收款狀態：分享版無法寫回 Firebase，所以跟個人記帳/代購一樣，狀態只存在本機 localStorage
     const PROXY_SETTLE_KEY = 'travel33_proxy_settle_guest';
     function getProxySettleMap() { try { return JSON.parse(localStorage.getItem(PROXY_SETTLE_KEY)) || {}; } catch(e) { return {}; } }
@@ -674,6 +690,39 @@
         removeLocalPersonalExpense(id);
         refreshAll();
     }
+    // 個人記帳／代購 編輯：點✏️把該筆紀錄換成可編輯表單，儲存後直接更新原紀錄（不用整筆刪除重建）
+    let editingPersonalId = null;
+    function editPersonalExpense(id) { editingPersonalId = id; refreshPersonalPage(); }
+    function cancelEditPersonal() { editingPersonalId = null; refreshPersonalPage(); }
+    function savePersonalExpense(id) {
+        const trip = db.trips[db.currentIdx];
+        const e = (trip.expenses || []).find(x => x.id === id); if (!e) return;
+        const newDate = document.getElementById('editPersonalDate_' + id).value.trim();
+        const newTitle = document.getElementById('editPersonalTitle_' + id).value.trim();
+        const newRaw = parseFloat(document.getElementById('editPersonalAmount_' + id).value) || 0;
+        const newCurrency = document.getElementById('editPersonalCurrency_' + id).value;
+        if (!newTitle || newRaw <= 0 || !newDate) return alert('請填寫完整！');
+        e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency;
+        e.amount = Math.round(newRaw * rates[newCurrency]);
+        updateLocalPersonalExpense(e);
+        editingPersonalId = null; refreshAll();
+    }
+    function renderPersonalEditForm(e) {
+        return `<div class="expense-edit-form">
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="editPersonalDate_${e.id}" value="${escapeAttr(e.date)}"></div>
+                <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="editPersonalTitle_${e.id}" value="${escapeAttr(e.title)}"></div>
+            </div>
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
+            </div>
+            <div class="expense-edit-actions">
+                <button class="comic-btn" style="background:var(--main-purple);" onclick="savePersonalExpense('${e.id}')">💾 儲存</button>
+                <button class="comic-btn" style="background:#eee;" onclick="cancelEditPersonal()">✖ 取消</button>
+            </div>
+        </div>`;
+    }
     
     function addProxyExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
@@ -695,6 +744,41 @@
         removeLocalPersonalExpense(id);
         refreshAll();
     }
+    // 代購編輯：連「幫誰代購」都能改，改完存檔後清單會依新的名字重新分組
+    let editingProxyId = null;
+    function editProxyItem(id) { editingProxyId = id; refreshPersonalPage(); }
+    function cancelEditProxy() { editingProxyId = null; refreshPersonalPage(); }
+    function saveProxyItem(id) {
+        const trip = db.trips[db.currentIdx];
+        const e = (trip.expenses || []).find(x => x.id === id); if (!e) return;
+        const newForWho = document.getElementById('editProxyFor_' + id).value.trim();
+        const newDate = document.getElementById('editProxyDate_' + id).value.trim();
+        const newTitle = document.getElementById('editProxyTitle_' + id).value.trim();
+        const newRaw = parseFloat(document.getElementById('editProxyAmount_' + id).value) || 0;
+        const newCurrency = document.getElementById('editProxyCurrency_' + id).value;
+        if (!newForWho) return alert('請輸入幫誰代購！'); if (!newTitle || newRaw <= 0 || !newDate) return alert('請填寫完整！');
+        e.forWho = newForWho; e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency;
+        e.amount = Math.round(newRaw * rates[newCurrency]);
+        updateLocalPersonalExpense(e);
+        editingProxyId = null; refreshAll();
+    }
+    function renderProxyEditForm(e) {
+        return `<div class="expense-edit-form">
+            <label>🙋 幫誰代購？</label><input type="text" id="editProxyFor_${e.id}" value="${escapeAttr(e.forWho)}">
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="editProxyDate_${e.id}" value="${escapeAttr(e.date)}"></div>
+                <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="editProxyTitle_${e.id}" value="${escapeAttr(e.title)}"></div>
+            </div>
+            <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="editProxyAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
+            </div>
+            <div class="expense-edit-actions">
+                <button class="comic-btn btn-green" onclick="saveProxyItem('${e.id}')">💾 儲存</button>
+                <button class="comic-btn" style="background:#eee;" onclick="cancelEditProxy()">✖ 取消</button>
+            </div>
+        </div>`;
+    }
 
     function refreshPersonalPage() {
         let myName = getMyIdentity(); document.getElementById('myIdentityDisplay').innerText = myName || "未設定";
@@ -705,17 +789,31 @@
         (trip.expenses || []).forEach((e) => {
             if (e.type === 'personalItem' && e.payer === myName) {
                 personalTotal += e.amount;
-                hist.innerHTML += `<div class="expense-grid-item">
-                    <div class="expense-cell-date">${e.date}</div>
-                    <div class="expense-cell-title">🎁 ${e.title}</div>
-                    ${formatAmountCell(e)}
-                    <button class="delete-btn" style="float:none;" onclick="deletePersonalExpense('${e.id}')">❌</button>
-                </div>`;
+                if (e.id === editingPersonalId) {
+                    hist.innerHTML += renderPersonalEditForm(e);
+                } else {
+                    hist.innerHTML += `<div class="expense-grid-item">
+                        <div class="expense-cell-date">${e.date}</div>
+                        <div class="expense-cell-title">🎁 ${e.title}</div>
+                        ${formatAmountCell(e)}
+                        <div class="expense-cell-actions">
+                            <button class="delete-btn" style="float:none;" onclick="editPersonalExpense('${e.id}')">✏️</button>
+                            <button class="delete-btn" style="float:none;" onclick="deletePersonalExpense('${e.id}')">❌</button>
+                        </div>
+                    </div>`;
+                }
             }
         });
         document.getElementById('personalTotalSum').innerText = `💰 目前總花費：$${Math.round(personalTotal)}`;
+        if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); }
 
         renderProxyGroupedList(trip, myName);
+    }
+    // 幫動態產生的編輯用幣別下拉選單填入選項並帶入原本的幣別
+    function fillEditCurrencySelect(id, currency) {
+        const sel = document.getElementById(id); if (!sel) return;
+        sel.innerHTML = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
+        sel.value = currency || 'TWD';
     }
     // 代購清單改依「幫誰買」分組：每人一個小卡片，各自小計金額＋收款狀態（已收款/未收款）
     // 分享版不能寫回雲端，收款狀態存在本機 localStorage（PROXY_SETTLE_KEY），key 用「記帳人::幫誰代購」組合
@@ -736,12 +834,17 @@
         if (!groups.length) { proxyList.innerHTML = '<p style="font-size:13px; color:var(--text-soft); padding:8px 2px;">尚無代購紀錄</p>'; return; }
         groups.forEach((g, gi) => {
             const settled = !!settleMap[g.key];
+            const containsEditing = g.items.some(x => x.id === editingProxyId);
+            const isOpen = !settled || containsEditing;
             const bodyId = `proxyGroupBody_${gi}`;
-            const itemsHtml = g.items.map(e => `<div class="expense-grid-item">
+            const itemsHtml = g.items.map(e => e.id === editingProxyId ? renderProxyEditForm(e) : `<div class="expense-grid-item">
                 <div class="expense-cell-date">${e.date}</div>
                 <div class="expense-cell-title">🍡 ${e.title}</div>
                 ${formatAmountCell(e)}
-                <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
+                <div class="expense-cell-actions">
+                    <button class="delete-btn" style="float:none;" onclick="editProxyItem('${e.id}')">✏️</button>
+                    <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
+                </div>
             </div>`).join('');
             proxyList.innerHTML += `<div class="proxy-person-group">
                 <div class="proxy-person-header">
@@ -750,11 +853,12 @@
                         <span class="proxy-person-meta">${g.items.length}筆・NT$${Math.round(g.subtotal)}</span>
                     </span>
                     <button class="settle-toggle ${settled ? 'settled' : 'unsettled'}" onclick="toggleProxySettlement(${gi})">${settled ? '✅ 已收款' : '⏳ 未收款'}</button>
-                    <button class="collapse-btn" onclick="toggleCollapse('${bodyId}', this)">${settled ? '▸' : '▾'}</button>
+                    <button class="collapse-btn" onclick="toggleCollapse('${bodyId}', this)">${isOpen ? '▾' : '▸'}</button>
                 </div>
-                <div id="${bodyId}" class="collapsible-content proxy-person-body" style="${settled ? 'display:none;' : ''}">${itemsHtml}</div>
+                <div id="${bodyId}" class="collapsible-content proxy-person-body" style="${isOpen ? '' : 'display:none;'}">${itemsHtml}</div>
             </div>`;
         });
+        if (editingProxyId) { const e = items.find(x => x.id === editingProxyId); if (e) fillEditCurrencySelect('editProxyCurrency_' + e.id, e.currency); }
     }
     function toggleProxySettlement(gi) {
         const g = _proxyGroupsCache[gi]; if (!g) return;
