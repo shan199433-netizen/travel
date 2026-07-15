@@ -470,6 +470,15 @@
         if (!wrap) return;
         const isOn = wrap.classList.toggle('manage-mode');
         btn.classList.toggle('active', isOn);
+        // 點擊鉛筆啟用管理模式時，若清單目前是收合狀態，自動展開，避免使用者看不到任何變化而誤以為按鈕沒反應
+        if (isOn) {
+            const body = document.getElementById('baggageBody');
+            if (body && body.style.display === 'none') {
+                body.style.display = '';
+                const arrowBtn = btn.nextElementSibling;
+                if (arrowBtn) arrowBtn.textContent = '▾';
+            }
+        }
     }
     function renderBaggageItems(kind, listId) {
         const el = document.getElementById(listId);
@@ -539,7 +548,7 @@
         const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
             const label = formatDayDate(start, i);
-            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})"><b>Day${i}</b>${label ? '︱'+label : ''}</div>`;
+            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`;
         }
         renderTimeline();
     }
@@ -660,7 +669,7 @@
         const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
         let personalTotal = 0;
         (trip.expenses || []).forEach((e) => {
-            if (e.costType === 'personal' && e.payer === myName && e.type !== 'proxy') {
+            if (e.type === 'personalItem' && e.payer === myName) {
                 personalTotal += e.amount;
                 hist.innerHTML += `<div class="expense-grid-item">
                     <div class="expense-cell-date">${e.date}</div>
