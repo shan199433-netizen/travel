@@ -204,6 +204,24 @@
         }
         .trip-tag.active { background: var(--main-pink); font-weight: 700; box-shadow: 2.5px 2.5px 0px rgba(53,50,44,0.8); }
         .day-tag.active { background: var(--main-orange); font-weight: 700; box-shadow: 2px 2px 0px rgba(53,50,44,0.8); }
+
+        /* 「當地日常」＋「本次行程」合併頁用的子分頁切換按鈕 */
+        .subtab-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        .subtab-btn {
+            flex: 1; background: #fff; border: 2px solid var(--border-color); padding: 10px 6px; border-radius: 14px;
+            font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; color: var(--text-main);
+            box-shadow: var(--box-shadow);
+        }
+        .subtab-btn.active { background: var(--main-orange); box-shadow: var(--active-shadow); transform: translate(3px, 3px); }
+
+        /* 總覽儀表板：圓餅圖與圖例 */
+        .pie-chart { width: 190px; height: 190px; border-radius: 50%; margin: 10px auto 18px; box-shadow: var(--box-shadow); }
+        .pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 14.5px; padding: 6px 2px; }
+        .pie-dot { width: 13px; height: 13px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid rgba(53,50,44,0.5); }
+        .overview-total-row { font-size: 16px; font-weight: 700; padding: 4px 2px 12px; }
+        .overview-empty-hint { color: var(--text-soft); font-size: 14px; text-align: center; padding: 24px 4px; }
+        .overview-cat-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14.5px; font-weight: 600; }
+        .overview-cat-row:last-child { border-bottom: none; }
         
         .delete-trip-btn { background: none; border: none; color: #c0564a; cursor: pointer; font-weight: bold; padding: 0 2px; }
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
@@ -414,6 +432,7 @@
                 <div style="flex:1; min-width:0;" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
             </div>
             <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
+            <div id="preCategoryBlock" style="display:none;"><label>📊 消費類型</label><select id="preCategorySelect" class="category-select"></select></div>
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
             </div>
         </div>
@@ -474,68 +493,76 @@
     </div>
 
     <div id="page-local" class="page">
-        <div class="comic-card" style="background: #fafafa;">
-            <div class="card-title">📊 【當地】花費錢包統計</div>
-            <div class="dashboard">
-                <div class="dash-item" style="background: #ffd1dc;">總花費<br><span id="localTotalSum" style="color:red;">$0</span></div>
-                <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
-            </div>
+        <div class="subtab-row">
+            <button class="subtab-btn active" id="localSubTabBtn-expense" onclick="switchLocalSubTab('expense')">🍜 當地消費</button>
+            <button class="subtab-btn" id="localSubTabBtn-schedule" onclick="switchLocalSubTab('schedule')">🗓️ 本次行程</button>
         </div>
 
-        <div class="comic-card">
-            <div class="card-title">🍜 當地日常消費記錄</div>
-            <label>📅 日期</label><input type="date" id="localDate" value="2026-07-11">
-            <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="localAmount" placeholder="金額"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
-                    <select id="localCurrency" class="currency-select" onchange="updateExchangeHint()"></select>
+        <div id="localSubTab-expense" class="subtab-content">
+            <div class="comic-card" style="background: #fafafa;">
+                <div class="card-title">📊 【當地】花費錢包統計</div>
+                <div class="dashboard">
+                    <div class="dash-item" style="background: #ffd1dc;">總花費<br><span id="localTotalSum" style="color:red;">$0</span></div>
+                    <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
                 </div>
             </div>
-            <p id="twdLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#ff5722; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
-            <div id="localPayerBlock">
-                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                    <div style="flex:1; min-width:0;"><label>🍡 消費項目</label><input type="text" id="localTitle" placeholder="拉麵、按摩..."></div>
-                    <div style="flex:1; min-width:0;"><label>👑 誰先代墊的？</label><select id="localPayerSelect"></select></div>
+
+            <div class="comic-card">
+                <div class="card-title">🍜 當地日常消費記錄</div>
+                <label>📅 日期</label><input type="date" id="localDate" value="2026-07-11">
+                <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="localAmount" placeholder="金額"></div>
+                    <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                        <select id="localCurrency" class="currency-select" onchange="updateExchangeHint()"></select>
+                    </div>
                 </div>
-                <label>💞 誰要共同分攤？</label><div id="localShareGroup" class="checkbox-group"></div>
+                <p id="twdLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#ff5722; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
+                <div id="localPayerBlock">
+                    <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                        <div style="flex:1; min-width:0;"><label>🍡 消費項目</label><input type="text" id="localTitle" placeholder="拉麵、按摩..."></div>
+                        <div style="flex:1; min-width:0;"><label>👑 誰先代墊的？</label><select id="localPayerSelect"></select></div>
+                    </div>
+                    <label>💞 誰要共同分攤？</label><div id="localShareGroup" class="checkbox-group"></div>
+                </div>
+                <button class="comic-btn btn-pink" onclick="addExpense('local')" style="margin-top:15px;">🥞 儲存當地日常</button>
             </div>
-            <button class="comic-btn btn-pink" onclick="addExpense('local')" style="margin-top:15px;">🥞 儲存當地日常</button>
+
+            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▸</button></div><div id="localHistoryList" class="collapsible-content" style="display:none;"></div></div>
+            <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay" style="margin-top: 5px;"></div></div>
         </div>
 
-        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▸</button></div><div id="localHistoryList" class="collapsible-content" style="display:none;"></div></div>
-        <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay" style="margin-top: 5px;"></div></div>
+        <div id="localSubTab-schedule" class="subtab-content" style="display:none;">
+            <div class="comic-card">
+                <div class="card-title">📅 行程日期設定</div>
+                <label style="font-size: 13px;">📅 出發日期</label><input type="date" id="tripStartDate" value="" onchange="updateTripDates()">
+                <label style="font-size: 13px;">📅 回程日期</label><input type="date" id="tripEndDate" value="" onchange="updateTripDates()">
+            </div>
+
+            <div class="comic-card">
+                <div class="card-title">🗺️ 本次每日行程時間軸</div>
+                <div class="day-scroll-box" id="dayTagsContainer"></div>
+                <div style="background: #fffdf5; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;">
+                    <b style="font-size:14px;">➕ 新增規劃與備忘錄：</b>
+                    <label class="time-toggle-label">
+                        <input type="checkbox" id="schedTimeEnabled" checked onchange="document.getElementById('schedTimeInputWrap').style.display=this.checked?'flex':'none'">
+                        🕒 設定時間（取消勾選＝不指定時間）
+                    </label>
+                    <div id="schedTimeInputWrap" class="time-select-row">
+                        <select id="schedHour"></select><span class="time-colon">:</span><select id="schedMinute"></select>
+                    </div>
+                    <input type="text" id="schedDesc" placeholder="活動項目">
+                    <div id="descColorRow" class="color-swatch-row"></div>
+                    <textarea id="schedMemo" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;"></textarea>
+                    <div style="text-align:right; margin-top:2px;">
+                        <button type="button" class="comic-btn btn-blue" style="width:auto; padding:6px 14px; font-size:12.5px; box-shadow:2px 2px 0px #333;" onclick="insertLinkIntoMemo('schedMemo')">🔗 插入連結</button>
+                    </div>
+                    <button class="comic-btn btn-blue" onclick="addScheduleItem()" style="padding: 8px; margin-top: 5px; font-size:14px; box-shadow: 2px 2px 0px #333;">填入時間軸</button>
+                </div>
+                <div id="timelineDisplayList" style="margin-top: 20px;"></div>
+            </div>
+        </div>
     </div>
 
-    <div id="page-schedule" class="page">
-        <div class="comic-card">
-            <div class="card-title">📅 行程日期設定</div>
-            <label style="font-size: 13px;">📅 出發日期</label><input type="date" id="tripStartDate" value="" onchange="updateTripDates()">
-            <label style="font-size: 13px;">📅 回程日期</label><input type="date" id="tripEndDate" value="" onchange="updateTripDates()">
-        </div>
-
-        <div class="comic-card">
-            <div class="card-title">🗺️ 本次每日行程時間軸</div>
-            <div class="day-scroll-box" id="dayTagsContainer"></div>
-            <div style="background: #fffdf5; padding: 12px; border: 2px solid var(--border-color); border-radius: 12px;">
-                <b style="font-size:14px;">➕ 新增規劃與備忘錄：</b>
-                <label class="time-toggle-label">
-                    <input type="checkbox" id="schedTimeEnabled" checked onchange="document.getElementById('schedTimeInputWrap').style.display=this.checked?'flex':'none'">
-                    🕒 設定時間（取消勾選＝不指定時間）
-                </label>
-                <div id="schedTimeInputWrap" class="time-select-row">
-                    <select id="schedHour"></select><span class="time-colon">:</span><select id="schedMinute"></select>
-                </div>
-                <input type="text" id="schedDesc" placeholder="活動項目">
-                <div id="descColorRow" class="color-swatch-row"></div>
-                <textarea id="schedMemo" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;"></textarea>
-                <div style="text-align:right; margin-top:2px;">
-                    <button type="button" class="comic-btn btn-blue" style="width:auto; padding:6px 14px; font-size:12.5px; box-shadow:2px 2px 0px #333;" onclick="insertLinkIntoMemo('schedMemo')">🔗 插入連結</button>
-                </div>
-                <button class="comic-btn btn-blue" onclick="addScheduleItem()" style="padding: 8px; margin-top: 5px; font-size:14px; box-shadow: 2px 2px 0px #333;">填入時間軸</button>
-            </div>
-            <div id="timelineDisplayList" style="margin-top: 20px;"></div>
-        </div>
-    </div>
 
     <div id="page-personal" class="page">
         <div class="comic-card" style="background: #f3e5f5;">
@@ -558,7 +585,8 @@
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
-            <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
+            <label>📊 消費類型</label><select id="personalCategory" class="category-select"></select>
+            <p id="personalLiveHint" style="margin:8px 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
             </div>
         </div>
@@ -588,11 +616,24 @@
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
     </div>
 
+    <div id="page-overview" class="page">
+        <div class="comic-card">
+            <div class="card-title">📊 我的消費總覽</div>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目，加上「個人記帳」頁面的花費（不含代購、不含其他人花費）</p>
+            <div id="overviewChartWrap"></div>
+            <div id="overviewLegend"></div>
+        </div>
+        <div class="comic-card">
+            <div class="card-title">🧾 分類明細</div>
+            <div id="overviewCategoryList"></div>
+        </div>
+    </div>
+
     <div class="nav-bar">
         <div class="nav-item active" onclick="switchTab('trip', this)"><div class="nav-icon">🐻</div><div>專案成員</div></div>
         <div class="nav-item" onclick="switchTab('pre', this)"><div class="nav-icon">🎫</div><div>行前總覽</div></div>
-        <div class="nav-item" onclick="switchTab('local', this)"><div class="nav-icon">🍡</div><div>當地日常</div></div>
-        <div class="nav-item" onclick="switchTab('schedule', this)"><div class="nav-icon">🗓️</div><div>本次行程</div></div>
+        <div class="nav-item" onclick="switchTab('local', this)"><div class="nav-icon">🍡</div><div>當地生活</div></div>
+        <div class="nav-item" onclick="switchTab('overview', this)"><div class="nav-icon">📊</div><div>總覽</div></div>
         <div class="nav-item" onclick="switchTab('personal', this)"><div class="nav-icon">🙋</div><div>個人記帳</div></div>
     </div>
 </div>
@@ -718,6 +759,20 @@
     function populateCurrencySelects() {
         const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
         document.querySelectorAll('select.currency-select').forEach(sel => { sel.innerHTML = html; });
+    }
+    // 📊 消費類型分類：給「總覽」圓餅圖分組用。舊資料沒有這個欄位的，一律歸類「未分類」（不開放使用者手動選這個選項）
+    const EXPENSE_CATEGORIES = [
+        { v: 'food', e: '🍜', n: '吃', color: '#ff8a65' },
+        { v: 'stay', e: '🏨', n: '住', color: '#64b5f6' },
+        { v: 'transport', e: '🚗', n: '交通', color: '#81c784' },
+        { v: 'shopping', e: '🛍️', n: '購物', color: '#ba68c8' },
+        { v: 'other', e: '🎁', n: '其他', color: '#ffd54f' }
+    ];
+    const UNCATEGORIZED_CATEGORY = { v: 'uncategorized', e: '❓', n: '未分類', color: '#bdbdbd' };
+    function getCategoryInfo(v) { return EXPENSE_CATEGORIES.find(c => c.v === v) || UNCATEGORIZED_CATEGORY; }
+    function populateCategorySelects() {
+        const html = EXPENSE_CATEGORIES.map(c => `<option value="${c.v}">${c.e} ${c.n}</option>`).join('');
+        document.querySelectorAll('select.category-select').forEach(sel => { sel.innerHTML = html; });
     }
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
@@ -884,6 +939,7 @@
 
     window.onload = function() {
         populateCurrencySelects();
+        populateCategorySelects();
         document.getElementById('schedHour').innerHTML = hourOptionsHtml('12');
         document.getElementById('schedMinute').innerHTML = minuteOptionsHtml('00');
         document.getElementById('localAmount').addEventListener('input', updateExchangeHint);
@@ -918,6 +974,7 @@
         const type = document.getElementById('preCostType').value; const isPersonal = (type === 'personal');
         document.getElementById('prePayerInline').style.display = isPersonal ? 'none' : 'block';
         document.getElementById('preShareBlock').style.display = isPersonal ? 'none' : 'block';
+        document.getElementById('preCategoryBlock').style.display = isPersonal ? 'block' : 'none';
     }
     function updateTripDates() {
         if (db.currentIdx === -1) return; let trip = db.trips[db.currentIdx];
@@ -1138,8 +1195,9 @@
         let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
+        const category = document.getElementById('personalCategory').value;
         if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
+        const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, category, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); save(); alert('記好了！');
         document.getElementById('personalDate').value = ""; document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
@@ -1163,8 +1221,9 @@
         const newTitle = document.getElementById('editPersonalTitle_' + id).value.trim();
         const newRaw = parseFloat(document.getElementById('editPersonalAmount_' + id).value) || 0;
         const newCurrency = document.getElementById('editPersonalCurrency_' + id).value;
+        const newCategory = document.getElementById('editPersonalCategory_' + id).value;
         if (!newTitle || newRaw <= 0 || !newDate) return alert('請填寫完整！');
-        e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency;
+        e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency; e.category = newCategory;
         e.amount = Math.round(newRaw * rates[newCurrency]);
         editingPersonalId = null; refreshAll(); save();
     }
@@ -1178,6 +1237,7 @@
                 <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
             </div>
+            <label>📊 消費類型</label><select id="editPersonalCategory_${e.id}" class="category-select"></select>
             <div class="expense-edit-actions">
                 <button class="comic-btn" style="background:var(--main-purple);" onclick="savePersonalExpense('${e.id}')">💾 儲存</button>
                 <button class="comic-btn" style="background:#eee;" onclick="cancelEditPersonal()">✖ 取消</button>
@@ -1253,7 +1313,7 @@
                 } else {
                     hist.innerHTML += `<div class="expense-grid-item">
                         <div class="expense-cell-date">${e.date}</div>
-                        <div class="expense-cell-title">🎁 ${e.title}</div>
+                        <div class="expense-cell-title">${getCategoryInfo(e.category).e} ${e.title}</div>
                         ${formatAmountCell(e)}
                         <div class="expense-cell-actions">
                             <button class="delete-btn" style="float:none;" onclick="editPersonalExpense('${e.id}')">✏️</button>
@@ -1264,7 +1324,7 @@
             }
         });
         document.getElementById('personalTotalSum').innerText = `💰 目前總花費：$${Math.round(personalTotal)}`;
-        if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); }
+        if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) { fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); fillEditCategorySelect('editPersonalCategory_' + e.id, e.category); } }
 
         renderProxyGroupedList(trip, myName);
     }
@@ -1273,6 +1333,12 @@
         const sel = document.getElementById(id); if (!sel) return;
         sel.innerHTML = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
         sel.value = currency || 'TWD';
+    }
+    // 幫動態產生的編輯用消費類型下拉選單填入選項並帶入原本的分類
+    function fillEditCategorySelect(id, category) {
+        const sel = document.getElementById(id); if (!sel) return;
+        sel.innerHTML = EXPENSE_CATEGORIES.map(c => `<option value="${c.v}">${c.e} ${c.n}</option>`).join('');
+        sel.value = category || 'other';
     }
     // 代購清單改依「幫誰買」分組：每人一個小卡片，各自小計金額＋收款狀態（已收款/未收款）
     // 收款狀態存在 trip.proxySettlement（會隨 save() 一起存到 Firebase），key 用「記帳人::幫誰代購」組合，避免不同人各自代購同名對象時互相蓋掉
@@ -1357,6 +1423,7 @@
         renderExpenseHistory('local', 'localHistoryList');
         updateLocalDashboard();
         renderLocalDailySettlement();
+        renderOverview();
         
         const preSel = document.getElementById('prePayerSelect');
         const localSel = document.getElementById('localPayerSelect');
@@ -1376,6 +1443,78 @@
                 localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`;
             });
         }
+    }
+
+    // 📊 總覽儀表板：行前＋當地的「個人自付」項目 ＋ 個人記帳頁面花費（不含代購、不含其他人花費）
+    // 只算「我自己」的花費（依目前裝置鎖定的身分），跟個人記帳頁面的統計口徑一致
+    function getMyPersonalExpenses(trip) {
+        const myName = getMyIdentity();
+        if (!myName) return [];
+        return (trip.expenses || []).filter(e => {
+            if (e.payer !== myName) return false;
+            if (e.type === 'personalItem') return true;
+            if ((e.type === 'pre' || e.type === 'local') && e.costType === 'personal') return true;
+            return false;
+        });
+    }
+
+    function renderOverview() {
+        const wrap = document.getElementById('overviewChartWrap');
+        const legend = document.getElementById('overviewLegend');
+        const catList = document.getElementById('overviewCategoryList');
+        if (!wrap || !legend || !catList) return;
+        if (db.currentIdx === -1 || !db.trips.length) {
+            wrap.innerHTML = ''; legend.innerHTML = '';
+            catList.innerHTML = '<p class="overview-empty-hint">請先建立並選擇一個行程分類 🌻</p>';
+            return;
+        }
+        const trip = db.trips[db.currentIdx];
+        const myName = getMyIdentity();
+        if (!myName) {
+            wrap.innerHTML = ''; legend.innerHTML = '';
+            catList.innerHTML = `<p class="overview-empty-hint">請先設定你的身分，才能看到你的個人消費總覽 🙋</p>
+                <div style="text-align:center;"><button class="comic-btn" style="width:auto; padding:6px 16px;" onclick="promptSetMyIdentity()">切換/設定身分</button></div>`;
+            return;
+        }
+        const items = getMyPersonalExpenses(trip);
+        const totals = {}; let grandTotal = 0;
+        items.forEach(e => {
+            const catV = e.category || 'uncategorized';
+            totals[catV] = (totals[catV] || 0) + e.amount;
+            grandTotal += e.amount;
+        });
+        if (!grandTotal) {
+            wrap.innerHTML = '';
+            legend.innerHTML = '';
+            catList.innerHTML = '<p class="overview-empty-hint">目前還沒有個人自付的花費紀錄 🌱</p>';
+            return;
+        }
+        const allCats = [...EXPENSE_CATEGORIES, UNCATEGORIZED_CATEGORY];
+        // 依金額由大到小排序，只列出有花費的分類
+        const rows = allCats.map(c => ({ ...c, amount: totals[c.v] || 0 }))
+            .filter(r => r.amount > 0)
+            .sort((a, b) => b.amount - a.amount);
+
+        // 用 conic-gradient 疊加各分類的百分比區間畫圓餅圖，不用額外的圖表套件
+        let acc = 0;
+        const gradientParts = rows.map(r => {
+            const pct = r.amount / grandTotal * 100;
+            const part = `${r.color} ${acc}% ${acc + pct}%`;
+            acc += pct;
+            return part;
+        });
+        wrap.innerHTML = `<div class="pie-chart" style="background: conic-gradient(${gradientParts.join(', ')});"></div>`;
+
+        legend.innerHTML = rows.map(r => {
+            const pct = Math.round(r.amount / grandTotal * 1000) / 10;
+            return `<div class="pie-legend-item"><span class="pie-dot" style="background:${r.color};"></span>${r.e} ${r.n}　$${Math.round(r.amount)}　(${pct}%)</div>`;
+        }).join('');
+
+        catList.innerHTML = `<div class="overview-total-row">💰 個人自付總計：$${Math.round(grandTotal)}</div>` +
+            rows.map(r => `<div class="overview-cat-row">
+                <span>${r.e} ${r.n}</span>
+                <span>NT$${Math.round(r.amount)}</span>
+            </div>`).join('');
     }
     function loadPreInfo() {
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
@@ -1404,7 +1543,10 @@
         const expDate = type === 'local'
             ? (document.getElementById('localDate').value || new Date().toISOString().slice(0, 10))
             : new Date().toISOString().slice(0, 10);
-        trip.expenses.push({ id: genId(), type, costType, title, payer, amount, participants, date: expDate, time: "" });
+        const newExp = { id: genId(), type, costType, title, payer, amount, participants, date: expDate, time: "" };
+        // 只有「個人自付」才需要消費類型（給總覽圓餅圖分類用），代墊分攤不用
+        if (isPersonal) newExp.category = document.getElementById('preCategorySelect').value;
+        trip.expenses.push(newExp);
         document.getElementById(type === 'pre' ? 'preTitle' : 'localTitle').value = "";
         document.getElementById(type === 'pre' ? 'preAmount' : 'localAmount').value = "";
         refreshAll(); save();
@@ -1424,6 +1566,14 @@
     }
     function switchTab(id, el) { collapseAllSections(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 
+    // 「當地日常」／「本次行程」合併成一頁後，用這個切換內部的兩個子分頁
+    function switchLocalSubTab(name) {
+        ['expense', 'schedule'].forEach(n => {
+            document.getElementById('localSubTab-' + n).style.display = (n === name) ? '' : 'none';
+            document.getElementById('localSubTabBtn-' + n).classList.toggle('active', n === name);
+        });
+    }
+
     // ↓↓↓ 補上原本缺少的「行前/當地」明細顯示、統計、結算邏輯 ↓↓↓
     function deleteExpense(realIdx) { if(!confirm('確定刪除這筆紀錄嗎？')) return; db.trips[db.currentIdx].expenses.splice(realIdx, 1); refreshAll(); save(); }
 
@@ -1440,11 +1590,13 @@
             const badge = e.costType === 'personal'
                 ? `<span class="type-badge" style="background:#7b1fa2;">個人自付</span>`
                 : `<span class="type-badge" style="background:#2e7d32;">代墊分攤</span>`;
+            const catInfo = e.costType === 'personal' ? getCategoryInfo(e.category) : null;
+            const catTag = catInfo ? `<span class="type-badge" style="background:${catInfo.color}; color:#35322c;">${catInfo.e} ${catInfo.n}</span>` : '';
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
             const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : '';
-            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteExpense(${realIdx})">❌</button><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
+            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="deleteExpense(${realIdx})">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
         });
     }
 

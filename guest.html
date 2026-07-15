@@ -126,6 +126,24 @@
         .trip-tag, .day-tag { background: #fff; border: 2px solid var(--border-color); padding: 9px 15px; border-radius: 22px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
         .trip-tag.active { background: var(--main-pink); font-weight: 700; }
         .day-tag.active { background: var(--main-orange); font-weight: 700; }
+
+        /* 「當地日常」＋「本次行程」合併頁用的子分頁切換按鈕 */
+        .subtab-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        .subtab-btn {
+            flex: 1; background: #fff; border: 2px solid var(--border-color); padding: 10px 6px; border-radius: 14px;
+            font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; color: var(--text-main);
+            box-shadow: var(--box-shadow);
+        }
+        .subtab-btn.active { background: var(--main-orange); box-shadow: var(--active-shadow); transform: translate(3px, 3px); }
+
+        /* 總覽儀表板：圓餅圖與圖例 */
+        .pie-chart { width: 190px; height: 190px; border-radius: 50%; margin: 10px auto 18px; box-shadow: var(--box-shadow); }
+        .pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 14.5px; padding: 6px 2px; }
+        .pie-dot { width: 13px; height: 13px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid rgba(53,50,44,0.5); }
+        .overview-total-row { font-size: 16px; font-weight: 700; padding: 4px 2px 12px; }
+        .overview-empty-hint { color: var(--text-soft); font-size: 14px; text-align: center; padding: 24px 4px; }
+        .overview-cat-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14.5px; font-weight: 600; }
+        .overview-cat-row:last-child { border-bottom: none; }
         
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
         .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
@@ -324,19 +342,26 @@
     </div>
 
     <div id="page-local" class="page">
-        <div class="comic-card" style="background: #fafafa;">
-            <div class="card-title">📊 【當地】花費錢包統計</div>
-            <div class="dashboard">
-                <div class="dash-item" style="background: #ffd1dc;">總花費<br><span id="localTotalSum" style="color:red;">$0</span></div>
-                <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
-            </div>
+        <div class="subtab-row">
+            <button class="subtab-btn active" id="localSubTabBtn-expense" onclick="switchLocalSubTab('expense')">🍜 當地消費</button>
+            <button class="subtab-btn" id="localSubTabBtn-schedule" onclick="switchLocalSubTab('schedule')">🗓️ 本次行程</button>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▸</button></div><div id="localHistoryList" class="collapsible-content" style="display:none;"></div></div>
-        <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay"></div></div>
-    </div>
 
-    <div id="page-schedule" class="page">
-        <div class="comic-card"><div class="card-title">🗺️ 本次每日行程時間軸</div><div class="day-scroll-box" id="dayTagsContainer"></div><div id="timelineDisplayList" style="margin-top: 20px;"></div></div>
+        <div id="localSubTab-expense" class="subtab-content">
+            <div class="comic-card" style="background: #fafafa;">
+                <div class="card-title">📊 【當地】花費錢包統計</div>
+                <div class="dashboard">
+                    <div class="dash-item" style="background: #ffd1dc;">總花費<br><span id="localTotalSum" style="color:red;">$0</span></div>
+                    <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
+                </div>
+            </div>
+            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▸</button></div><div id="localHistoryList" class="collapsible-content" style="display:none;"></div></div>
+            <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay"></div></div>
+        </div>
+
+        <div id="localSubTab-schedule" class="subtab-content" style="display:none;">
+            <div class="comic-card"><div class="card-title">🗺️ 本次每日行程時間軸</div><div class="day-scroll-box" id="dayTagsContainer"></div><div id="timelineDisplayList" style="margin-top: 20px;"></div></div>
+        </div>
     </div>
 
     <div id="page-personal" class="page">
@@ -360,7 +385,8 @@
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
-            <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
+            <label>📊 消費類型</label><select id="personalCategory" class="category-select"></select>
+            <p id="personalLiveHint" style="margin:8px 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
             </div>
         </div>
@@ -390,11 +416,24 @@
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
     </div>
 
+    <div id="page-overview" class="page">
+        <div class="comic-card">
+            <div class="card-title">📊 我的消費總覽</div>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目，加上「個人記帳」頁面的花費（不含代購、不含其他人花費）</p>
+            <div id="overviewChartWrap"></div>
+            <div id="overviewLegend"></div>
+        </div>
+        <div class="comic-card">
+            <div class="card-title">🧾 分類明細</div>
+            <div id="overviewCategoryList"></div>
+        </div>
+    </div>
+
     <div class="nav-bar">
         <div class="nav-item active" onclick="switchTab('trip', this)"><div class="nav-icon">🐻</div><div>專案成員</div></div>
         <div class="nav-item" onclick="switchTab('pre', this)"><div class="nav-icon">🎫</div><div>行前總覽</div></div>
-        <div class="nav-item" onclick="switchTab('local', this)"><div class="nav-icon">🍡</div><div>當地日常</div></div>
-        <div class="nav-item" onclick="switchTab('schedule', this)"><div class="nav-icon">🗓️</div><div>本次行程</div></div>
+        <div class="nav-item" onclick="switchTab('local', this)"><div class="nav-icon">🍡</div><div>當地生活</div></div>
+        <div class="nav-item" onclick="switchTab('overview', this)"><div class="nav-icon">📊</div><div>總覽</div></div>
         <div class="nav-item" onclick="switchTab('personal', this)"><div class="nav-icon">🙋</div><div>個人記帳</div></div>
     </div>
 </div>
@@ -521,6 +560,20 @@
     function populateCurrencySelects() {
         const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
         document.querySelectorAll('select.currency-select').forEach(sel => { sel.innerHTML = html; });
+    }
+    // 📊 消費類型分類：給「總覽」圓餅圖分組用。舊資料沒有這個欄位的，一律歸類「未分類」（不開放使用者手動選這個選項）
+    const EXPENSE_CATEGORIES = [
+        { v: 'food', e: '🍜', n: '吃', color: '#ff8a65' },
+        { v: 'stay', e: '🏨', n: '住', color: '#64b5f6' },
+        { v: 'transport', e: '🚗', n: '交通', color: '#81c784' },
+        { v: 'shopping', e: '🛍️', n: '購物', color: '#ba68c8' },
+        { v: 'other', e: '🎁', n: '其他', color: '#ffd54f' }
+    ];
+    const UNCATEGORIZED_CATEGORY = { v: 'uncategorized', e: '❓', n: '未分類', color: '#bdbdbd' };
+    function getCategoryInfo(v) { return EXPENSE_CATEGORIES.find(c => c.v === v) || UNCATEGORIZED_CATEGORY; }
+    function populateCategorySelects() {
+        const html = EXPENSE_CATEGORIES.map(c => `<option value="${c.v}">${c.e} ${c.n}</option>`).join('');
+        document.querySelectorAll('select.category-select').forEach(sel => { sel.innerHTML = html; });
     }
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
@@ -684,6 +737,7 @@
 
     window.onload = function() {
         populateCurrencySelects();
+        populateCategorySelects();
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
         fetchExchangeRates();
@@ -781,8 +835,9 @@
         let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
+        const category = document.getElementById('personalCategory').value;
         if (!title || amount <= 0 || !date) return alert('請填寫完整！');
-        const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, participants: [], date, time: "" };
+        const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, category, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
         trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); alert('記好了！');
         document.getElementById('personalDate').value = ""; document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
@@ -806,8 +861,9 @@
         const newTitle = document.getElementById('editPersonalTitle_' + id).value.trim();
         const newRaw = parseFloat(document.getElementById('editPersonalAmount_' + id).value) || 0;
         const newCurrency = document.getElementById('editPersonalCurrency_' + id).value;
+        const newCategory = document.getElementById('editPersonalCategory_' + id).value;
         if (!newTitle || newRaw <= 0 || !newDate) return alert('請填寫完整！');
-        e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency;
+        e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency; e.category = newCategory;
         e.amount = Math.round(newRaw * rates[newCurrency]);
         updateLocalPersonalExpense(e);
         editingPersonalId = null; refreshAll();
@@ -822,6 +878,7 @@
                 <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
             </div>
+            <label>📊 消費類型</label><select id="editPersonalCategory_${e.id}" class="category-select"></select>
             <div class="expense-edit-actions">
                 <button class="comic-btn" style="background:var(--main-purple);" onclick="savePersonalExpense('${e.id}')">💾 儲存</button>
                 <button class="comic-btn" style="background:#eee;" onclick="cancelEditPersonal()">✖ 取消</button>
@@ -899,7 +956,7 @@
                 } else {
                     hist.innerHTML += `<div class="expense-grid-item">
                         <div class="expense-cell-date">${e.date}</div>
-                        <div class="expense-cell-title">🎁 ${e.title}</div>
+                        <div class="expense-cell-title">${getCategoryInfo(e.category).e} ${e.title}</div>
                         ${formatAmountCell(e)}
                         <div class="expense-cell-actions">
                             <button class="delete-btn" style="float:none;" onclick="editPersonalExpense('${e.id}')">✏️</button>
@@ -910,7 +967,7 @@
             }
         });
         document.getElementById('personalTotalSum').innerText = `💰 目前總花費：$${Math.round(personalTotal)}`;
-        if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); }
+        if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) { fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); fillEditCategorySelect('editPersonalCategory_' + e.id, e.category); } }
 
         renderProxyGroupedList(trip, myName);
     }
@@ -919,6 +976,12 @@
         const sel = document.getElementById(id); if (!sel) return;
         sel.innerHTML = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
         sel.value = currency || 'TWD';
+    }
+    // 幫動態產生的編輯用消費類型下拉選單填入選項並帶入原本的分類
+    function fillEditCategorySelect(id, category) {
+        const sel = document.getElementById(id); if (!sel) return;
+        sel.innerHTML = EXPENSE_CATEGORIES.map(c => `<option value="${c.v}">${c.e} ${c.n}</option>`).join('');
+        sel.value = category || 'other';
     }
     // 代購清單改依「幫誰買」分組：每人一個小卡片，各自小計金額＋收款狀態（已收款/未收款）
     // 分享版不能寫回雲端，收款狀態存在本機 localStorage（PROXY_SETTLE_KEY），key 用「記帳人::幫誰代購」組合
@@ -1014,6 +1077,77 @@
         renderExpenseHistory('local', 'localHistoryList');
         updateLocalDashboard();
         renderLocalDailySettlement();
+        renderOverview();
+    }
+
+    // 📊 總覽儀表板：行前＋當地的「個人自付」項目 ＋ 個人記帳頁面花費（不含代購、不含其他人花費）
+    // 只算「我自己」的花費（依目前裝置鎖定的身分），跟個人記帳頁面的統計口徑一致
+    function getMyPersonalExpenses(trip) {
+        const myName = getMyIdentity();
+        if (!myName) return [];
+        return (trip.expenses || []).filter(e => {
+            if (e.payer !== myName) return false;
+            if (e.type === 'personalItem') return true;
+            if ((e.type === 'pre' || e.type === 'local') && e.costType === 'personal') return true;
+            return false;
+        });
+    }
+
+    function renderOverview() {
+        const wrap = document.getElementById('overviewChartWrap');
+        const legend = document.getElementById('overviewLegend');
+        const catList = document.getElementById('overviewCategoryList');
+        if (!wrap || !legend || !catList) return;
+        if (db.currentIdx === -1 || !db.trips.length) {
+            wrap.innerHTML = ''; legend.innerHTML = '';
+            catList.innerHTML = '<p class="overview-empty-hint">請先選擇一個行程分類 🌻</p>';
+            return;
+        }
+        const trip = db.trips[db.currentIdx];
+        const myName = getMyIdentity();
+        if (!myName) {
+            wrap.innerHTML = ''; legend.innerHTML = '';
+            catList.innerHTML = `<p class="overview-empty-hint">請先設定你的身分，才能看到你的個人消費總覽 🙋</p>
+                <div style="text-align:center;"><button class="comic-btn" style="width:auto; padding:6px 16px;" onclick="promptSetMyIdentity()">設定身分</button></div>`;
+            return;
+        }
+        const items = getMyPersonalExpenses(trip);
+        const totals = {}; let grandTotal = 0;
+        items.forEach(e => {
+            const catV = e.category || 'uncategorized';
+            totals[catV] = (totals[catV] || 0) + e.amount;
+            grandTotal += e.amount;
+        });
+        if (!grandTotal) {
+            wrap.innerHTML = '';
+            legend.innerHTML = '';
+            catList.innerHTML = '<p class="overview-empty-hint">目前還沒有個人自付的花費紀錄 🌱</p>';
+            return;
+        }
+        const allCats = [...EXPENSE_CATEGORIES, UNCATEGORIZED_CATEGORY];
+        const rows = allCats.map(c => ({ ...c, amount: totals[c.v] || 0 }))
+            .filter(r => r.amount > 0)
+            .sort((a, b) => b.amount - a.amount);
+
+        let acc = 0;
+        const gradientParts = rows.map(r => {
+            const pct = r.amount / grandTotal * 100;
+            const part = `${r.color} ${acc}% ${acc + pct}%`;
+            acc += pct;
+            return part;
+        });
+        wrap.innerHTML = `<div class="pie-chart" style="background: conic-gradient(${gradientParts.join(', ')});"></div>`;
+
+        legend.innerHTML = rows.map(r => {
+            const pct = Math.round(r.amount / grandTotal * 1000) / 10;
+            return `<div class="pie-legend-item"><span class="pie-dot" style="background:${r.color};"></span>${r.e} ${r.n}　$${Math.round(r.amount)}　(${pct}%)</div>`;
+        }).join('');
+
+        catList.innerHTML = `<div class="overview-total-row">💰 個人自付總計：$${Math.round(grandTotal)}</div>` +
+            rows.map(r => `<div class="overview-cat-row">
+                <span>${r.e} ${r.n}</span>
+                <span>NT$${Math.round(r.amount)}</span>
+            </div>`).join('');
     }
 
     // ↓↓↓ 補上原本缺少的「行前/當地」明細顯示、統計、結算邏輯（唯讀，無刪除按鈕） ↓↓↓
@@ -1028,11 +1162,13 @@
             const badge = e.costType === 'personal'
                 ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
                 : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
+            const catInfo = e.costType === 'personal' ? getCategoryInfo(e.category) : null;
+            const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
             const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : '';
-            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
+            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
         });
     }
 
@@ -1156,6 +1292,14 @@
         });
     }
     function switchTab(id, el) { collapseAllSections(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
+    // 「當地日常」／「本次行程」合併成一頁後，用這個切換內部的兩個子分頁
+    function switchLocalSubTab(name) {
+        ['expense', 'schedule'].forEach(n => {
+            document.getElementById('localSubTab-' + n).style.display = (n === name) ? '' : 'none';
+            document.getElementById('localSubTabBtn-' + n).classList.toggle('active', n === name);
+        });
+    }
 </script>
 </body>
 </html>
