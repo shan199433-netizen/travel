@@ -154,7 +154,7 @@
         /* 統一「金額／日期／內容」與「幣別」框框高度，避免 select 在部分手機瀏覽器上比 input 顯得更大 */
         .row-flex-nowrap input, .row-flex-nowrap select { padding: 12px 10px; font-size: 16px; height: 48px; box-sizing: border-box; }
         /* 幣別欄位（國旗＋幣別名＋代碼）文字較長，在窄欄位手機上容易被下拉箭頭蓋住一半，多分配一點寬度 */
-        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.35 !important; }
+        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.4 !important; }
         /* 消費類型（分類）選單文字＋emoji 也偏長，跟幣別一樣縮小字體/箭頭留白，避免在窄欄位被箭頭擋住 */
         select.category-select { font-size: 14px; padding-right: 26px; background-position: right 10px center; }
 
@@ -520,7 +520,7 @@
                 <label>📅 日期</label><input type="date" id="localDate" value="2026-07-11">
                 <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
                     <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="localAmount" placeholder="金額"></div>
-                    <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                    <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
                         <select id="localCurrency" class="currency-select" onchange="updateExchangeHint()"></select>
                     </div>
                 </div>
@@ -589,7 +589,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
@@ -613,7 +613,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
                     <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
             </div>
@@ -1288,7 +1288,7 @@
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <label>📊 消費類型</label><select id="editPersonalCategory_${e.id}" class="category-select"></select>
             <div class="expense-edit-actions">
@@ -1344,7 +1344,7 @@
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editProxyAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <div class="expense-edit-actions">
                 <button class="comic-btn btn-green" onclick="saveProxyItem('${e.id}')">💾 儲存</button>
@@ -1516,7 +1516,11 @@
         (trip.expenses || []).forEach(e => {
             if (e.payer === myName && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
             if (e.payer === myName && e.type === 'proxy') { result.push({ amount: e.amount, category: PROXY_CATEGORY.v }); return; }
-            if (e.payer === myName && (e.type === 'pre' || e.type === 'local') && e.costType === 'personal') { result.push({ amount: e.amount, category: e.category }); return; }
+            if ((e.type === 'pre' || e.type === 'local') && e.costType === 'personal') {
+                const payers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+                if (payers.includes(myName)) result.push({ amount: e.amount, category: e.category });
+                return;
+            }
             // 行前「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
             if (e.type === 'pre' && e.costType === 'share') {
                 const participants = (e.participants && e.participants.length) ? e.participants : (trip.members || []);
@@ -1612,14 +1616,12 @@
             : new Date().toISOString().slice(0, 10);
 
         if (isPersonal) {
-            // 個人自付：可複選多人（例如機票大家都要各買一張），勾幾人就各自建立一筆全額紀錄，彼此不分攤
+            // 個人自付：可複選多人（例如機票大家都各自買一張），勾幾人只建立「一筆」紀錄，名單記在 payers 裡，彼此各付各的、互不分攤
             const checks = document.querySelectorAll('#preSelfGroup input:checked');
             const selected = Array.from(checks).map(c => c.value);
             if (!selected.length) return alert('請至少勾選一位「這是誰的花費」！');
             const category = document.getElementById('preCategorySelect').value;
-            selected.forEach(m => {
-                trip.expenses.push({ id: genId(), type: 'pre', costType: 'personal', title, payer: m, amount, participants: [], date: expDate, time: "", category });
-            });
+            trip.expenses.push({ id: genId(), type: 'pre', costType: 'personal', title, payer: selected[0], payers: selected, amount, participants: [], date: expDate, time: "", category });
         } else {
             let payer = document.getElementById(type === 'pre' ? 'prePayerSelect' : 'localPayerSelect').value;
             const participants = trip.members;
@@ -1693,19 +1695,15 @@
             const checks = document.querySelectorAll('#' + p + 'selfGroup input:checked');
             const selected = Array.from(checks).map(c => c.value);
             if (!selected.length) return alert('請至少勾選一位「這是誰的花費」！');
-            // 第一位沿用這筆原本的紀錄，其餘多勾的人各自另外新增一筆全額紀錄
-            e.date = newDate; e.title = newTitle; e.amount = newAmount; e.costType = 'personal'; e.payer = selected[0]; e.participants = [];
+            // 勾幾人都只維持這「一筆」紀錄，名單記在 payers 裡，不再另外新增重複紀錄
+            e.date = newDate; e.title = newTitle; e.amount = newAmount; e.costType = 'personal'; e.payer = selected[0]; e.payers = selected; e.participants = [];
             if (e.type === 'pre') e.category = newCategory;
-            selected.slice(1).forEach(m => {
-                const dup = { id: genId(), type: e.type, costType: 'personal', title: newTitle, payer: m, amount: newAmount, participants: [], date: newDate, time: e.time || "" };
-                if (e.type === 'pre') dup.category = newCategory;
-                trip.expenses.push(dup);
-            });
         } else {
             const newPayer = document.getElementById(p + 'payer').value;
             const checks = document.querySelectorAll('#' + p + 'shareGroup input:checked');
             e.date = newDate; e.title = newTitle; e.amount = newAmount; e.costType = 'share'; e.payer = newPayer;
             e.participants = Array.from(checks).map(c => c.value);
+            delete e.payers;
             if (e.type === 'pre') e.category = newCategory;
         }
         editingExpenseId = null; refreshAll(); save();
@@ -1716,7 +1714,8 @@
         const payerOptions = members.map(m => `<option value="${escapeAttr(m)}" ${m === e.payer ? 'selected' : ''}>${m}</option>`).join('');
         const activeParticipants = (e.participants && e.participants.length) ? e.participants : members;
         const shareGroupHtml = members.map(m => `<label class="checkbox-label"><input type="checkbox" value="${escapeAttr(m)}" ${activeParticipants.includes(m) ? 'checked' : ''}>${m}</label>`).join('');
-        const selfGroupHtml = members.map(m => `<label class="checkbox-label"><input type="checkbox" value="${escapeAttr(m)}" ${m === e.payer ? 'checked' : ''}>${m}</label>`).join('');
+        const activeSelfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+        const selfGroupHtml = members.map(m => `<label class="checkbox-label"><input type="checkbox" value="${escapeAttr(m)}" ${activeSelfPayers.includes(m) ? 'checked' : ''}>${m}</label>`).join('');
         const categoryRow = e.type === 'pre' ? `<label>📊 消費類型</label><select id="editExp_${e.id}_category" class="category-select"></select>` : '';
         return `<div class="expense-edit-form">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
@@ -1759,8 +1758,12 @@
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
-            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (e.payer ? `　👤 ${e.payer}` : '');
-            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="editExpenseItem('${e.id}')">✏️</button><button class="delete-btn" onclick="deleteExpense('${e.id}')">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
+            const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
+            const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
+                ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
+                : '';
+            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="editExpenseItem('${e.id}')">✏️</button><button class="delete-btn" onclick="deleteExpense('${e.id}')">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
         });
         if (editingExpenseId) {
             const editingItem = items.find(x => x.id === editingExpenseId);
@@ -1773,7 +1776,7 @@
         const trip = db.trips[db.currentIdx]; const members = trip.members.length || 1;
         const items = (trip.expenses || []).filter(e => e.type === 'pre');
         const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
-        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount, 0);
+        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount * ((e.payers && e.payers.length) ? e.payers.length : 1), 0);
         const perShare = Math.round(shareTotal / members);
         document.getElementById('preShareSum').innerText = `$${perShare}`;
         document.getElementById('preOwnSum').innerText = `$${Math.round(ownTotal)}`;
@@ -1785,7 +1788,7 @@
         const trip = db.trips[db.currentIdx]; const members = trip.members.length || 1;
         const items = (trip.expenses || []).filter(e => e.type === 'local');
         const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
-        const total = items.reduce((s,e) => s + e.amount, 0);
+        const total = items.reduce((s,e) => s + e.amount * ((e.costType === 'personal' && e.payers && e.payers.length) ? e.payers.length : 1), 0);
         document.getElementById('localTotalSum').innerText = `$${Math.round(total)}`;
         document.getElementById('localShareSum').innerText = `$${Math.round(shareTotal / members)}`;
     }

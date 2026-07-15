@@ -94,7 +94,7 @@
         /* 統一「金額／日期／內容」與「幣別」框框高度，避免 select 在部分手機瀏覽器上比 input 顯得更大 */
         .row-flex-nowrap input, .row-flex-nowrap select, .row-flex-nowrap .currency-select { height: 48px; box-sizing: border-box; }
         /* 幣別欄位（國旗＋幣別名＋代碼）文字較長，在窄欄位手機上容易被下拉箭頭蓋住一半，多分配一點寬度 */
-        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.35 !important; }
+        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.4 !important; }
         /* 消費類型（分類）選單文字＋emoji 也偏長，跟幣別一樣縮小字體/箭頭留白，避免在窄欄位被箭頭擋住 */
         select.category-select { font-size: 14px; padding-right: 26px; background-position: right 10px center; }
         
@@ -385,7 +385,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
@@ -409,7 +409,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
                     <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
             </div>
@@ -925,7 +925,7 @@
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <label>📊 消費類型</label><select id="editPersonalCategory_${e.id}" class="category-select"></select>
             <div class="expense-edit-actions">
@@ -982,7 +982,7 @@
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editProxyAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
-                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
+                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <div class="expense-edit-actions">
                 <button class="comic-btn btn-green" onclick="saveProxyItem('${e.id}')">💾 儲存</button>
@@ -1139,7 +1139,11 @@
         (trip.expenses || []).forEach(e => {
             if (e.payer === myName && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
             if (e.payer === myName && e.type === 'proxy') { result.push({ amount: e.amount, category: PROXY_CATEGORY.v }); return; }
-            if (e.payer === myName && (e.type === 'pre' || e.type === 'local') && e.costType === 'personal') { result.push({ amount: e.amount, category: e.category }); return; }
+            if ((e.type === 'pre' || e.type === 'local') && e.costType === 'personal') {
+                const payers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+                if (payers.includes(myName)) result.push({ amount: e.amount, category: e.category });
+                return;
+            }
             // 行前「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
             if (e.type === 'pre' && e.costType === 'share') {
                 const participants = (e.participants && e.participants.length) ? e.participants : (trip.members || []);
@@ -1225,8 +1229,12 @@
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
-            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (e.payer ? `　👤 ${e.payer}` : '');
-            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
+            const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
+            const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
+                ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
+                : '';
+            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
         });
     }
 
@@ -1235,7 +1243,7 @@
         const trip = db.trips[db.currentIdx]; const members = (trip.members || []).length || 1;
         const items = (trip.expenses || []).filter(e => e.type === 'pre');
         const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
-        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount, 0);
+        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount * ((e.payers && e.payers.length) ? e.payers.length : 1), 0);
         const perShare = Math.round(shareTotal / members);
         document.getElementById('preShareSum').innerText = `$${perShare}`;
         document.getElementById('preOwnSum').innerText = `$${Math.round(ownTotal)}`;
@@ -1247,7 +1255,7 @@
         const trip = db.trips[db.currentIdx]; const members = (trip.members || []).length || 1;
         const items = (trip.expenses || []).filter(e => e.type === 'local');
         const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
-        const total = items.reduce((s,e) => s + e.amount, 0);
+        const total = items.reduce((s,e) => s + e.amount * ((e.costType === 'personal' && e.payers && e.payers.length) ? e.payers.length : 1), 0);
         document.getElementById('localTotalSum').innerText = `$${Math.round(total)}`;
         document.getElementById('localShareSum').innerText = `$${Math.round(shareTotal / members)}`;
     }
