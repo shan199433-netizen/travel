@@ -155,6 +155,8 @@
         .row-flex-nowrap input, .row-flex-nowrap select { padding: 12px 10px; font-size: 16px; height: 48px; box-sizing: border-box; }
         /* 幣別欄位（國旗＋幣別名＋代碼）文字較長，在窄欄位手機上容易被下拉箭頭蓋住一半，多分配一點寬度 */
         .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.35 !important; }
+        /* 消費類型（分類）選單文字＋emoji 也偏長，跟幣別一樣縮小字體/箭頭留白，避免在窄欄位被箭頭擋住 */
+        select.category-select { font-size: 14px; padding-right: 26px; background-position: right 10px center; }
 
         @media (max-width: 480px) { .row-flex { flex-direction: column; gap: 0; } .row-flex > div { width: 100%; } }
 
@@ -435,9 +437,10 @@
             <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>🎈 項目名稱</label><input type="text" id="preTitle" placeholder="機票、訂房..."></div>
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="preAmount" placeholder="金額"></div>
-                <div style="flex:1; min-width:0;" id="prePayerInline"><label id="prePayerLabel">👑 誰先代墊</label><select id="prePayerSelect"></select></div>
+                <div style="flex:1; min-width:0;" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
             </div>
             <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
+            <div id="preSelfBlock" style="display:none;"><label>👤 這是誰的花費？（可複選，勾幾人就各自記一筆全額，不分攤）</label><div id="preSelfGroup" class="checkbox-group"></div></div>
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
             </div>
         </div>
@@ -630,7 +633,7 @@
         </div>
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
-            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目、行前「代墊分攤」中屬於自己的均攤份額，加上「個人記帳」頁面的花費（不含代購、不含其他人花費）</p>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目、行前「代墊分攤」中屬於自己的均攤份額，加上「個人記帳」頁面的私物花費與代購花費（不含其他人的花費）</p>
             <div id="overviewChartWrap"></div>
             <div id="overviewLegend"></div>
         </div>
@@ -780,6 +783,7 @@
         { v: 'other', e: '🎁', n: '其他', color: '#ffd54f' }
     ];
     const UNCATEGORIZED_CATEGORY = { v: 'uncategorized', e: '❓', n: '未分類', color: '#bdbdbd' };
+    const PROXY_CATEGORY = { v: 'proxy_purchase', e: '📦', n: '代購', color: '#4dd0e1' };
     function getCategoryInfo(v) { return EXPENSE_CATEGORIES.find(c => c.v === v) || UNCATEGORIZED_CATEGORY; }
     function populateCategorySelects() {
         const html = EXPENSE_CATEGORIES.map(c => `<option value="${c.v}">${c.e} ${c.n}</option>`).join('');
@@ -1002,9 +1006,9 @@
     function deleteMember(name) { let trip = db.trips[db.currentIdx]; if(confirm(`確定移除 ${name} 嗎？`)) { trip.members = trip.members.filter(m => m !== name); refreshAll(); save(); } }
     function togglePreCostUI() {
         const type = document.getElementById('preCostType').value; const isPersonal = (type === 'personal');
+        document.getElementById('prePayerInline').style.display = isPersonal ? 'none' : 'block';
         document.getElementById('preShareBlock').style.display = isPersonal ? 'none' : 'block';
-        const payerLabel = document.getElementById('prePayerLabel');
-        if (payerLabel) payerLabel.textContent = isPersonal ? '👤 這是誰的花費' : '👑 誰先代墊';
+        document.getElementById('preSelfBlock').style.display = isPersonal ? 'block' : 'none';
     }
     function updateTripDates() {
         if (db.currentIdx === -1) return; let trip = db.trips[db.currentIdx];
@@ -1474,6 +1478,13 @@
                 localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`;
             });
         }
+        const preSelfGroup = document.getElementById('preSelfGroup');
+        if (preSelfGroup) {
+            preSelfGroup.innerHTML = "";
+            trip.members.forEach(m => {
+                preSelfGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" value="${m}">${m}</label>`;
+            });
+        }
     }
 
     // 📊 總覽儀表板：行前＋當地的「個人自付」項目、行前「代墊分攤」依比例算出的個人份額、
@@ -1485,6 +1496,7 @@
         const result = [];
         (trip.expenses || []).forEach(e => {
             if (e.payer === myName && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
+            if (e.payer === myName && e.type === 'proxy') { result.push({ amount: e.amount, category: PROXY_CATEGORY.v }); return; }
             if (e.payer === myName && (e.type === 'pre' || e.type === 'local') && e.costType === 'personal') { result.push({ amount: e.amount, category: e.category }); return; }
             // 行前「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
             if (e.type === 'pre' && e.costType === 'share') {
@@ -1528,7 +1540,7 @@
             catList.innerHTML = '<p class="overview-empty-hint">目前還沒有花費紀錄 🌱</p>';
             return;
         }
-        const allCats = [...EXPENSE_CATEGORIES, UNCATEGORIZED_CATEGORY];
+        const allCats = [...EXPENSE_CATEGORIES, PROXY_CATEGORY, UNCATEGORIZED_CATEGORY];
         // 依金額由大到小排序，只列出有花費的分類
         const rows = allCats.map(c => ({ ...c, amount: totals[c.v] || 0 }))
             .filter(r => r.amount > 0)
@@ -1573,19 +1585,30 @@
         let title = document.getElementById(type === 'pre' ? 'preTitle' : 'localTitle').value.trim();
         let amount = parseFloat(document.getElementById(type === 'pre' ? 'preAmount' : 'localAmount').value) || 0;
         if (!title || amount <= 0) return alert('填寫完整！');
-        let payer = document.getElementById(type === 'pre' ? 'prePayerSelect' : 'localPayerSelect').value;
         const isPersonal = type === 'pre' && document.getElementById('preCostType').value === 'personal';
-        const costType = isPersonal ? 'personal' : 'share';
-        const participants = isPersonal ? [] : trip.members;
         if (!trip.expenses) trip.expenses = [];
         // 「當地日常」要用使用者實際選的日期；「行前」沒有日期欄位，維持記錄當下日期
         const expDate = type === 'local'
             ? (document.getElementById('localDate').value || new Date().toISOString().slice(0, 10))
             : new Date().toISOString().slice(0, 10);
-        const newExp = { id: genId(), type, costType, title, payer, amount, participants, date: expDate, time: "" };
-        // 行前花費（不論代墊或自付）都要記錄消費分類，供「總覽」統計每人各分類花費使用
-        if (type === 'pre') newExp.category = document.getElementById('preCategorySelect').value;
-        trip.expenses.push(newExp);
+
+        if (isPersonal) {
+            // 個人自付：可複選多人（例如機票大家都要各買一張），勾幾人就各自建立一筆全額紀錄，彼此不分攤
+            const checks = document.querySelectorAll('#preSelfGroup input:checked');
+            const selected = Array.from(checks).map(c => c.value);
+            if (!selected.length) return alert('請至少勾選一位「這是誰的花費」！');
+            const category = document.getElementById('preCategorySelect').value;
+            selected.forEach(m => {
+                trip.expenses.push({ id: genId(), type: 'pre', costType: 'personal', title, payer: m, amount, participants: [], date: expDate, time: "", category });
+            });
+        } else {
+            let payer = document.getElementById(type === 'pre' ? 'prePayerSelect' : 'localPayerSelect').value;
+            const participants = trip.members;
+            const newExp = { id: genId(), type, costType: 'share', title, payer, amount, participants, date: expDate, time: "" };
+            // 行前花費（代墊）也要記錄消費分類，供「總覽」統計每人各分類花費使用
+            if (type === 'pre') newExp.category = document.getElementById('preCategorySelect').value;
+            trip.expenses.push(newExp);
+        }
         document.getElementById(type === 'pre' ? 'preTitle' : 'localTitle').value = "";
         document.getElementById(type === 'pre' ? 'preAmount' : 'localAmount').value = "";
         refreshAll(); save();

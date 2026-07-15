@@ -95,6 +95,8 @@
         .row-flex-nowrap input, .row-flex-nowrap select, .row-flex-nowrap .currency-select { height: 48px; box-sizing: border-box; }
         /* 幣別欄位（國旗＋幣別名＋代碼）文字較長，在窄欄位手機上容易被下拉箭頭蓋住一半，多分配一點寬度 */
         .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.35 !important; }
+        /* 消費類型（分類）選單文字＋emoji 也偏長，跟幣別一樣縮小字體/箭頭留白，避免在窄欄位被箭頭擋住 */
+        select.category-select { font-size: 14px; padding-right: 26px; background-position: right 10px center; }
         
         .comic-btn { background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px; padding: 14px 20px; font-weight: 600; font-size: 16px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; cursor: pointer; box-shadow: var(--box-shadow); display: inline-block; text-align: center; width: 100%; box-sizing: border-box; }
         .comic-btn:active { transform: translate(3px, 3px); box-shadow: var(--active-shadow); }
@@ -427,7 +429,7 @@
         </div>
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
-            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目、行前「代墊分攤」中屬於自己的均攤份額，加上「個人記帳」頁面的花費（不含代購、不含其他人花費）</p>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目、行前「代墊分攤」中屬於自己的均攤份額，加上「個人記帳」頁面的私物花費與代購花費（不含其他人的花費）</p>
             <div id="overviewChartWrap"></div>
             <div id="overviewLegend"></div>
         </div>
@@ -578,6 +580,7 @@
         { v: 'other', e: '🎁', n: '其他', color: '#ffd54f' }
     ];
     const UNCATEGORIZED_CATEGORY = { v: 'uncategorized', e: '❓', n: '未分類', color: '#bdbdbd' };
+    const PROXY_CATEGORY = { v: 'proxy_purchase', e: '📦', n: '代購', color: '#4dd0e1' };
     function getCategoryInfo(v) { return EXPENSE_CATEGORIES.find(c => c.v === v) || UNCATEGORIZED_CATEGORY; }
     function populateCategorySelects() {
         const html = EXPENSE_CATEGORIES.map(c => `<option value="${c.v}">${c.e} ${c.n}</option>`).join('');
@@ -1116,6 +1119,7 @@
         const result = [];
         (trip.expenses || []).forEach(e => {
             if (e.payer === myName && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
+            if (e.payer === myName && e.type === 'proxy') { result.push({ amount: e.amount, category: PROXY_CATEGORY.v }); return; }
             if (e.payer === myName && (e.type === 'pre' || e.type === 'local') && e.costType === 'personal') { result.push({ amount: e.amount, category: e.category }); return; }
             // 行前「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
             if (e.type === 'pre' && e.costType === 'share') {
@@ -1159,7 +1163,7 @@
             catList.innerHTML = '<p class="overview-empty-hint">目前還沒有花費紀錄 🌱</p>';
             return;
         }
-        const allCats = [...EXPENSE_CATEGORIES, UNCATEGORIZED_CATEGORY];
+        const allCats = [...EXPENSE_CATEGORIES, PROXY_CATEGORY, UNCATEGORIZED_CATEGORY];
         const rows = allCats.map(c => ({ ...c, amount: totals[c.v] || 0 }))
             .filter(r => r.amount > 0)
             .sort((a, b) => b.amount - a.amount);
