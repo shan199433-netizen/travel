@@ -250,6 +250,7 @@
     
     <div class="header-box">
         <span class="header-title" id="appTitle">🦊 33旅遊分帳</span>
+        <button class="edit-btn" id="rateBadge" onclick="openRateSettings()" title="匯率設定">💱</button>
     </div>
 
     <div id="page-trip" class="page active">
@@ -399,7 +400,110 @@
 </div>
 
 <script>
-    const rates = { TWD: 1.0, JPY: 0.22, THB: 0.90, KRW: 0.024, USD: 32.5, EUR: 35.2, CNY: 4.5, VND: 0.0013, HKD: 4.15, SGD: 24.2, MYR: 7.3 };
+    // 💱 匯率系統：進頁面自動抓當天匯率 → 抓不到就用快取（上次抓到的）→ 快取也沒有才用下面這組寫死的預設值墊底
+    // 三層備援 + 手動覆蓋（手動設定的幣別，之後自動抓取／重整都不會蓋掉，除非使用者自己清空恢復自動）
+    // 與主控版共用同一套邏輯與localStorage key，兩邊會共用同一份快取結果
+    const DEFAULT_RATES = { TWD: 1.0, JPY: 0.22, THB: 0.90, KRW: 0.024, USD: 32.5, EUR: 35.2, CNY: 4.5, VND: 0.0013, HKD: 4.15, SGD: 24.2, MYR: 7.3 };
+    let rates = { ...DEFAULT_RATES };
+    let baseRatesRaw = { ...DEFAULT_RATES };   // 尚未套用手動覆蓋前的「自動來源」匯率，清除手動覆蓋時用來復原
+    let rateOverrides = {};                    // 使用者手動指定的匯率 { USD: 33.1, ... }
+    let rateMeta = { source: 'default', date: '' }; // source: 'auto'（今日成功抓取）／'cache'（沿用上次）／'default'（內建預設值）
+    const RATE_CACHE_KEY = 'travel33_rate_cache';
+    const RATE_OVERRIDE_KEY = 'travel33_rate_overrides';
+
+    function getRateOverrides() { try { return JSON.parse(localStorage.getItem(RATE_OVERRIDE_KEY)) || {}; } catch (e) { return {}; } }
+    function saveRateOverrides() { localStorage.setItem(RATE_OVERRIDE_KEY, JSON.stringify(rateOverrides)); }
+    function getRateCache() { try { return JSON.parse(localStorage.getItem(RATE_CACHE_KEY)); } catch (e) { return null; } }
+    function saveRateCache(data) { localStorage.setItem(RATE_CACHE_KEY, JSON.stringify(data)); }
+    function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    // 數字太小（如越南盾）四捨五入到小數第2位會變成看起來像0，顯示時多留一些小數位
+    function formatRateForDisplay(v) { if (!v && v !== 0) return ''; return v >= 1 ? String(Math.round(v * 100) / 100) : String(Math.round(v * 10000) / 10000); }
+
+    // 套用一組「自動來源」匯率（來自今日抓取、快取、或內建預設值），再疊上使用者的手動覆蓋值
+    function applyRates(newBaseRates) {
+        baseRatesRaw = { ...DEFAULT_RATES, ...newBaseRates, TWD: 1.0 };
+        rates = { ...baseRatesRaw };
+        Object.keys(rateOverrides).forEach(code => { rates[code] = rateOverrides[code]; });
+        updateRateBadge();
+        if (typeof updateExchangeHint === 'function') updateExchangeHint();
+        if (typeof updatePersonalExchangeHint === 'function') updatePersonalExchangeHint();
+        if (typeof updateProxyExchangeHint === 'function') updateProxyExchangeHint();
+    }
+
+    function rateStatusText() {
+        if (rateMeta.source === 'auto') return `✅ 匯率已於 ${rateMeta.date} 自動更新`;
+        if (rateMeta.source === 'cache') return `⚠️ 今天抓取失敗，沿用 ${rateMeta.date} 最後一次成功抓到的匯率`;
+        return `❗ 抓取失敗，且沒有可用的舊資料，暫用內建預設匯率`;
+    }
+
+    function updateRateBadge() {
+        const el = document.getElementById('rateBadge');
+        if (!el) return;
+        el.textContent = rateMeta.source === 'auto' ? '💱' : '⚠️';
+        el.title = rateStatusText() + '（點我可查看/手動修改）';
+    }
+
+    // 進頁面自動呼叫：先用快取或預設值墊底（避免畫面短暫顯示0），再嘗試打今日最新匯率
+    async function fetchExchangeRates(forceAlert) {
+        rateOverrides = getRateOverrides();
+        const cache = getRateCache();
+        if (cache && cache.rates) { rateMeta = { source: 'cache', date: cache.date }; applyRates(cache.rates); }
+        else { rateMeta = { source: 'default', date: '' }; applyRates(DEFAULT_RATES); }
+
+        try {
+            const resp = await fetch('https://open.er-api.com/v6/latest/TWD');
+            if (!resp.ok) throw new Error('rate api response not ok');
+            const data = await resp.json();
+            if (data.result !== 'success' || !data.rates) throw new Error('rate api payload invalid');
+            const fetchedRates = {};
+            CURRENCIES.forEach(c => {
+                if (c.v === 'TWD') { fetchedRates.TWD = 1.0; return; }
+                const r = data.rates[c.v];
+                // API回傳的是「1台幣可換多少外幣」，我們要的是「1外幣值多少台幣」，取倒數
+                if (typeof r === 'number' && r > 0) fetchedRates[c.v] = 1 / r;
+            });
+            const today = todayStr();
+            rateMeta = { source: 'auto', date: today };
+            saveRateCache({ rates: fetchedRates, date: today });
+            applyRates(fetchedRates);
+            if (forceAlert) alert(`✅ 已成功更新今日匯率（${today}）！`);
+        } catch (err) {
+            // 抓失敗：畫面已經在上面用快取/預設值墊過底了，這裡只需要在使用者主動要求重抓時才跳提示
+            if (forceAlert) alert(`⚠️ 匯率抓取失敗，已沿用${cache ? cache.date + ' 的舊匯率' : '內建預設匯率'}`);
+        }
+    }
+
+    // 點擊header上的💱：顯示目前所有匯率與更新狀態，並可手動修改／恢復自動／強制重抓
+    function openRateSettings() {
+        const lines = CURRENCIES.filter(c => c.v !== 'TWD').map(c => {
+            const mark = rateOverrides.hasOwnProperty(c.v) ? '（✏️手動設定）' : '';
+            return `${c.f} ${c.v}：1 ${c.v} ≈ ${formatRateForDisplay(rates[c.v])} 元${mark}`;
+        }).join('\n');
+        const choice = prompt(`${rateStatusText()}\n\n${lines}\n\n👉 輸入幣別代碼可手動修改匯率（例如 USD）\n👉 輸入「重抓」可強制重新抓取今日匯率\n👉 取消可直接關閉`);
+        if (choice === null) return;
+        const code = choice.trim().toUpperCase();
+        if (!code) return;
+        if (code === '重抓' || code === 'REFRESH' || code === 'RETRY') { fetchExchangeRates(true); return; }
+        if (code === 'TWD') { alert('台幣是換算基準，固定為 1，不需要設定喔！'); return; }
+        const found = CURRENCIES.find(c => c.v === code);
+        if (!found) { alert('找不到這個幣別代碼，請輸入清單中列出的代碼（例如 JPY、USD）喔！'); return; }
+        const input = prompt(`✏️ 手動設定「1 ${code} = 多少台幣」\n（目前：${formatRateForDisplay(rates[code])}；清空後直接送出可恢復自動匯率）`, formatRateForDisplay(rates[code]));
+        if (input === null) return;
+        if (input.trim() === '') {
+            delete rateOverrides[code];
+            saveRateOverrides();
+            applyRates(baseRatesRaw);
+            alert(`已恢復 ${code} 為自動匯率 🔄`);
+            return;
+        }
+        const val = parseFloat(input);
+        if (isNaN(val) || val <= 0) { alert('請輸入大於 0 的數字喔！'); return; }
+        rateOverrides[code] = val;
+        saveRateOverrides();
+        applyRates(baseRatesRaw);
+        alert(`已手動將 ${code} 匯率設定為 ${val} ✅`);
+    }
+
     // 幣別清單需與主控版保持一致（修正HKD國旗、補上MYR中文名）
     const CURRENCIES = [
         { v: 'TWD', f: '🇹🇼', n: '台幣' },
@@ -582,6 +686,7 @@
         populateCurrencySelects();
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
+        fetchExchangeRates();
         cloudDoc.onSnapshot((docSnap) => {
             if (docSnap.exists) db = docSnap.data();
             if (db.trips && db.trips.length > 0 && db.currentIdx === -1) db.currentIdx = 0;
