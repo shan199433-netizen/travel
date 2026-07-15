@@ -37,7 +37,6 @@
         }
 
         html {
-            height: 100%;
             overscroll-behavior-y: none;
         }
         html, body {
@@ -46,8 +45,9 @@
             background-size: 18px 18px;
             margin: 0;
             padding: 0;
-            font-family: 'naikaifont', 'Segoe UI', "Microsoft JhengHei", sans-serif;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", 'naikaifont', 'Segoe UI', "Microsoft JhengHei", sans-serif;
             color: var(--text-main);
+            font-weight: 600;
             display: flex;
             justify-content: center;
             -webkit-font-smoothing: antialiased;
@@ -55,7 +55,6 @@
             -webkit-tap-highlight-color: transparent;
         }
         body {
-            min-height: 100%;
             overscroll-behavior-y: none;
         }
         button, .comic-btn, .nav-item, .trip-tag, .day-tag, .collapse-btn, .checkbox-label {
@@ -74,24 +73,25 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .header-box { background: rgba(255, 223, 142, 0.88); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 15px 20px 19px; text-align: center; position: sticky; top: 0; z-index: 99; border-radius: 0 0 26px 26px; box-shadow: 0 8px 18px -6px rgba(53,50,44,0.32); }
-        .header-title { font-size: 20px; font-weight: 500; letter-spacing: 2px; color: var(--text-main); }
+        .header-box { background: rgba(255, 223, 142, 0.88); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); padding: 15px 20px 19px; text-align: center; position: sticky; top: 0; z-index: 99; box-shadow: 0 8px 18px -6px rgba(53,50,44,0.32); }
+        .header-title { font-size: 20px; font-weight: 600; letter-spacing: 2px; color: var(--text-main); }
 
         .page { display: none; width: 100%; box-sizing: border-box; padding: 16px 14px; }
         .page.active { display: block; }
 
         .comic-card { background: #fffdf9; border: 2.5px solid var(--border-color); border-radius: 22px; box-shadow: var(--box-shadow); margin-bottom: 22px; padding: 20px 18px; box-sizing: border-box; }
-        .card-title { font-size: 17px; font-weight: 500; letter-spacing: 1px; margin-bottom: 14px; border-bottom: 2px dashed rgba(53,50,44,0.35); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 17px; font-weight: 600; letter-spacing: 1px; margin-bottom: 14px; border-bottom: 2px dashed rgba(53,50,44,0.35); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 
         .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .dash-item { border: 2px solid var(--border-color); border-radius: 14px; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 500; line-height: 1.7; }
+        .dash-item { border: 2px solid var(--border-color); border-radius: 14px; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 600; line-height: 1.7; }
 
-        label { font-size: 13.5px; color: var(--text-main); font-weight: 500; }
-        input, select, textarea { width: 100%; padding: 13px 14px; margin: 7px 0 10px 0; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px; font-family: 'naikaifont', sans-serif; background: #fff; color: var(--text-main); }
+        label { font-size: 13.5px; color: var(--text-main); font-weight: 600; }
+        input, select, textarea { width: 100%; padding: 13px 14px; margin: 7px 0 10px 0; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", 'naikaifont', sans-serif; background: #fff; color: var(--text-main); }
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; background: #fff; }
+        .currency-select { box-sizing: border-box; width: 100%; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .comic-btn { background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px; padding: 14px 20px; font-weight: 500; font-size: 16px; font-family: 'naikaifont', sans-serif; cursor: pointer; box-shadow: var(--box-shadow); display: inline-block; text-align: center; width: 100%; box-sizing: border-box; }
+        .comic-btn { background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px; padding: 14px 20px; font-weight: 600; font-size: 16px; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", 'naikaifont', sans-serif; cursor: pointer; box-shadow: var(--box-shadow); display: inline-block; text-align: center; width: 100%; box-sizing: border-box; }
         .comic-btn:active { transform: translate(3px, 3px); box-shadow: var(--active-shadow); }
         .btn-green { background-color: var(--main-green); }
 
@@ -106,7 +106,7 @@
             box-shadow: 0 10px 26px rgba(53,50,44,0.22), 0 2px 6px rgba(53,50,44,0.14);
         }
         .nav-item {
-            flex: 1; text-align: center; font-size: 10px; font-weight: 500; letter-spacing: 0.3px; cursor: pointer;
+            flex: 1; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 0.3px; cursor: pointer;
             display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 2px;
             padding: 5px 2px; border-radius: 999px; color: var(--text-soft); transition: color .15s ease;
         }
@@ -120,9 +120,9 @@
         .nav-item:active .nav-icon { transform: scale(0.9); }
 
         .trip-scroll-box, .day-scroll-box { display: flex; gap: 10px; overflow-x: auto; padding: 5px 2px; margin-bottom: 15px; }
-        .trip-tag, .day-tag { background: #fff; border: 2px solid var(--border-color); padding: 9px 15px; border-radius: 22px; font-size: 14px; white-space: nowrap; cursor: pointer; }
-        .trip-tag.active { background: var(--main-pink); font-weight: 500; }
-        .day-tag.active { background: var(--main-orange); font-weight: 500; }
+        .trip-tag, .day-tag { background: #fff; border: 2px solid var(--border-color); padding: 9px 15px; border-radius: 22px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+        .trip-tag.active { background: var(--main-pink); font-weight: 700; }
+        .day-tag.active { background: var(--main-orange); font-weight: 700; }
         
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
         .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 18px; line-height: 1.7; }
@@ -135,12 +135,12 @@
         }
         .timeline-period-tag {
             display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 2px solid var(--border-color);
-            border-radius: 20px; padding: 4px 14px; font-size: 12.5px; font-weight: 500; color: var(--text-main);
+            border-radius: 20px; padding: 4px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-main);
             margin: 4px 0 12px -10px;
         }
         .timeline-time-badge {
             display: inline-block; min-width: 44px; text-align: center; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
-            padding: 2px 12px; font-size: 13.5px; font-weight: 500; margin-right: 8px; letter-spacing: 0.5px;
+            padding: 2px 12px; font-size: 13.5px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
         }
         .timeline-time-badge.no-time { background: transparent; border: none; padding: 0 8px 0 0; font-size: 17px; min-width: auto; }
         .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; float: right; font-size: 16px; font-weight: bold; }
@@ -153,17 +153,17 @@
         }
         .expense-grid-item:last-child { border-bottom: none; }
         .expense-cell-date {
-            font-size: 12px; font-weight: 500; text-align: center; color: var(--text-soft);
+            font-size: 12px; font-weight: 600; text-align: center; color: var(--text-soft);
             background: var(--bg-color); border: 1.5px solid rgba(53,50,44,0.25); border-radius: 8px;
             padding: 5px 2px; line-height: 1.25; word-break: break-word;
         }
-        .expense-cell-title { font-weight: 500; line-height: 1.4; word-break: break-word; }
+        .expense-cell-title { font-weight: 600; line-height: 1.4; word-break: break-word; }
         .expense-cell-sub { display: block; font-size: 11px; color: var(--text-soft); font-weight: 400; }
         .expense-cell-amount { text-align: right; font-weight: bold; white-space: nowrap; font-size: 13.5px; line-height: 1.3; }
         @media (max-width: 420px) { .expense-grid-item { grid-template-columns: 46px 1fr auto 20px; font-size: 13px; } }
 
         /* 代購清單：幫誰／買什麼 同一行顯示，並用色塊標籤讓兩者更顯眼 */
-        .proxy-cell-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-weight: 500; line-height: 1.5; }
+        .proxy-cell-title { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-weight: 600; line-height: 1.5; }
         .proxy-connector { font-size: 12.5px; color: var(--text-soft); }
         .proxy-tag {
             display: inline-flex; align-items: center; font-weight: 700; font-size: 13.5px;
@@ -177,18 +177,19 @@
 
         /* 收合／展開 按鈕 */
         .collapse-btn {
-            background: #fff; border: 2px solid var(--border-color); border-radius: 10px;
-            width: 30px; height: 30px; font-size: 13px; cursor: pointer; flex-shrink: 0;
+            background: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 10px;
+            width: 34px; height: 34px; font-size: 15px; cursor: pointer; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; padding: 0; margin: 0;
-            -webkit-tap-highlight-color: transparent; transition: transform .08s ease;
+            -webkit-tap-highlight-color: transparent; transition: transform .08s ease, box-shadow .08s ease;
+            box-shadow: 2px 2px 0px rgba(53,50,44,0.75);
         }
-        .collapse-btn:active { transform: translate(1px, 1px); }
+        .collapse-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px rgba(53,50,44,0.75); }
         .card-title-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
 
         /* 個人行李清單 */
         .baggage-col-wrap { display: flex; flex-direction: column; gap: 20px; }
         @media (min-width: 520px) { .baggage-col-wrap { flex-direction: row; } .baggage-col { flex: 1; min-width: 0; } }
-        .baggage-col-title { font-weight: 500; font-size: 14.5px; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .baggage-col-title { font-weight: 600; font-size: 14.5px; margin-bottom: 6px; letter-spacing: 0.5px; }
         .baggage-item {
             display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px;
             padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14px;
@@ -201,15 +202,18 @@
         }
         .baggage-item-text { word-break: break-word; line-height: 1.5; flex: 1 1 auto; min-width: 0; }
         .baggage-item-text.done { text-decoration: line-through; color: var(--text-soft); }
-        .baggage-item-actions { display: flex; gap: 2px; flex-shrink: 0; margin-left: auto; }
+        .baggage-item-actions { display: none; gap: 2px; flex-shrink: 0; margin-left: auto; }
         .baggage-item-actions button {
             background: none; border: none; cursor: pointer; font-size: 14px; padding: 3px 5px;
             -webkit-tap-highlight-color: transparent;
         }
-        .baggage-add-row { display: flex; gap: 6px; margin-top: 8px; }
+        .baggage-add-row { display: none; gap: 6px; margin-top: 8px; }
         .baggage-add-row input { margin: 0; flex: 1; padding: 11px 12px; font-size: 16px; }
         .baggage-add-row button { width: auto; padding: 0 16px; box-shadow: none; border-radius: 12px; }
         .baggage-empty-hint { font-size: 13px; color: var(--text-soft); padding: 8px 2px; }
+        #baggageColWrap.manage-mode .baggage-add-row { display: flex; }
+        #baggageColWrap.manage-mode .baggage-item-actions { display: flex; }
+        .baggage-manage-toggle.active { background: var(--main-pink); }
     </style>
 </head>
 <body class="guest-mode">
@@ -240,9 +244,9 @@
         <div class="comic-card" style="background:#fff8e1;">
             <div class="card-title">
                 <span class="card-title-left">📌 行前重要資訊</span>
-                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▸</button>
+                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾</button>
             </div>
-            <div id="preInfoBody" class="collapsible-content" style="display:none;">
+            <div id="preInfoBody" class="collapsible-content">
             <label>✈️ 班機資訊</label><div id="infoFlightView" class="info-view"></div>
             <label>🏠 民宿 / 住宿地址</label><div id="infoHotelView" class="info-view"></div>
             <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
@@ -262,11 +266,14 @@
         <div class="comic-card" style="background:#fff3e0;">
             <div class="card-title">
                 <span class="card-title-left">🧳 個人行李清單</span>
-                <button class="collapse-btn" onclick="toggleCollapse('baggageBody', this)">▸</button>
+                <span style="display:flex; gap:6px;">
+                    <button class="collapse-btn baggage-manage-toggle" onclick="toggleBaggageManage(this)" title="新增／編輯／刪除項目">✏️</button>
+                    <button class="collapse-btn" onclick="toggleCollapse('baggageBody', this)">▸</button>
+                </span>
             </div>
             <div id="baggageBody" class="collapsible-content" style="display:none;">
-            <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0;">僅存本機裝置，不會同步雲端 ☁️❌，此分享版可自由編輯此清單</p>
-            <div class="baggage-col-wrap">
+            <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0;">僅存本機裝置，不會同步雲端 ☁️❌，此分享版可自由編輯此清單　｜　平常只需打勾表示已帶，按上方 ✏️ 才能新增／編輯／刪除項目</p>
+            <div class="baggage-col-wrap" id="baggageColWrap">
                 <div class="baggage-col">
                     <div class="baggage-col-title">🎒 隨身行李</div>
                     <div id="baggageCarryList"></div>
@@ -457,6 +464,12 @@
         list[kind] = list[kind].filter(i => i.id !== id);
         setBaggageList(list);
         renderBaggageList();
+    }
+    function toggleBaggageManage(btn) {
+        const wrap = document.getElementById('baggageColWrap');
+        if (!wrap) return;
+        const isOn = wrap.classList.toggle('manage-mode');
+        btn.classList.toggle('active', isOn);
     }
     function renderBaggageItems(kind, listId) {
         const el = document.getElementById(listId);
@@ -845,9 +858,16 @@
         displayDiv.innerHTML = html;
     }
     // 切換頁面（分頁）時，把所有頁面中已展開的收合區塊統一收回，避免切回來還留著上次展開的狀態
+    // 例外：📌 行前重要資訊（preInfoBody）預設保持展開，交由使用者自己決定何時收合
+    // 例外：🧳 行李清單的 ✏️ 管理按鈕借用 .collapse-btn 樣式，但文字是固定的鉛筆圖示，不該被改成箭頭
     function collapseAllSections() {
-        document.querySelectorAll('.collapsible-content').forEach(el => { el.style.display = 'none'; });
-        document.querySelectorAll('.collapse-btn').forEach(btn => { btn.textContent = '▸'; });
+        document.querySelectorAll('.collapsible-content').forEach(el => { if (el.id !== 'preInfoBody') el.style.display = 'none'; });
+        document.querySelectorAll('.collapse-btn').forEach(btn => {
+            if (btn.classList.contains('baggage-manage-toggle')) return;
+            const onclickAttr = btn.getAttribute('onclick') || '';
+            if (onclickAttr.includes("'preInfoBody'")) return;
+            btn.textContent = '▸';
+        });
     }
     function switchTab(id, el) { collapseAllSections(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 </script>
