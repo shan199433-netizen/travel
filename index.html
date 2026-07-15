@@ -445,18 +445,9 @@
             </div>
         </div>
 
-        <div class="comic-card" style="background: #fafafa;">
-            <div class="card-title">📊 【行前】花費錢包統計</div>
-            <div class="dashboard">
-                <div class="dash-item" style="background: #ffecb3;">每人約花<br><span id="preTotalSum" style="color:red;">$0</span></div>
-                <div class="dash-item" style="background: #c8e6c9;">代墊(每人)<br><span id="preShareSum" style="color:green;">$0</span></div>
-                <div class="dash-item" style="background: #e1f5fe;">個人自付<br><span id="preOwnSum" style="color:blue;">$0</span></div>
-            </div>
-        </div>
-
         <div class="comic-card">
             <div class="card-title">
-                <span class="card-title-left">📋 行前明細歷史</span>
+                <span class="card-title-left">📋 行前總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span>
                 <button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button>
             </div>
             <div id="preHistoryList" class="collapsible-content" style="display:none;"></div>
@@ -1773,14 +1764,11 @@
 
     function updatePreDashboard() {
         if (db.currentIdx === -1 || !db.trips.length) return;
-        const trip = db.trips[db.currentIdx]; const members = trip.members.length || 1;
+        const trip = db.trips[db.currentIdx];
         const items = (trip.expenses || []).filter(e => e.type === 'pre');
         const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
         const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount * ((e.payers && e.payers.length) ? e.payers.length : 1), 0);
-        const perShare = Math.round(shareTotal / members);
-        document.getElementById('preShareSum').innerText = `$${perShare}`;
-        document.getElementById('preOwnSum').innerText = `$${Math.round(ownTotal)}`;
-        document.getElementById('preTotalSum').innerText = `$${perShare + Math.round(ownTotal)}`;
+        document.getElementById('preTotalSum').innerText = `$${Math.round(shareTotal + ownTotal)}`;
     }
 
     function updateLocalDashboard() {
