@@ -90,9 +90,11 @@
         input, select, textarea { width: 100%; padding: 13px 14px; margin: 7px 0 10px 0; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #fff; color: var(--text-main); }
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; background: #fff; }
-        .currency-select { box-sizing: border-box; width: 100%; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .currency-select { box-sizing: border-box; width: 100%; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; padding-right: 26px; background-position: right 10px center; }
         /* 統一「金額／日期／內容」與「幣別」框框高度，避免 select 在部分手機瀏覽器上比 input 顯得更大 */
         .row-flex-nowrap input, .row-flex-nowrap select, .row-flex-nowrap .currency-select { height: 48px; box-sizing: border-box; }
+        /* 幣別欄位（國旗＋幣別名＋代碼）文字較長，在窄欄位手機上容易被下拉箭頭蓋住一半，多分配一點寬度 */
+        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.35 !important; }
         
         .comic-btn { background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px; padding: 14px 20px; font-weight: 600; font-size: 16px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; cursor: pointer; box-shadow: var(--box-shadow); display: inline-block; text-align: center; width: 100%; box-sizing: border-box; }
         .comic-btn:active { transform: translate(3px, 3px); box-shadow: var(--active-shadow); }
@@ -371,16 +373,16 @@
                 <button class="collapse-btn" onclick="toggleCollapse('personalFormBody', this)">▾</button>
             </div>
             <div id="personalFormBody" class="collapsible-content">
-            <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                <div>🙋 <b>我的身分：</b> <span id="myIdentityDisplay" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
-                <button class="comic-btn" style="width:auto; padding:5px 12px; font-size:13px; box-shadow:none; background:var(--main-purple);" onclick="promptSetMyIdentity()">設定身分</button>
+            <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px;">
+                <div>🙋 <b>我的身分：</b> <span id="myIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
+                <select class="identity-select" id="myIdentitySelect" onchange="setMyIdentity(this.value)" style="margin:8px 0 0 0;"></select>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="personalTitle" placeholder="伴手禮、藥妝..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
@@ -404,7 +406,7 @@
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="proxyTitle" placeholder="藥妝、酒..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
@@ -413,13 +415,19 @@
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
     </div>
 
     <div id="page-overview" class="page">
+        <div class="comic-card" style="background:#f3e5f5;">
+            <div class="card-title">🙋 設定身分</div>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-6px 0 10px 0; line-height:1.5;">選好身分後，行前／當地的個人自付、行前代墊分攤的均攤份額，以及個人記帳頁面的花費，才會統計進下面的花費總覽。名單需由主控者設定好。</p>
+            <div>目前身分：<span id="overviewIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
+            <select class="identity-select" id="overviewIdentitySelect" onchange="setMyIdentity(this.value)" style="margin-top:8px;"></select>
+        </div>
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
-            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目，加上「個人記帳」頁面的花費（不含代購、不含其他人花費）</p>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目、行前「代墊分攤」中屬於自己的均攤份額，加上「個人記帳」頁面的花費（不含代購、不含其他人花費）</p>
             <div id="overviewChartWrap"></div>
             <div id="overviewLegend"></div>
         </div>
@@ -430,10 +438,10 @@
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" onclick="switchTab('trip', this)"><div class="nav-icon">🐻</div><div>專案成員</div></div>
+        <div class="nav-item active" onclick="switchTab('trip', this)"><div class="nav-icon">🐻</div><div>旅遊成員</div></div>
         <div class="nav-item" onclick="switchTab('pre', this)"><div class="nav-icon">🎫</div><div>行前總覽</div></div>
-        <div class="nav-item" onclick="switchTab('local', this)"><div class="nav-icon">🍡</div><div>當地生活</div></div>
-        <div class="nav-item" onclick="switchTab('overview', this)"><div class="nav-icon">📊</div><div>總覽</div></div>
+        <div class="nav-item" onclick="switchTab('local', this)"><div class="nav-icon">🍡</div><div>當地日常</div></div>
+        <div class="nav-item" onclick="switchTab('overview', this)"><div class="nav-icon">📊</div><div>花費總覽</div></div>
         <div class="nav-item" onclick="switchTab('personal', this)"><div class="nav-icon">🙋</div><div>個人記帳</div></div>
     </div>
 </div>
@@ -580,11 +588,30 @@
     const MY_NAME_KEY = 'travel33_my_device_identity_guest';
 
     function getMyIdentity() { return localStorage.getItem(MY_NAME_KEY) || ''; }
-    function setMyIdentity(name) { localStorage.setItem(MY_NAME_KEY, name.trim()); refreshPersonalPage(); }
-    function promptSetMyIdentity() {
-        let cur = getMyIdentity();
-        let name = prompt("請輸入你在本裝置的身分名字：", cur);
-        if (name && name.trim()) { setMyIdentity(name.trim()); alert(`已鎖定身分為：${name.trim()}`); }
+    function setMyIdentity(name) {
+        if (!name) return;
+        localStorage.setItem(MY_NAME_KEY, name.trim());
+        refreshPersonalPage();
+    }
+    // 身分只能從主控版在「旅遊成員」設定好的名單中選擇，不再開放自由輸入文字
+    // 同步更新所有出現身分選單/顯示文字的地方（個人記帳頁＋花費總覽頁）
+    function populateIdentitySelect() {
+        const sels = document.querySelectorAll('.identity-select'); if (!sels.length) return;
+        const trip = (db.currentIdx > -1 && db.trips.length) ? db.trips[db.currentIdx] : null;
+        const members = trip ? (trip.members || []) : [];
+        const myName = getMyIdentity();
+        sels.forEach(sel => {
+            if (!members.length) {
+                sel.innerHTML = '<option value="">請先請主控者設定成員名單</option>';
+                sel.disabled = true;
+                return;
+            }
+            sel.disabled = false;
+            sel.innerHTML = '<option value="">請選擇你的身分</option>' + members.map(m => `<option value="${escapeAttr(m)}" ${m === myName ? 'selected' : ''}>${m}</option>`).join('');
+            if (myName && !members.includes(myName)) sel.value = "";
+        });
+        const validName = (myName && members.includes(myName)) ? myName : "";
+        document.querySelectorAll('.identity-display').forEach(el => { el.innerText = validName || "未設定"; });
     }
 
     const firebaseConfig = {
@@ -832,7 +859,7 @@
     
     function addPersonalExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先在上方選擇你的身分！'); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         const category = document.getElementById('personalCategory').value;
@@ -875,7 +902,7 @@
                 <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="editPersonalTitle_${e.id}" value="${escapeAttr(e.title)}"></div>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <label>📊 消費類型</label><select id="editPersonalCategory_${e.id}" class="category-select"></select>
@@ -888,7 +915,7 @@
     
     function addProxyExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { promptSetMyIdentity(); return; }
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先在上方選擇你的身分！'); return; }
         const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
         const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value.trim();
@@ -932,7 +959,7 @@
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="editProxyTitle_${e.id}" value="${escapeAttr(e.title)}"></div>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="editProxyAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editProxyAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <div class="expense-edit-actions">
@@ -943,7 +970,8 @@
     }
 
     function refreshPersonalPage() {
-        let myName = getMyIdentity(); document.getElementById('myIdentityDisplay').innerText = myName || "未設定";
+        let myName = getMyIdentity();
+        populateIdentitySelect();
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
 
         const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
@@ -997,7 +1025,7 @@
             if (!(key in groupIndex)) { groupIndex[key] = groups.length; groups.push({ key, forWho: e.forWho, items: [], subtotal: 0 }); }
             const g = groups[groupIndex[key]]; g.items.push(e); g.subtotal += e.amount;
         });
-        document.getElementById('proxyTotalSum').innerText = `💰 目前總花費：$${Math.round(proxyTotal)}`;
+        document.getElementById('proxyTotalSum').innerText = `目前總花費：$${Math.round(proxyTotal)}`;
         _proxyGroupsCache = groups;
         if (!groups.length) { proxyList.innerHTML = '<p style="font-size:13px; color:var(--text-soft); padding:8px 2px;">尚無代購紀錄</p>'; return; }
         groups.forEach((g, gi) => {
@@ -1085,12 +1113,20 @@
     function getMyPersonalExpenses(trip) {
         const myName = getMyIdentity();
         if (!myName) return [];
-        return (trip.expenses || []).filter(e => {
-            if (e.payer !== myName) return false;
-            if (e.type === 'personalItem') return true;
-            if ((e.type === 'pre' || e.type === 'local') && e.costType === 'personal') return true;
-            return false;
+        const result = [];
+        (trip.expenses || []).forEach(e => {
+            if (e.payer === myName && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
+            if (e.payer === myName && (e.type === 'pre' || e.type === 'local') && e.costType === 'personal') { result.push({ amount: e.amount, category: e.category }); return; }
+            // 行前「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
+            if (e.type === 'pre' && e.costType === 'share') {
+                const participants = (e.participants && e.participants.length) ? e.participants : (trip.members || []);
+                if (participants.includes(myName)) {
+                    const share = e.amount / (participants.length || 1);
+                    result.push({ amount: share, category: e.category || 'uncategorized' });
+                }
+            }
         });
+        return result;
     }
 
     function renderOverview() {
@@ -1107,8 +1143,7 @@
         const myName = getMyIdentity();
         if (!myName) {
             wrap.innerHTML = ''; legend.innerHTML = '';
-            catList.innerHTML = `<p class="overview-empty-hint">請先設定你的身分，才能看到你的個人消費總覽 🙋</p>
-                <div style="text-align:center;"><button class="comic-btn" style="width:auto; padding:6px 16px;" onclick="promptSetMyIdentity()">設定身分</button></div>`;
+            catList.innerHTML = `<p class="overview-empty-hint">請先在上方選擇你的身分，才能看到你的個人消費總覽 🙋</p>`;
             return;
         }
         const items = getMyPersonalExpenses(trip);
@@ -1121,7 +1156,7 @@
         if (!grandTotal) {
             wrap.innerHTML = '';
             legend.innerHTML = '';
-            catList.innerHTML = '<p class="overview-empty-hint">目前還沒有個人自付的花費紀錄 🌱</p>';
+            catList.innerHTML = '<p class="overview-empty-hint">目前還沒有花費紀錄 🌱</p>';
             return;
         }
         const allCats = [...EXPENSE_CATEGORIES, UNCATEGORIZED_CATEGORY];
@@ -1143,7 +1178,7 @@
             return `<div class="pie-legend-item"><span class="pie-dot" style="background:${r.color};"></span>${r.e} ${r.n}　$${Math.round(r.amount)}　(${pct}%)</div>`;
         }).join('');
 
-        catList.innerHTML = `<div class="overview-total-row">💰 個人自付總計：$${Math.round(grandTotal)}</div>` +
+        catList.innerHTML = `<div class="overview-total-row">💰 個人消費總計：$${Math.round(grandTotal)}</div>` +
             rows.map(r => `<div class="overview-cat-row">
                 <span>${r.e} ${r.n}</span>
                 <span>NT$${Math.round(r.amount)}</span>
@@ -1162,12 +1197,12 @@
             const badge = e.costType === 'personal'
                 ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
                 : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
-            const catInfo = e.costType === 'personal' ? getCategoryInfo(e.category) : null;
+            const catInfo = type === 'pre' ? getCategoryInfo(e.category) : null;
             const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
                 : '';
-            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : '';
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (e.payer ? `　👤 ${e.payer}` : '');
             listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}</div>`;
         });
     }
