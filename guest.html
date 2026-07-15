@@ -178,6 +178,21 @@
         .guest-banner { background: var(--main-purple); border-bottom: 3px solid var(--border-color); padding: 8px 10px; font-size: 13px; text-align: center; font-weight: bold; }
         .info-view { display: block; white-space: pre-wrap; word-break: break-word; background: #fffdf9; border: 2px dashed var(--border-color); border-radius: 14px; padding: 13px 14px; margin: 7px 0 12px 0; font-size: 15px; line-height: 1.75; color: var(--text-main); }
 
+        /* 代購依「幫誰買」分組：每人一個小群組，各自小計＋收款狀態切換 */
+        .proxy-person-group { border: 2px solid var(--border-color); border-radius: 14px; padding: 10px 12px; margin-bottom: 12px; background: #fff; }
+        .proxy-person-group:last-child { margin-bottom: 0; }
+        .proxy-person-header { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+        .proxy-person-left { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; cursor: pointer; }
+        .proxy-person-meta { font-size: 12px; color: var(--text-soft); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .settle-toggle {
+            border: 2px solid var(--border-color); border-radius: 20px; padding: 5px 10px; font-size: 12px;
+            font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        }
+        .settle-toggle.unsettled { background: #fff3e0; color: #e65100; }
+        .settle-toggle.settled { background: #e8f5e9; color: #2e7d32; }
+        .proxy-person-body { margin-top: 8px; }
+
         /* 收合／展開 按鈕 */
         .collapse-btn {
             background: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 10px;
@@ -528,6 +543,10 @@
         let list = getLocalPersonalExpenses().filter(li => li.id !== id);
         localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
     }
+    // 代購收款狀態：分享版無法寫回 Firebase，所以跟個人記帳/代購一樣，狀態只存在本機 localStorage
+    const PROXY_SETTLE_KEY = 'travel33_proxy_settle_guest';
+    function getProxySettleMap() { try { return JSON.parse(localStorage.getItem(PROXY_SETTLE_KEY)) || {}; } catch(e) { return {}; } }
+    function saveProxySettleMap(map) { localStorage.setItem(PROXY_SETTLE_KEY, JSON.stringify(map)); }
     function mergeLocalData() {
         const localItems = getLocalPersonalExpenses();
         if (!localItems.length || !db.trips.length || db.currentIdx === -1) return;
@@ -696,20 +715,53 @@
         });
         document.getElementById('personalTotalSum').innerText = `💰 目前總花費：$${Math.round(personalTotal)}`;
 
+        renderProxyGroupedList(trip, myName);
+    }
+    // 代購清單改依「幫誰買」分組：每人一個小卡片，各自小計金額＋收款狀態（已收款/未收款）
+    // 分享版不能寫回雲端，收款狀態存在本機 localStorage（PROXY_SETTLE_KEY），key 用「記帳人::幫誰代購」組合
+    let _proxyGroupsCache = [];
+    function renderProxyGroupedList(trip, myName) {
         const proxyList = document.getElementById('proxyHistoryList'); proxyList.innerHTML = "";
-        let proxyTotal = 0;
-        (trip.expenses || []).forEach((e) => {
-            if (e.type === 'proxy' && e.payer === myName) {
-                proxyTotal += e.amount;
-                proxyList.innerHTML += `<div class="expense-grid-item">
-                    <div class="expense-cell-date">${e.date}</div>
-                    <div class="proxy-cell-title">🙋 幫 <span class="proxy-tag proxy-tag-name">${e.forWho}</span> <span class="proxy-connector">買</span> <span class="proxy-tag proxy-tag-item">${e.title}</span></div>
-                    ${formatAmountCell(e)}
-                    <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
-                </div>`;
-            }
+        const settleMap = getProxySettleMap();
+        const items = (trip.expenses || []).filter(e => e.type === 'proxy' && e.payer === myName);
+        let proxyTotal = 0; const groups = []; const groupIndex = {};
+        items.forEach(e => {
+            proxyTotal += e.amount;
+            const key = `${myName}::${e.forWho}`;
+            if (!(key in groupIndex)) { groupIndex[key] = groups.length; groups.push({ key, forWho: e.forWho, items: [], subtotal: 0 }); }
+            const g = groups[groupIndex[key]]; g.items.push(e); g.subtotal += e.amount;
         });
         document.getElementById('proxyTotalSum').innerText = `💰 目前總花費：$${Math.round(proxyTotal)}`;
+        _proxyGroupsCache = groups;
+        if (!groups.length) { proxyList.innerHTML = '<p style="font-size:13px; color:var(--text-soft); padding:8px 2px;">尚無代購紀錄</p>'; return; }
+        groups.forEach((g, gi) => {
+            const settled = !!settleMap[g.key];
+            const bodyId = `proxyGroupBody_${gi}`;
+            const itemsHtml = g.items.map(e => `<div class="expense-grid-item">
+                <div class="expense-cell-date">${e.date}</div>
+                <div class="expense-cell-title">🍡 ${e.title}</div>
+                ${formatAmountCell(e)}
+                <button class="delete-btn" style="float:none;" onclick="deleteProxyItem('${e.id}')">❌</button>
+            </div>`).join('');
+            proxyList.innerHTML += `<div class="proxy-person-group">
+                <div class="proxy-person-header">
+                    <span class="proxy-person-left" onclick="toggleCollapse('${bodyId}', this.parentElement.querySelector('.collapse-btn'))">
+                        <span class="proxy-tag proxy-tag-name">🙋 ${g.forWho}</span>
+                        <span class="proxy-person-meta">${g.items.length}筆・NT$${Math.round(g.subtotal)}</span>
+                    </span>
+                    <button class="settle-toggle ${settled ? 'settled' : 'unsettled'}" onclick="toggleProxySettlement(${gi})">${settled ? '✅ 已收款' : '⏳ 未收款'}</button>
+                    <button class="collapse-btn" onclick="toggleCollapse('${bodyId}', this)">${settled ? '▸' : '▾'}</button>
+                </div>
+                <div id="${bodyId}" class="collapsible-content proxy-person-body" style="${settled ? 'display:none;' : ''}">${itemsHtml}</div>
+            </div>`;
+        });
+    }
+    function toggleProxySettlement(gi) {
+        const g = _proxyGroupsCache[gi]; if (!g) return;
+        const settleMap = getProxySettleMap();
+        settleMap[g.key] = !settleMap[g.key];
+        saveProxySettleMap(settleMap);
+        refreshAll();
     }
     // 產生金額格子：原幣金額顯示在上方小字，換算後的台幣金額顯示在下方（沒有幣別資訊的舊資料則只顯示台幣金額）
     function formatAmountCell(e) {
