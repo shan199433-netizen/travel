@@ -91,6 +91,8 @@
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; background: #fff; }
         .currency-select { box-sizing: border-box; width: 100%; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 統一「金額／日期／內容」與「幣別」框框高度，避免 select 在部分手機瀏覽器上比 input 顯得更大 */
+        .row-flex-nowrap input, .row-flex-nowrap select, .row-flex-nowrap .currency-select { height: 48px; box-sizing: border-box; }
         
         .comic-btn { background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px; padding: 14px 20px; font-weight: 600; font-size: 16px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; cursor: pointer; box-shadow: var(--box-shadow); display: inline-block; text-align: center; width: 100%; box-sizing: border-box; }
         .comic-btn:active { transform: translate(3px, 3px); box-shadow: var(--active-shadow); }
@@ -126,12 +128,12 @@
         .day-tag.active { background: var(--main-orange); font-weight: 700; }
         
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
-        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 18px; line-height: 1.7; }
+        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
         .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
-        .timeline-item .item-desc { font-weight: bold; font-size: 15px; }
-        .timeline-item .item-memo { display: block; margin-top: 4px; font-size: 13px; color: var(--text-soft); line-height: 1.6; }
+        .timeline-item .item-desc { font-weight: bold; font-size: 16.5px; }
+        .timeline-item .item-memo { display: block; margin-top: 5px; font-size: 14.5px; color: var(--text-soft); line-height: 1.65; }
         .item-link {
-            font-size: 13px; font-weight: 400; color: #4a95c9; text-decoration: underline;
+            font-size: 14px; font-weight: 400; color: #4a95c9; text-decoration: underline;
             text-underline-offset: 2px; word-break: break-all;
         }
         .timeline-period-tag {
@@ -140,10 +142,10 @@
             margin: 4px 0 12px -10px;
         }
         .timeline-time-badge {
-            display: inline-block; min-width: 44px; text-align: center; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
-            padding: 2px 12px; font-size: 13.5px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
+            display: inline-block; min-width: 46px; text-align: center; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
+            padding: 3px 12px; font-size: 14.5px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
         }
-        .timeline-time-badge.no-time { background: transparent; border: none; padding: 0 8px 0 0; font-size: 17px; min-width: auto; }
+        .timeline-time-badge.no-time { background: transparent; border: none; padding: 0 8px 0 0; font-size: 17.5px; min-width: auto; }
         .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; float: right; font-size: 16px; font-weight: bold; }
 
         /* 個人記帳／代購清單：每筆紀錄改成「日期／內容／金額」分格顯示，取代原本一長串文字 */
@@ -314,7 +316,11 @@
 
     <div id="page-personal" class="page">
         <div class="comic-card" style="background: #f3e5f5;">
-            <div class="card-title">👤 個人記帳（本機專屬）</div>
+            <div class="card-title">
+                <span class="card-title-left">👤 個人記帳</span>
+                <button class="collapse-btn" onclick="toggleCollapse('personalFormBody', this)">▾</button>
+            </div>
+            <div id="personalFormBody" class="collapsible-content">
             <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
                 <div>🙋 <b>我的身分：</b> <span id="myIdentityDisplay" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
                 <button class="comic-btn" style="width:auto; padding:5px 12px; font-size:13px; box-shadow:none; background:var(--main-purple);" onclick="promptSetMyIdentity()">設定身分</button>
@@ -324,31 +330,37 @@
                 <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="personalTitle" placeholder="伴手禮、藥妝..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
             <p id="personalLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#7b1fa2; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
+            </div>
         </div>
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▸</button></div><div id="personalHistoryList" class="collapsible-content" style="display:none;"></div></div>
 
         <div class="comic-card" style="background:#e8f5e9;">
-            <div class="card-title">🛍️ 幫別人代購紀錄</div>
+            <div class="card-title">
+                <span class="card-title-left">🛍️ 幫別人代購紀錄</span>
+                <button class="collapse-btn" onclick="toggleCollapse('proxyFormBody', this)">▾</button>
+            </div>
+            <div id="proxyFormBody" class="collapsible-content">
             <label>🙋 幫誰代購？</label><input type="text" id="proxyFor" placeholder="小明、熊大...">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="proxyDate" placeholder="例如 7/10"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="proxyTitle" placeholder="藥妝、酒..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>💰金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
             </div>
             <p id="proxyLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#2e7d32; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
+            </div>
         </div>
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我幫別人代購的清單</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
     </div>
@@ -868,14 +880,15 @@
         displayDiv.innerHTML = html;
     }
     // 切換頁面（分頁）時，把所有頁面中已展開的收合區塊統一收回，避免切回來還留著上次展開的狀態
-    // 例外：📌 行前重要資訊（preInfoBody）預設保持展開，交由使用者自己決定何時收合
+    // 例外：📌 行前重要資訊（preInfoBody）、👤 個人記帳表單、🛍️ 代購表單 預設保持展開，交由使用者自己決定何時收合
     // 例外：🧳 行李清單的 ✏️ 管理按鈕借用 .collapse-btn 樣式，但文字是固定的鉛筆圖示，不該被改成箭頭
+    const KEEP_EXPANDED_IDS = ['preInfoBody', 'personalFormBody', 'proxyFormBody'];
     function collapseAllSections() {
-        document.querySelectorAll('.collapsible-content').forEach(el => { if (el.id !== 'preInfoBody') el.style.display = 'none'; });
+        document.querySelectorAll('.collapsible-content').forEach(el => { if (!KEEP_EXPANDED_IDS.includes(el.id)) el.style.display = 'none'; });
         document.querySelectorAll('.collapse-btn').forEach(btn => {
             if (btn.classList.contains('baggage-manage-toggle')) return;
             const onclickAttr = btn.getAttribute('onclick') || '';
-            if (onclickAttr.includes("'preInfoBody'")) return;
+            if (KEEP_EXPANDED_IDS.some(id => onclickAttr.includes(`'${id}'`))) return;
             btn.textContent = '▸';
         });
     }
