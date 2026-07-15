@@ -19,6 +19,7 @@
             font-weight: 400;
             font-style: normal;
             font-display: swap;
+            unicode-range: U+3000-303F, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF, U+20000-2A6DF, U+2A700-2EBEF;
         }
         :root {
             --bg-color: #faf7f0;
@@ -44,7 +45,7 @@
             background-size: 18px 18px;
             margin: 0;
             padding: 0;
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", 'naikaifont', 'Segoe UI', "Microsoft JhengHei", sans-serif;
+            font-family: 'naikaifont', 'Segoe UI', "Microsoft JhengHei", "PingFang TC", sans-serif;
             color: var(--text-main);
             font-weight: 600;
             display: flex;
@@ -129,7 +130,7 @@
         input, select, textarea {
             width: 100%; padding: 13px 14px; margin: 7px 0 10px 0; box-sizing: border-box;
             border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px;
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", 'naikaifont', sans-serif; background: #fff; color: var(--text-main);
+            font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; background: #fff; color: var(--text-main);
         }
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="checkbox"] { -webkit-appearance: checkbox; appearance: auto; width: 17px; height: 17px; accent-color: var(--border-color); }
@@ -155,7 +156,7 @@
 
         .comic-btn {
             background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px;
-            padding: 14px 20px; font-weight: 600; font-size: 16px; letter-spacing: 1px; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", 'naikaifont', sans-serif;
+            padding: 14px 20px; font-weight: 600; font-size: 16px; letter-spacing: 1px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif;
             cursor: pointer; box-shadow: var(--box-shadow); display: inline-block; text-align: center; width: 100%;
             box-sizing: border-box; transition: transform .08s ease, box-shadow .08s ease; -webkit-tap-highlight-color: transparent;
         }
@@ -370,6 +371,27 @@
             </div>
         </div>
 
+        <div class="comic-card">
+            <div class="card-title">
+                <span class="card-title-left">🎟️ 登記行前開銷</span>
+                <button class="collapse-btn" onclick="toggleCollapse('preExpenseFormBody', this)">▸</button>
+            </div>
+            <div id="preExpenseFormBody" class="collapsible-content" style="display:none;">
+            <label>🍨 支出模式</label>
+            <select id="preCostType" onchange="togglePreCostUI()">
+                <option value="share">🤝 大家代墊 (代墊幫大家付，事後拆帳)</option>
+                <option value="personal">👤 個人自付 (單人預估公定價，透明展示)</option>
+            </select>
+            <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
+                <div style="flex:1; min-width:0;"><label>🎈 項目名稱</label><input type="text" id="preTitle" placeholder="機票、訂房..."></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="preAmount" placeholder="金額"></div>
+                <div style="flex:1; min-width:0;" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
+            </div>
+            <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
+            <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
+            </div>
+        </div>
+
         <div class="comic-card" style="background: #fafafa;">
             <div class="card-title">📊 【行前】花費錢包統計</div>
             <div class="dashboard">
@@ -401,7 +423,7 @@
                 </span>
             </div>
             <div id="baggageBody" class="collapsible-content" style="display:none;">
-            <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0;">僅存本機裝置，不會同步雲端 ☁️❌　｜　平常只需打勾表示已帶，按上方 ✏️ 才能新增／編輯／刪除項目</p>
+            <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0; white-space:nowrap; overflow-x:auto;">僅存本機不同步雲端☁️❌｜打勾＝已帶，✏️新增/編輯/刪除</p>
             <div class="baggage-col-wrap" id="baggageColWrap">
                 <div class="baggage-col">
                     <div class="baggage-col-title">🎒 隨身行李</div>
@@ -423,26 +445,11 @@
             </div>
         </div>
 
-        <div class="comic-card">
-            <div class="card-title">🎟️ 登記行前開銷 (台幣)</div>
-            <label>🍨 支出模式</label>
-            <select id="preCostType" onchange="togglePreCostUI()">
-                <option value="share">🤝 大家代墊 (代墊幫大家付，事後拆帳)</option>
-                <option value="personal">👤 個人自付 (單人預估公定價，透明展示)</option>
-            </select>
-            <div style="display: flex; gap: 6px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>🎈 項目名稱</label><input type="text" id="preTitle" placeholder="機票、訂房..."></div>
-                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="preAmount" placeholder="金額"></div>
-                <div style="flex:1; min-width:0;" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
-            </div>
-            <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
-            <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
-        </div>
     </div>
 
     <div id="page-local" class="page">
         <div class="comic-card" style="background: #fafafa;">
-            <div class="card-title">📊 【當地】花費錢包統計 (換算台幣)</div>
+            <div class="card-title">📊 【當地】花費錢包統計</div>
             <div class="dashboard">
                 <div class="dash-item" style="background: #ffd1dc;">總花費<br><span id="localTotalSum" style="color:red;">$0</span></div>
                 <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
