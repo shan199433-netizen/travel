@@ -377,7 +377,7 @@
             <div id="personalFormBody" class="collapsible-content">
             <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px;">
                 <div>🙋 <b>我的身分：</b> <span id="myIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
-                <select class="identity-select" id="myIdentitySelect" onchange="setMyIdentity(this.value)" style="margin:8px 0 0 0;"></select>
+                <p style="font-size:12px; color:var(--text-soft); margin:6px 0 0 0;">身分請到「花費總覽」頁選擇並確認，這裡僅顯示、無法更改。</p>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10"></div>
@@ -425,7 +425,7 @@
             <div class="card-title">🙋 設定身分</div>
             <p style="font-size:12.5px; color:var(--text-soft); margin:-6px 0 10px 0; line-height:1.5;">選好身分後，行前／當地的個人自付、行前代墊分攤的均攤份額，以及個人記帳頁面的花費，才會統計進下面的花費總覽。名單需由主控者設定好。</p>
             <div>目前身分：<span id="overviewIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
-            <select class="identity-select" id="overviewIdentitySelect" onchange="setMyIdentity(this.value)" style="margin-top:8px;"></select>
+            <select class="identity-select" id="overviewIdentitySelect" onchange="confirmIdentitySelection(this)" style="margin-top:8px;"></select>
         </div>
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
@@ -589,21 +589,40 @@
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
     const MY_NAME_KEY = 'travel33_my_device_identity_guest';
+    const MY_LOCK_KEY = MY_NAME_KEY + '_locked';
 
     function getMyIdentity() { return localStorage.getItem(MY_NAME_KEY) || ''; }
+    function isIdentityLocked() { return localStorage.getItem(MY_LOCK_KEY) === '1'; }
     function setMyIdentity(name) {
         if (!name) return;
         localStorage.setItem(MY_NAME_KEY, name.trim());
         refreshPersonalPage();
     }
-    // 身分只能從主控版在「旅遊成員」設定好的名單中選擇，不再開放自由輸入文字
-    // 同步更新所有出現身分選單/顯示文字的地方（個人記帳頁＋花費總覽頁）
+    // 花費總覽頁選擇身分後跳出二次確認，確認後就鎖定身分、不能再更動
+    function confirmIdentitySelection(selectEl) {
+        const name = selectEl.value;
+        if (!name) return;
+        if (!confirm(`確定是 ${name} 嗎？確認後就不能再更改身分囉！`)) {
+            populateIdentitySelect();
+            return;
+        }
+        localStorage.setItem(MY_LOCK_KEY, '1');
+        setMyIdentity(name);
+    }
+    // 身分只能從主控版在「旅遊成員」設定好的名單中選擇，不再開放自由輸入文字；確認鎖定後選單會鎖死
+    // 同步更新所有出現身分選單/顯示文字的地方（花費總覽頁的選單＋個人記帳頁的唯讀顯示）
     function populateIdentitySelect() {
         const sels = document.querySelectorAll('.identity-select'); if (!sels.length) return;
         const trip = (db.currentIdx > -1 && db.trips.length) ? db.trips[db.currentIdx] : null;
         const members = trip ? (trip.members || []) : [];
         const myName = getMyIdentity();
+        const locked = isIdentityLocked();
         sels.forEach(sel => {
+            if (locked && myName) {
+                sel.innerHTML = `<option value="${escapeAttr(myName)}" selected>${myName}（已鎖定）</option>`;
+                sel.disabled = true;
+                return;
+            }
             if (!members.length) {
                 sel.innerHTML = '<option value="">請先請主控者設定成員名單</option>';
                 sel.disabled = true;
@@ -613,7 +632,7 @@
             sel.innerHTML = '<option value="">請選擇你的身分</option>' + members.map(m => `<option value="${escapeAttr(m)}" ${m === myName ? 'selected' : ''}>${m}</option>`).join('');
             if (myName && !members.includes(myName)) sel.value = "";
         });
-        const validName = (myName && members.includes(myName)) ? myName : "";
+        const validName = locked ? myName : ((myName && members.includes(myName)) ? myName : "");
         document.querySelectorAll('.identity-display').forEach(el => { el.innerText = validName || "未設定"; });
     }
 
@@ -862,7 +881,7 @@
     
     function addPersonalExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先在上方選擇你的身分！'); return; }
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         const category = document.getElementById('personalCategory').value;
@@ -918,7 +937,7 @@
     
     function addProxyExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先在上方選擇你的身分！'); return; }
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
         const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
         const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value.trim();

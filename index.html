@@ -440,7 +440,7 @@
                 <div style="flex:1; min-width:0;" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
             </div>
             <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
-            <div id="preSelfBlock" style="display:none;"><label>👤 這是誰的花費？（可複選，勾幾人就各自記一筆全額，不分攤）</label><div id="preSelfGroup" class="checkbox-group"></div></div>
+            <div id="preSelfBlock" style="display:none;"><label>👤 這是誰的花費？（可複選）</label><div id="preSelfGroup" class="checkbox-group"></div></div>
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
             </div>
         </div>
@@ -581,7 +581,7 @@
             <div id="personalFormBody" class="collapsible-content">
             <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px;">
                 <div>🙋 <b>當前身分：</b> <span id="myIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
-                <select class="identity-select" id="myIdentitySelect" onchange="setMyIdentity(this.value)" style="margin:8px 0 0 0;"></select>
+                <p style="font-size:12px; color:var(--text-soft); margin:6px 0 0 0;">身分請到「花費總覽」頁選擇並確認，這裡僅顯示、無法更改。</p>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10"></div>
@@ -629,7 +629,7 @@
             <div class="card-title">🙋 設定身分</div>
             <p style="font-size:12.5px; color:var(--text-soft); margin:-6px 0 10px 0; line-height:1.5;">選好身分後，行前／當地的個人自付、行前代墊分攤的均攤份額，以及個人記帳頁面的花費，才會統計進下面的花費總覽。名單需先到「旅遊成員」頁設定好。</p>
             <div>目前身分：<span id="overviewIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
-            <select class="identity-select" id="overviewIdentitySelect" onchange="setMyIdentity(this.value)" style="margin-top:8px;"></select>
+            <select class="identity-select" id="overviewIdentitySelect" onchange="confirmIdentitySelection(this)" style="margin-top:8px;"></select>
         </div>
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
@@ -792,21 +792,40 @@
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
     const MY_NAME_KEY = 'travel33_my_device_identity';
+    const MY_LOCK_KEY = MY_NAME_KEY + '_locked';
 
     function getMyIdentity() { return localStorage.getItem(MY_NAME_KEY) || ''; }
+    function isIdentityLocked() { return localStorage.getItem(MY_LOCK_KEY) === '1'; }
     function setMyIdentity(name) {
         if (!name) return;
         localStorage.setItem(MY_NAME_KEY, name.trim());
         refreshPersonalPage();
     }
-    // 身分只能從「旅遊成員」頁設定好的名單中選擇，不再開放自由輸入文字
-    // 同步更新所有出現身分選單/顯示文字的地方（個人記帳頁＋花費總覽頁）
+    // 花費總覽頁選擇身分後跳出二次確認，確認後就鎖定身分、不能再更動
+    function confirmIdentitySelection(selectEl) {
+        const name = selectEl.value;
+        if (!name) return;
+        if (!confirm(`確定是 ${name} 嗎？確認後就不能再更改身分囉！`)) {
+            populateIdentitySelect();
+            return;
+        }
+        localStorage.setItem(MY_LOCK_KEY, '1');
+        setMyIdentity(name);
+    }
+    // 身分只能從「旅遊成員」頁設定好的名單中選擇，不再開放自由輸入文字；確認鎖定後選單會鎖死
+    // 同步更新所有出現身分選單/顯示文字的地方（花費總覽頁的選單＋個人記帳頁的唯讀顯示）
     function populateIdentitySelect() {
         const sels = document.querySelectorAll('.identity-select'); if (!sels.length) return;
         const trip = (db.currentIdx > -1 && db.trips.length) ? db.trips[db.currentIdx] : null;
         const members = trip ? (trip.members || []) : [];
         const myName = getMyIdentity();
+        const locked = isIdentityLocked();
         sels.forEach(sel => {
+            if (locked && myName) {
+                sel.innerHTML = `<option value="${escapeAttr(myName)}" selected>${myName}（已鎖定）</option>`;
+                sel.disabled = true;
+                return;
+            }
             if (!members.length) {
                 sel.innerHTML = '<option value="">請先到「旅遊成員」設定成員名單</option>';
                 sel.disabled = true;
@@ -816,7 +835,7 @@
             sel.innerHTML = '<option value="">請選擇你的身分</option>' + members.map(m => `<option value="${escapeAttr(m)}" ${m === myName ? 'selected' : ''}>${m}</option>`).join('');
             if (myName && !members.includes(myName)) sel.value = "";
         });
-        const validName = (myName && members.includes(myName)) ? myName : "";
+        const validName = locked ? myName : ((myName && members.includes(myName)) ? myName : "");
         document.querySelectorAll('.identity-display').forEach(el => { el.innerText = validName || "未設定"; });
     }
 
@@ -1226,7 +1245,7 @@
 
     function addPersonalExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先在上方選擇你的身分！'); return; }
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         const category = document.getElementById('personalCategory').value;
@@ -1281,7 +1300,7 @@
 
     function addProxyExpense() {
         if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先在上方選擇你的身分！'); return; }
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
         const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
         const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value.trim();
@@ -1653,8 +1672,12 @@
     function toggleExpenseEditUI(id) {
         const type = document.getElementById('editExp_' + id + '_costType').value;
         const isPersonal = type === 'personal';
+        const payerBlock = document.getElementById('editExp_' + id + '_payerBlock');
         const shareBlock = document.getElementById('editExp_' + id + '_shareBlock');
+        const selfBlock = document.getElementById('editExp_' + id + '_selfBlock');
+        if (payerBlock) payerBlock.style.display = isPersonal ? 'none' : 'block';
         if (shareBlock) shareBlock.style.display = isPersonal ? 'none' : 'block';
+        if (selfBlock) selfBlock.style.display = isPersonal ? 'block' : 'none';
     }
     function saveExpenseItem(id) {
         const trip = db.trips[db.currentIdx];
@@ -1664,16 +1687,27 @@
         const newTitle = document.getElementById(p + 'title').value.trim();
         const newAmount = parseFloat(document.getElementById(p + 'amount').value) || 0;
         const newCostType = document.getElementById(p + 'costType').value;
-        const newPayer = document.getElementById(p + 'payer').value;
         if (!newTitle || newAmount <= 0 || !newDate) return alert('請填寫完整！');
-        e.date = newDate; e.title = newTitle; e.amount = newAmount; e.costType = newCostType; e.payer = newPayer;
+        const newCategory = (e.type === 'pre') ? document.getElementById(p + 'category').value : undefined;
         if (newCostType === 'personal') {
-            e.participants = [];
+            const checks = document.querySelectorAll('#' + p + 'selfGroup input:checked');
+            const selected = Array.from(checks).map(c => c.value);
+            if (!selected.length) return alert('請至少勾選一位「這是誰的花費」！');
+            // 第一位沿用這筆原本的紀錄，其餘多勾的人各自另外新增一筆全額紀錄
+            e.date = newDate; e.title = newTitle; e.amount = newAmount; e.costType = 'personal'; e.payer = selected[0]; e.participants = [];
+            if (e.type === 'pre') e.category = newCategory;
+            selected.slice(1).forEach(m => {
+                const dup = { id: genId(), type: e.type, costType: 'personal', title: newTitle, payer: m, amount: newAmount, participants: [], date: newDate, time: e.time || "" };
+                if (e.type === 'pre') dup.category = newCategory;
+                trip.expenses.push(dup);
+            });
         } else {
+            const newPayer = document.getElementById(p + 'payer').value;
             const checks = document.querySelectorAll('#' + p + 'shareGroup input:checked');
+            e.date = newDate; e.title = newTitle; e.amount = newAmount; e.costType = 'share'; e.payer = newPayer;
             e.participants = Array.from(checks).map(c => c.value);
+            if (e.type === 'pre') e.category = newCategory;
         }
-        if (e.type === 'pre') e.category = document.getElementById(p + 'category').value;
         editingExpenseId = null; refreshAll(); save();
     }
     function renderExpenseEditForm(e, trip) {
@@ -1682,6 +1716,7 @@
         const payerOptions = members.map(m => `<option value="${escapeAttr(m)}" ${m === e.payer ? 'selected' : ''}>${m}</option>`).join('');
         const activeParticipants = (e.participants && e.participants.length) ? e.participants : members;
         const shareGroupHtml = members.map(m => `<label class="checkbox-label"><input type="checkbox" value="${escapeAttr(m)}" ${activeParticipants.includes(m) ? 'checked' : ''}>${m}</label>`).join('');
+        const selfGroupHtml = members.map(m => `<label class="checkbox-label"><input type="checkbox" value="${escapeAttr(m)}" ${m === e.payer ? 'checked' : ''}>${m}</label>`).join('');
         const categoryRow = e.type === 'pre' ? `<label>📊 消費類型</label><select id="editExp_${e.id}_category" class="category-select"></select>` : '';
         return `<div class="expense-edit-form">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
@@ -1695,8 +1730,9 @@
                     <option value="personal" ${isPersonal ? 'selected' : ''}>自付</option>
                 </select></div>
             </div>
-            <label>👑 記在誰名下</label><select id="editExp_${e.id}_payer">${payerOptions}</select>
+            <div id="editExp_${e.id}_payerBlock" style="display:${isPersonal ? 'none' : 'block'};"><label>👑 記在誰名下</label><select id="editExp_${e.id}_payer">${payerOptions}</select></div>
             <div id="editExp_${e.id}_shareBlock" style="display:${isPersonal ? 'none' : 'block'};"><label>💞 誰要共同分攤？</label><div id="editExp_${e.id}_shareGroup" class="checkbox-group">${shareGroupHtml}</div></div>
+            <div id="editExp_${e.id}_selfBlock" style="display:${isPersonal ? 'block' : 'none'};"><label>👤 這是誰的花費？（可複選）</label><div id="editExp_${e.id}_selfGroup" class="checkbox-group">${selfGroupHtml}</div></div>
             ${categoryRow}
             <div class="expense-edit-actions">
                 <button class="comic-btn btn-green" onclick="saveExpenseItem('${e.id}')">💾 儲存</button>
