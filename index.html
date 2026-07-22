@@ -144,7 +144,7 @@
         .currency-select {
             box-sizing: border-box; width: 100%; max-width: 100%;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            font-size: 14px; padding-right: 26px; background-position: right 10px center;
+            font-size: 13.5px; padding-left: 10px; padding-right: 30px; background-position: right 11px center;
         }
         
         .row-flex { display: flex; gap: 8px; }
@@ -153,12 +153,21 @@
         .row-flex-nowrap label { font-size: 12.5px; white-space: nowrap; }
         /* 統一「金額／日期／內容」與「幣別」框框高度，避免 select 在部分手機瀏覽器上比 input 顯得更大 */
         .row-flex-nowrap input, .row-flex-nowrap select { padding: 12px 10px; font-size: 16px; height: 48px; box-sizing: border-box; }
-        /* 幣別欄位（國旗＋幣別名＋代碼）文字較長，在窄欄位手機上容易被下拉箭頭蓋住一半，多分配一點寬度 */
-        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1.4 !important; }
+        /* 幣別選單文字已縮短為「國旗＋代碼」，跟同一列的金額框維持等寬，比例一致 */
+        .row-flex-nowrap > div:has(> select.currency-select) { flex: 1 !important; }
         /* 消費類型（分類）選單文字＋emoji 也偏長，跟幣別一樣縮小字體/箭頭留白，避免在窄欄位被箭頭擋住 */
         select.category-select { font-size: 14px; padding-right: 26px; background-position: right 10px center; }
 
         @media (max-width: 480px) { .row-flex { flex-direction: column; gap: 0; } .row-flex > div { width: 100%; } }
+
+        /* 更窄的手機螢幕（≤360px）再微調卡片內距與字級，讓整體比例更貼合小螢幕 */
+        @media (max-width: 360px) {
+            .comic-card { padding: 16px 14px; border-radius: 18px; }
+            .card-title { font-size: 15.5px; }
+            .header-title { font-size: 17px; letter-spacing: 1px; }
+            .dashboard { gap: 7px; }
+            .dash-item { font-size: 12px; padding: 10px 6px; }
+        }
 
         .comic-btn {
             background-color: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 14px;
@@ -334,8 +343,8 @@
             box-shadow: 2px 2px 0px rgba(53,50,44,0.75);
         }
         .collapse-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px rgba(53,50,44,0.75); }
-        .card-title-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: nowrap; }
-        .card-title-left > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+        .card-title-left { display: flex; align-items: center; gap: 6px 8px; min-width: 0; flex: 1 1 auto; flex-wrap: wrap; }
+        .card-title-left > span:first-child { overflow: visible; text-overflow: unset; white-space: normal; overflow-wrap: break-word; word-break: break-word; min-width: 0; flex: 1 1 auto; }
         .card-title-left .total-badge { flex-shrink: 0; }
 
         /* 個人行李清單 */
@@ -447,7 +456,7 @@
 
         <div class="comic-card">
             <div class="card-title">
-                <span class="card-title-left">📋 行前個人總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span>
+                <span class="card-title-left"><span>📋 行前個人總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span></span>
                 <button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button>
             </div>
             <div id="preHistoryList" class="collapsible-content" style="display:none;"></div>
@@ -508,19 +517,19 @@
 
             <div class="comic-card">
                 <div class="card-title">🍜 當地日常消費記錄</div>
-                <label>📅 日期</label><input type="date" id="localDate" value="2026-07-11">
+                <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="date" id="localDate" value="2026-07-11"></div>
+                    <div style="flex:1; min-width:0;"><label>🍡 買什麼</label><input type="text" id="localTitle" placeholder="拉麵、按摩..."></div>
+                </div>
                 <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
                     <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="localAmount" placeholder="金額"></div>
-                    <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
+                    <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                         <select id="localCurrency" class="currency-select" onchange="updateExchangeHint()"></select>
                     </div>
                 </div>
                 <p id="twdLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#ff5722; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
                 <div id="localPayerBlock">
-                    <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                        <div style="flex:1; min-width:0;"><label>🍡 消費項目</label><input type="text" id="localTitle" placeholder="拉麵、按摩..."></div>
-                        <div style="flex:1; min-width:0;"><label>👑 誰先代墊的？</label><select id="localPayerSelect"></select></div>
-                    </div>
+                    <label>👑 誰先代墊的？</label><select id="localPayerSelect"></select>
                     <label>📊 消費類型</label><select id="localCategorySelect" class="category-select"></select>
                     <label>💞 誰要共同分攤？</label><div id="localShareGroup" class="checkbox-group"></div>
                 </div>
@@ -581,7 +590,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
-                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
             </div>
@@ -605,7 +614,7 @@
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
-                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
             </div>
@@ -625,7 +634,7 @@
         </div>
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
-            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 14px 0; line-height:1.5;">範圍：行前＋當地的「個人自付」項目、行前「代墊分攤」中屬於自己的均攤份額，加上「個人記帳」頁面的私物花費與代購花費（不含其他人的花費）</p>
+            <p style="font-size:12px; color:var(--text-soft); margin:-4px 0 14px 0; white-space:nowrap; overflow-x:auto;">範圍：個人自付＋行前代墊均攤額＋個人記帳私物／代購（不含他人）</p>
             <div id="overviewChartWrap"></div>
             <div id="overviewLegend"></div>
         </div>
@@ -763,7 +772,7 @@
         { v: 'MYR', f: '🇲🇾', n: '馬幣' }
     ];
     function populateCurrencySelects() {
-        const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
+        const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.v}</option>`).join('');
         document.querySelectorAll('select.currency-select').forEach(sel => { sel.innerHTML = html; });
     }
     // 📊 消費類型分類：給「總覽」圓餅圖分組用。舊資料沒有這個欄位的，一律歸類「未分類」（不開放使用者手動選這個選項）
@@ -1280,7 +1289,7 @@
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editPersonalAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
-                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editPersonalCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <label>📊 消費類型</label><select id="editPersonalCategory_${e.id}" class="category-select"></select>
             <div class="expense-edit-actions">
@@ -1336,7 +1345,7 @@
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="editProxyAmount_${e.id}" value="${e.rawAmount != null ? e.rawAmount : e.amount}"></div>
-                <div style="flex:1.4; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
+                <div style="flex:1; min-width:0;"><label>🌐 幣別</label><select id="editProxyCurrency_${e.id}" class="currency-select"></select></div>
             </div>
             <div class="expense-edit-actions">
                 <button class="comic-btn btn-green" onclick="saveProxyItem('${e.id}')">💾 儲存</button>
@@ -1377,7 +1386,7 @@
     // 幫動態產生的編輯用幣別下拉選單填入選項並帶入原本的幣別（新增表單那三個幣別選單已在 window.onload 時填過，這裡只需處理編輯表單新生成的）
     function fillEditCurrencySelect(id, currency) {
         const sel = document.getElementById(id); if (!sel) return;
-        sel.innerHTML = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.n} ${c.v}</option>`).join('');
+        sel.innerHTML = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.v}</option>`).join('');
         sel.value = currency || 'TWD';
     }
     // 幫動態產生的編輯用消費類型下拉選單填入選項並帶入原本的分類
