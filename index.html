@@ -529,8 +529,10 @@
                 </div>
                 <p id="twdLiveHint" style="margin:0 0 12px 0; font-size:15px; color:#ff5722; font-weight:bold;">🍦 換算台幣：約 $0 元</p>
                 <div id="localPayerBlock">
-                    <label>👑 誰先代墊的？</label><select id="localPayerSelect"></select>
-                    <label>📊 消費類型</label><select id="localCategorySelect" class="category-select"></select>
+                    <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
+                        <div style="flex:1; min-width:0;"><label>👑 誰先代墊的？</label><select id="localPayerSelect"></select></div>
+                        <div style="flex:1; min-width:0;"><label>📊 消費類型</label><select id="localCategorySelect" class="category-select"></select></div>
+                    </div>
                     <label>💞 誰要共同分攤？</label><div id="localShareGroup" class="checkbox-group"></div>
                 </div>
                 <button class="comic-btn btn-pink" onclick="addExpense('local')" style="margin-top:15px;">🥞 儲存當地日常</button>
@@ -582,7 +584,7 @@
             <div id="personalFormBody" class="collapsible-content">
             <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px;">
                 <div>🙋 <b>當前身分：</b> <span id="myIdentityDisplay" class="identity-display" style="color:#7b1fa2; font-weight:bold;">未設定</span></div>
-                <p style="font-size:12px; color:var(--text-soft); margin:6px 0 0 0;">身分請到「花費總覽」頁選擇並確認，這裡僅顯示、無法更改。</p>
+                <p style="font-size:12px; color:var(--text-soft); margin:6px 0 0 0;">身分請到「花費總覽」頁選擇並確認。</p>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
@@ -772,7 +774,7 @@
         { v: 'MYR', f: '🇲🇾', n: '馬幣' }
     ];
     function populateCurrencySelects() {
-        const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.v}</option>`).join('');
+        const html = CURRENCIES.map(c => `<option value="${c.v}">${c.f} ${c.v} ${c.n}</option>`).join('');
         document.querySelectorAll('select.currency-select').forEach(sel => { sel.innerHTML = html; });
     }
     // 📊 消費類型分類：給「總覽」圓餅圖分組用。舊資料沒有這個欄位的，一律歸類「未分類」（不開放使用者手動選這個選項）
