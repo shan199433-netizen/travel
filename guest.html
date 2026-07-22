@@ -168,16 +168,16 @@
             padding: 3px 12px; font-size: 14.5px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
         }
         .timeline-time-badge.no-time { background: transparent; border: none; padding: 0 8px 0 0; font-size: 17.5px; min-width: auto; }
-        .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; float: right; font-size: 16px; font-weight: bold; }
+        .delete-btn { background: none; border: none; color: #cc0000; cursor: pointer; float: right; font-size: 16px; font-weight: bold; padding: 0; margin: 0; line-height: 1; flex-shrink: 0; }
 
         /* 個人記帳／代購清單：每筆紀錄改成「日期／內容／金額」分格顯示，取代原本一長串文字 */
         .total-badge { font-size: 13px; font-weight: bold; white-space: nowrap; }
         .expense-grid-item {
-            display: grid; grid-template-columns: 54px 1fr auto 46px; gap: 8px; align-items: center;
+            display: grid; grid-template-columns: 54px 1fr auto 58px; gap: 8px; align-items: center;
             padding: 10px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14px;
         }
         .expense-grid-item:last-child { border-bottom: none; }
-        .expense-cell-actions { display: flex; gap: 2px; justify-content: flex-end; }
+        .expense-cell-actions { display: flex; gap: 6px; justify-content: flex-end; }
         .expense-cell-date {
             font-size: 12px; font-weight: 600; text-align: center; color: var(--text-soft);
             background: var(--bg-color); border: 1.5px solid rgba(53,50,44,0.25); border-radius: 8px;
@@ -186,7 +186,7 @@
         .expense-cell-title { font-weight: 600; line-height: 1.4; word-break: break-word; }
         .expense-cell-sub { display: block; font-size: 11px; color: var(--text-soft); font-weight: 400; }
         .expense-cell-amount { text-align: right; font-weight: bold; white-space: nowrap; font-size: 13.5px; line-height: 1.3; }
-        @media (max-width: 420px) { .expense-grid-item { grid-template-columns: 46px 1fr auto 42px; font-size: 13px; } }
+        @media (max-width: 420px) { .expense-grid-item { grid-template-columns: 46px 1fr auto 50px; font-size: 13px; } }
 
         /* 個人記帳／代購 編輯表單：點✏️後把該筆紀錄換成可編輯的表單區塊 */
         .expense-edit-form { background: #fffde7; border: 2px dashed var(--border-color); border-radius: 12px; padding: 10px 10px 2px; margin: 6px 0; }
@@ -302,7 +302,7 @@
             <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 行前總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button></div><div id="preHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 行前個人總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button></div><div id="preHistoryList" class="collapsible-content" style="display:none;"></div></div>
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;"><div class="card-title">🧮 行前結算</div><div id="preSettlementDisplay"></div></div>
 
         <div class="comic-card" style="background:#fff3e0;">
@@ -372,7 +372,7 @@
                 <p style="font-size:12px; color:var(--text-soft); margin:6px 0 0 0;">身分請到「花費總覽」頁選擇並確認，這裡僅顯示、無法更改。</p>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10"></div>
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="personalDate" placeholder="例如 7/10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="personalTitle" placeholder="伴手禮、藥妝..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
@@ -386,7 +386,7 @@
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">💰 目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▸</button></div><div id="personalHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▸</button></div><div id="personalHistoryList" class="collapsible-content" style="display:none;"></div></div>
 
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">
@@ -396,7 +396,7 @@
             <div id="proxyFormBody" class="collapsible-content">
             <label>🙋 幫誰代購？</label><input type="text" id="proxyFor" placeholder="小明、熊大...">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="proxyDate" placeholder="例如 7/10"></div>
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="proxyDate" placeholder="例如 7/10" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="proxyTitle" placeholder="藥妝、酒..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
@@ -912,7 +912,7 @@
     function renderPersonalEditForm(e) {
         return `<div class="expense-edit-form">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="editPersonalDate_${e.id}" value="${escapeAttr(e.date)}"></div>
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="editPersonalDate_${e.id}" value="${escapeAttr(e.date)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="editPersonalTitle_${e.id}" value="${escapeAttr(e.title)}"></div>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
@@ -969,7 +969,7 @@
         return `<div class="expense-edit-form">
             <label>🙋 幫誰代購？</label><input type="text" id="editProxyFor_${e.id}" value="${escapeAttr(e.forWho)}">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="editProxyDate_${e.id}" value="${escapeAttr(e.date)}"></div>
+                <div style="flex:1; min-width:0;"><label>📅 日期</label><input type="text" id="editProxyDate_${e.id}" value="${escapeAttr(e.date)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div>
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="editProxyTitle_${e.id}" value="${escapeAttr(e.title)}"></div>
             </div>
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
@@ -1008,7 +1008,7 @@
                 }
             }
         });
-        document.getElementById('personalTotalSum').innerText = `💰 目前總花費：$${Math.round(personalTotal)}`;
+        document.getElementById('personalTotalSum').innerText = `目前總花費：$${Math.round(personalTotal)}`;
         if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) { fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); fillEditCategorySelect('editPersonalCategory_' + e.id, e.category); } }
 
         renderProxyGroupedList(trip, myName);
@@ -1136,8 +1136,8 @@
                 if (payers.includes(myName)) result.push({ amount: e.amount, category: e.category });
                 return;
             }
-            // 行前「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
-            if (e.type === 'pre' && e.costType === 'share') {
+            // 行前／當地「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
+            if ((e.type === 'pre' || e.type === 'local') && e.costType === 'share') {
                 const participants = (e.participants && e.participants.length) ? e.participants : (trip.members || []);
                 if (participants.includes(myName)) {
                     const share = e.amount / (participants.length || 1);
@@ -1216,7 +1216,7 @@
             const badge = e.costType === 'personal'
                 ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
                 : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
-            const catInfo = type === 'pre' ? getCategoryInfo(e.category) : null;
+            const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
             const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
             const shareInfo = e.costType === 'share'
                 ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
@@ -1233,10 +1233,13 @@
     function updatePreDashboard() {
         if (db.currentIdx === -1 || !db.trips.length) return;
         const trip = db.trips[db.currentIdx];
+        const members = trip.members.length || 1;
         const items = (trip.expenses || []).filter(e => e.type === 'pre');
         const shareTotal = items.filter(e => e.costType === 'share').reduce((s,e) => s + e.amount, 0);
-        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount * ((e.payers && e.payers.length) ? e.payers.length : 1), 0);
-        document.getElementById('preTotalSum').innerText = `$${Math.round(shareTotal + ownTotal)}`;
+        const ownTotal = items.filter(e => e.costType === 'personal').reduce((s,e) => s + e.amount, 0);
+        // 行前個人總花費＝「平均一個人」的行前花費：自付項目本來就是每人各付一次同樣的金額，所以直接加總金額本身（不乘人數）；
+        // 代墊項目則是全部人平分同一筆錢，所以要除以人數，取平均每人的份額
+        document.getElementById('preTotalSum').innerText = `$${Math.round(ownTotal + shareTotal / members)}`;
     }
 
     function updateLocalDashboard() {
