@@ -11,6 +11,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         @font-face {
@@ -234,6 +235,44 @@
         .pie-dot { width: 13px; height: 13px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid rgba(53,50,44,0.5); }
         .overview-total-row { font-size: 16px; font-weight: 700; padding: 4px 2px 12px; }
         .overview-empty-hint { color: var(--text-soft); font-size: 14px; text-align: center; padding: 24px 4px; }
+        /* 🎉 戰報卡：直式限動風格，固定 9:16 比例方便輸出成圖片分享到 IG/LINE 限動 */
+        .rc-overlay {
+            position: fixed; inset: 0; background: rgba(53,50,44,0.72); z-index: 999;
+            display: flex; align-items: center; justify-content: center; padding: 20px 12px;
+        }
+        .rc-scroll-wrap { max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; align-items: center; -webkit-overflow-scrolling: touch; }
+        .rc-card {
+            width: 320px; aspect-ratio: 9 / 16; border-radius: 26px; border: 3px solid var(--border-color);
+            box-shadow: var(--box-shadow); position: relative; overflow: hidden; flex-shrink: 0;
+            background: linear-gradient(160deg, var(--main-pink) 0%, var(--main-yellow) 45%, var(--main-blue) 100%);
+            font-family: 'naikaifont', 'Segoe UI', "Microsoft JhengHei", "PingFang TC", sans-serif;
+            color: var(--text-main); display: flex; flex-direction: column; padding: 22px 18px 18px;
+            box-sizing: border-box;
+        }
+        .rc-mascot { font-size: 46px; text-align: center; line-height: 1; margin-bottom: 4px; }
+        .rc-tripname { font-size: 18px; font-weight: 900; text-align: center; line-height: 1.35; }
+        .rc-days { font-size: 12.5px; text-align: center; color: var(--text-main); opacity: 0.75; margin-top: 2px; font-weight: 700; }
+        .rc-total-box {
+            background: #fff; border: 2.5px solid var(--border-color); border-radius: 18px;
+            text-align: center; padding: 12px 8px; margin: 14px 0 12px; box-shadow: var(--active-shadow);
+        }
+        .rc-total-label { font-size: 12.5px; font-weight: 700; color: var(--text-soft); }
+        .rc-total-amount { font-size: 30px; font-weight: 900; margin-top: 2px; }
+        .rc-rank-box {
+            background: rgba(255,255,255,0.72); border: 2.5px solid var(--border-color); border-radius: 18px;
+            padding: 10px 14px; flex: 1; overflow: hidden;
+        }
+        .rc-rank-title { font-size: 13px; font-weight: 900; margin-bottom: 6px; }
+        .rc-rank-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; padding: 5px 0; border-bottom: 1.5px dashed rgba(53,50,44,0.25); }
+        .rc-rank-row:last-child { border-bottom: none; }
+        .rc-rank-medal { width: 22px; display: inline-block; text-align: center; }
+        .rc-comment {
+            margin-top: 12px; font-size: 12.5px; font-weight: 700; text-align: center; line-height: 1.5;
+            background: #fff; border: 2px dashed var(--border-color); border-radius: 14px; padding: 9px 8px;
+        }
+        .rc-footer { text-align: center; font-size: 10.5px; color: var(--text-soft); font-weight: 700; margin-top: 10px; letter-spacing: 0.5px; }
+        .rc-actions { display: flex; gap: 10px; margin-top: 16px; width: 320px; flex-shrink: 0; }
+        .rc-actions button { flex: 1; padding: 12px 6px; }
         .overview-cat-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14.5px; font-weight: 600; }
         .overview-cat-row:last-child { border-bottom: none; }
         
@@ -274,6 +313,12 @@
         .color-swatch.active { box-shadow: 0 0 0 3px rgba(255,217,141,0.9); transform: scale(1.15); }
         
         .checkbox-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 8px 0; }
+        /* 👑代墊選單＋💞平分勾選區同一行：選單固定窄寬，勾選區依剩餘空間自動排欄數，避免4欄網格被硬壓擠變形 */
+        .payer-share-row { display: flex; gap: 10px; align-items: flex-start; }
+        .payer-share-row .payer-col { flex: 0 0 112px; min-width: 0; }
+        .payer-share-row .payer-col select { padding: 12px 8px; font-size: 14.5px; }
+        .payer-share-row .share-col { flex: 1; min-width: 0; }
+        .payer-share-row .share-col .checkbox-group { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
         .checkbox-label {
             display: flex; align-items: center; justify-content: center; gap: 3px; background: #fff;
             padding: 9px 4px; border: 2px solid var(--border-color); border-radius: 20px; cursor: pointer;
@@ -447,8 +492,10 @@
                 <div style="flex:1; min-width:0;"><label>🎈 項目名稱</label><input type="text" id="preTitle" placeholder="機票、訂房..."></div>
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="preAmount" placeholder="金額"></div>
             </div>
-            <div id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
-            <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
+            <div class="payer-share-row">
+                <div class="payer-col" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
+                <div class="share-col" id="preShareBlock"><label>💞 誰要共同平分？</label><div id="preShareGroup" class="checkbox-group"></div></div>
+            </div>
             <div id="preSelfBlock" style="display:none;"><label>👤 這是誰的花費？（可複選）</label><div id="preSelfGroup" class="checkbox-group"></div></div>
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
             </div>
@@ -643,6 +690,21 @@
         <div class="comic-card">
             <div class="card-title">🧾 分類明細</div>
             <div id="overviewCategoryList"></div>
+        </div>
+        <div class="comic-card" style="background:#fff3e0; text-align:center;">
+            <div class="card-title" style="justify-content:center;">📸 旅遊戰報卡</div>
+            <p style="font-size:12.5px; color:var(--text-soft); margin:-4px 0 12px 0;">產生一張這趟旅程的花費戰報，存下來分享給大家看吧！</p>
+            <button class="comic-btn btn-pink" onclick="generateReportCard()">✨ 產生本趟戰報卡</button>
+        </div>
+    </div>
+
+    <div id="reportCardOverlay" class="rc-overlay" style="display:none;" onclick="if(event.target===this) closeReportCard();">
+        <div class="rc-scroll-wrap">
+            <div class="rc-card" id="reportCardContent"></div>
+            <div class="rc-actions">
+                <button class="comic-btn" onclick="closeReportCard()">✖️ 關閉</button>
+                <button class="comic-btn btn-pink" onclick="downloadReportCard()">⬇️ 下載圖片</button>
+            </div>
         </div>
     </div>
 
@@ -1512,22 +1574,22 @@
     // 📊 總覽儀表板：行前＋當地的「個人自付」項目、行前「代墊分攤」依比例算出的個人份額、
     // 加上「個人記帳」頁面的花費（不含代購、不含其他人花費）
     // 只算「我自己」的花費（依目前裝置鎖定的身分），跟個人記帳頁面的統計口徑一致
-    function getMyPersonalExpenses(trip) {
-        const myName = getMyIdentity();
-        if (!myName) return [];
+    // 通用版本：算出「任一位成員」的個人消費明細（含代墊分攤均分邏輯），myName 版跟戰報卡的每人排行榜共用同一套邏輯，避免兩邊算法各自維護造成不一致
+    function getPersonalExpensesFor(trip, name) {
+        if (!name) return [];
         const result = [];
         (trip.expenses || []).forEach(e => {
-            if (e.payer === myName && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
-            if (e.payer === myName && e.type === 'proxy') { result.push({ amount: e.amount, category: PROXY_CATEGORY.v }); return; }
+            if (e.payer === name && e.type === 'personalItem') { result.push({ amount: e.amount, category: e.category }); return; }
+            if (e.payer === name && e.type === 'proxy') { result.push({ amount: e.amount, category: PROXY_CATEGORY.v }); return; }
             if ((e.type === 'pre' || e.type === 'local') && e.costType === 'personal') {
                 const payers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
-                if (payers.includes(myName)) result.push({ amount: e.amount, category: e.category });
+                if (payers.includes(name)) result.push({ amount: e.amount, category: e.category });
                 return;
             }
             // 行前／當地「代墊分攤」：不論誰先代墊，只要自己是分攤對象之一，就把自己的均攤份額依該筆的消費分類算進總覽
             if ((e.type === 'pre' || e.type === 'local') && e.costType === 'share') {
                 const participants = (e.participants && e.participants.length) ? e.participants : (trip.members || []);
-                if (participants.includes(myName)) {
+                if (participants.includes(name)) {
                     const share = e.amount / (participants.length || 1);
                     result.push({ amount: share, category: e.category || 'uncategorized' });
                 }
@@ -1535,6 +1597,7 @@
         });
         return result;
     }
+    function getMyPersonalExpenses(trip) { return getPersonalExpensesFor(trip, getMyIdentity()); }
 
     function renderOverview() {
         const wrap = document.getElementById('overviewChartWrap');
@@ -1592,6 +1655,79 @@
                 <span>${r.e} ${r.n}</span>
                 <span>NT$${Math.round(r.amount)}</span>
             </div>`).join('');
+    }
+    // 從 App 標題抓出開頭的萌寵 emoji（例如「🦊 我的萌寵五星旅遊手帳」→🦊），抓不到就用預設的🦊墊底
+    function extractMascotEmoji() {
+        const m = (db.title || '').match(/^\s*(\p{Emoji_Presentation}|\p{Extended_Pictographic})/u);
+        return m ? m[0] : '🦊';
+    }
+    // 依「花費最多者佔全團總花費的比例」動態換不同的趣味吐嘈句，讓每次產生的戰報卡感覺都不太一樣
+    function getReportComment(topName, topAmount, grandTotal, memberCount) {
+        if (!grandTotal || !topName) return '🎈 這趟旅程大家花得開心又值得～';
+        const pct = Math.round(topAmount / grandTotal * 100);
+        if (memberCount <= 1) return `🦸 一人成行，${topName} 包辦全部旅費，帥氣！`;
+        if (pct >= 50) return `💸 ${topName} 貢獻了全團 ${pct}% 的旅費，根本行走的提款機！`;
+        if (pct >= 32) return `💪 ${topName} 花得最兇，是此行第一名散財戰士！`;
+        return `🎈 大家旗鼓相當，花得平均又開心～`;
+    }
+    function generateReportCard() {
+        if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
+        const trip = db.trips[db.currentIdx];
+        const members = trip.members || [];
+        if (!members.length) return alert('請先到「旅遊成員」頁新增隊員，才能產生戰報卡喔！');
+
+        // 每人總花費（複用個人消費總覽同一套計算邏輯，避免跟總覽頁數字對不上）
+        const ranking = members.map(name => {
+            const total = getPersonalExpensesFor(trip, name).reduce((sum, e) => sum + e.amount, 0);
+            return { name, total };
+        }).sort((a, b) => b.total - a.total);
+        const grandTotal = ranking.reduce((sum, r) => sum + r.total, 0);
+
+        if (!grandTotal) return alert('目前還沒有任何花費紀錄，先記幾筆帳再來產生戰報卡吧！');
+
+        // 天數：優先用行前設定的起訖日期計算，沒設定就不顯示天數
+        let daysLabel = '';
+        if (trip.startDate && trip.endDate) {
+            const diff = Math.round((new Date(trip.endDate) - new Date(trip.startDate)) / 86400000) + 1;
+            if (diff > 0) daysLabel = `　｜　${diff} 天`;
+        }
+
+        const medals = ['🥇', '🥈', '🥉'];
+        const rankRowsHtml = ranking.map((r, i) => `
+            <div class="rc-rank-row">
+                <span><span class="rc-rank-medal">${medals[i] || (i + 1) + '.'}</span>${r.name}</span>
+                <span>$${Math.round(r.total)}</span>
+            </div>`).join('');
+
+        const comment = getReportComment(ranking[0].name, ranking[0].total, grandTotal, members.length);
+
+        document.getElementById('reportCardContent').innerHTML = `
+            <div class="rc-mascot">${extractMascotEmoji()}</div>
+            <div class="rc-tripname">${trip.name || '這趟旅行'}</div>
+            <div class="rc-days">旅遊戰報${daysLabel}</div>
+            <div class="rc-total-box">
+                <div class="rc-total-label">💰 全團總花費</div>
+                <div class="rc-total-amount">$${Math.round(grandTotal)}</div>
+            </div>
+            <div class="rc-rank-box">
+                <div class="rc-rank-title">🏆 花費排行榜</div>
+                ${rankRowsHtml}
+            </div>
+            <div class="rc-comment">${comment}</div>
+            <div class="rc-footer">✨ 33旅遊分帳 ✨</div>
+        `;
+        document.getElementById('reportCardOverlay').style.display = 'flex';
+    }
+    function closeReportCard() { document.getElementById('reportCardOverlay').style.display = 'none'; }
+    function downloadReportCard() {
+        const node = document.getElementById('reportCardContent');
+        if (!node || typeof html2canvas === 'undefined') return alert('圖片產生功能載入中，請稍後再試一次！');
+        html2canvas(node, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `旅遊戰報卡_${(db.trips[db.currentIdx].name || 'trip')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(() => alert('圖片產生失敗了，請再試一次！'));
     }
     function loadPreInfo() {
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
