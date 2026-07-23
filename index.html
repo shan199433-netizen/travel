@@ -75,7 +75,7 @@
             border-right: 4px solid var(--border-color);
             box-sizing: border-box;
             position: relative;
-            padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); 
+            padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); 
             box-shadow: 0 0 24px rgba(0,0,0,0.12);
             display: flex;
             flex-direction: column;
@@ -84,15 +84,13 @@
         }
 
         .header-box {
-            background: rgba(255, 223, 142, 0.88);
-            -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px);
-            padding: 15px 20px 19px;
+            background: var(--main-yellow);
+            padding: 15px 20px 17px;
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 99;
-            box-shadow: 0 8px 18px -6px rgba(53,50,44,0.32);
+            border-bottom: 2.5px solid var(--border-color);
         }
         .header-title {
             font-size: 20px;
@@ -185,18 +183,17 @@
         .nav-bar {
             position: fixed;
             left: 50%;
-            bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+            bottom: 0;
             transform: translateX(-50%);
-            width: calc(100vw - 32px);
-            max-width: 606px;
-            background: rgba(255, 253, 249, 0.72);
-            -webkit-backdrop-filter: blur(18px) saturate(160%);
-            backdrop-filter: blur(18px) saturate(160%);
-            border: 2px solid rgba(53,50,44,0.9);
-            border-radius: 999px;
+            width: 100%;
+            max-width: 650px;
+            background: #fffdf9;
+            border: 2.5px solid var(--border-color);
+            border-bottom: none;
+            border-radius: 22px 22px 0 0;
             display: flex; justify-content: space-around; align-items: center;
-            z-index: 100; padding: 5px 6px;
-            box-shadow: 0 10px 26px rgba(53,50,44,0.22), 0 2px 6px rgba(53,50,44,0.14);
+            z-index: 100; padding: 7px 6px calc(7px + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -6px 16px rgba(53,50,44,0.16);
         }
         .nav-item {
             flex: 1; text-align: center; font-size: 10px; font-weight: 600; letter-spacing: 0.3px; cursor: pointer;
@@ -313,12 +310,6 @@
         .color-swatch.active { box-shadow: 0 0 0 3px rgba(255,217,141,0.9); transform: scale(1.15); }
         
         .checkbox-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 8px 0; }
-        /* 👑代墊選單＋💞平分勾選區同一行：選單固定窄寬，勾選區依剩餘空間自動排欄數，避免4欄網格被硬壓擠變形 */
-        .payer-share-row { display: flex; gap: 10px; align-items: flex-start; }
-        .payer-share-row .payer-col { flex: 0 0 112px; min-width: 0; }
-        .payer-share-row .payer-col select { padding: 12px 8px; font-size: 14.5px; }
-        .payer-share-row .share-col { flex: 1; min-width: 0; }
-        .payer-share-row .share-col .checkbox-group { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
         .checkbox-label {
             display: flex; align-items: center; justify-content: center; gap: 3px; background: #fff;
             padding: 9px 4px; border: 2px solid var(--border-color); border-radius: 20px; cursor: pointer;
@@ -492,10 +483,8 @@
                 <div style="flex:1; min-width:0;"><label>🎈 項目名稱</label><input type="text" id="preTitle" placeholder="機票、訂房..."></div>
                 <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="preAmount" placeholder="金額"></div>
             </div>
-            <div class="payer-share-row">
-                <div class="payer-col" id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
-                <div class="share-col" id="preShareBlock"><label>💞 誰要共同平分？</label><div id="preShareGroup" class="checkbox-group"></div></div>
-            </div>
+            <div id="prePayerInline"><label>👑 誰先代墊</label><select id="prePayerSelect"></select></div>
+            <div id="preShareBlock"><label>💞 誰要共同平分這筆錢？</label><div id="preShareGroup" class="checkbox-group"></div></div>
             <div id="preSelfBlock" style="display:none;"><label>👤 這是誰的花費？（可複選）</label><div id="preSelfGroup" class="checkbox-group"></div></div>
             <button class="comic-btn btn-green" onclick="addExpense('pre')" style="margin-top:15px;">🍓 儲存行前花費</button>
             </div>
