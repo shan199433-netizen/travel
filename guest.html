@@ -338,6 +338,13 @@
     </div>
 
     <div id="page-pre" class="page">
+        <div class="subtab-row">
+            <button class="subtab-btn active" id="preSubTabBtn-info" onclick="switchPreSubTab('info')">📌 行前資訊</button>
+            <button class="subtab-btn" id="preSubTabBtn-expense" onclick="switchPreSubTab('expense')">💰 花費記帳</button>
+            <button class="subtab-btn" id="preSubTabBtn-baggage" onclick="switchPreSubTab('baggage')">🧳 行李清單</button>
+        </div>
+
+        <div id="preSubTab-info" class="subtab-content">
         <div class="comic-card" style="background:#fff8e1;">
             <div class="card-title">
                 <span class="card-title-left">📌 行前重要資訊</span>
@@ -349,9 +356,14 @@
             <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
             </div>
         </div>
+        </div>
+
+        <div id="preSubTab-expense" class="subtab-content" style="display:none;">
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 行前個人總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span></span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button></div><div id="preHistoryList" class="collapsible-content" style="display:none;"></div></div>
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;"><div class="card-title">🧮 行前結算</div><div id="preSettlementDisplay"></div></div>
+        </div>
 
+        <div id="preSubTab-baggage" class="subtab-content" style="display:none;">
         <div class="comic-card" style="background:#fff3e0;">
             <div class="card-title">
                 <span class="card-title-left">🧳 個人行李清單</span>
@@ -382,6 +394,7 @@
             </div>
             </div>
         </div>
+        </div>
     </div>
 
     <div id="page-local" class="page">
@@ -408,6 +421,12 @@
     </div>
 
     <div id="page-personal" class="page">
+        <div class="subtab-row">
+            <button class="subtab-btn active" id="personalSubTabBtn-mine" onclick="switchPersonalSubTab('mine')">👤 個人記帳</button>
+            <button class="subtab-btn" id="personalSubTabBtn-proxy" onclick="switchPersonalSubTab('proxy')">🛍️ 代購紀錄</button>
+        </div>
+
+        <div id="personalSubTab-mine" class="subtab-content">
         <div class="comic-card" style="background: #f3e5f5;">
             <div class="card-title">
                 <span class="card-title-left">👤 個人記帳</span>
@@ -434,7 +453,9 @@
             </div>
         </div>
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▸</button></div><div id="personalHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        </div>
 
+        <div id="personalSubTab-proxy" class="subtab-content" style="display:none;">
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">
                 <span class="card-title-left">🛍️ 幫別人代購紀錄</span>
@@ -457,6 +478,7 @@
             </div>
         </div>
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        </div>
     </div>
 
     <div id="page-overview" class="page">
@@ -1492,6 +1514,22 @@
         ['expense', 'schedule'].forEach(n => {
             document.getElementById('localSubTab-' + n).style.display = (n === name) ? '' : 'none';
             document.getElementById('localSubTabBtn-' + n).classList.toggle('active', n === name);
+        });
+    }
+
+    // 「行前總覽」頁的子分頁：資訊／花費記帳／行李清單
+    function switchPreSubTab(name) {
+        ['info', 'expense', 'baggage'].forEach(n => {
+            document.getElementById('preSubTab-' + n).style.display = (n === name) ? '' : 'none';
+            document.getElementById('preSubTabBtn-' + n).classList.toggle('active', n === name);
+        });
+    }
+
+    // 「個人記帳」頁的子分頁：個人記帳／代購紀錄
+    function switchPersonalSubTab(name) {
+        ['mine', 'proxy'].forEach(n => {
+            document.getElementById('personalSubTab-' + n).style.display = (n === name) ? '' : 'none';
+            document.getElementById('personalSubTabBtn-' + n).classList.toggle('active', n === name);
         });
     }
 </script>
