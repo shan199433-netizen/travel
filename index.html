@@ -369,14 +369,16 @@
         .settle-toggle.settled { background: #e8f5e9; color: #2e7d32; }
         .proxy-person-body { margin-top: 8px; }
 
-        /* 收合／展開 按鈕 */
+        /* 收合／展開 按鈕：加寬並附文字，讓人一眼看出是可以點的按鈕 */
         .collapse-btn {
-            background: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 10px;
-            width: 34px; height: 34px; font-size: 15px; cursor: pointer; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center; padding: 0; margin: 0;
+            background: var(--main-yellow); border: 2.5px solid var(--border-color); border-radius: 999px;
+            min-width: 36px; height: 34px; font-size: 13px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; padding: 0 12px; margin: 0; gap: 3px;
+            white-space: nowrap;
             -webkit-tap-highlight-color: transparent; transition: transform .08s ease, box-shadow .08s ease;
             box-shadow: 2px 2px 0px rgba(53,50,44,0.75);
         }
+        .collapse-btn.baggage-manage-toggle, .collapse-btn.collapse-btn-compact { padding: 0; width: 34px; min-width: 34px; }
         .collapse-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px rgba(53,50,44,0.75); }
         .card-title-left { display: flex; align-items: center; gap: 6px 8px; min-width: 0; flex: 1 1 auto; flex-wrap: wrap; }
         .card-title-left > span:first-child { overflow: visible; text-overflow: unset; white-space: normal; overflow-wrap: break-word; word-break: break-word; min-width: 0; flex: 1 1 auto; }
@@ -457,7 +459,7 @@
         <div class="comic-card" style="background:#fff8e1;">
             <div class="card-title">
                 <span class="card-title-left">📌 行前重要資訊</span>
-                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾</button>
+                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾ 收合</button>
             </div>
             <div id="preInfoBody" class="collapsible-content">
             <label>✈️ 班機資訊</label>
@@ -476,9 +478,9 @@
         <div class="comic-card">
             <div class="card-title">
                 <span class="card-title-left">🎟️ 登記行前開銷</span>
-                <button class="collapse-btn" onclick="toggleCollapse('preExpenseFormBody', this)">▸</button>
+                <button class="collapse-btn" onclick="toggleCollapse('preExpenseFormBody', this)">▾ 收合</button>
             </div>
-            <div id="preExpenseFormBody" class="collapsible-content" style="display:none;">
+            <div id="preExpenseFormBody" class="collapsible-content">
             <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                 <div style="flex:1; min-width:0;"><label>🍨 支出模式</label>
                 <select id="preCostType" onchange="togglePreCostUI()">
@@ -501,9 +503,9 @@
         <div class="comic-card">
             <div class="card-title">
                 <span class="card-title-left"><span>📋 行前個人總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span></span>
-                <button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▸</button>
+                <button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾ 收合</button>
             </div>
-            <div id="preHistoryList" class="collapsible-content" style="display:none;"></div>
+            <div id="preHistoryList" class="collapsible-content"></div>
         </div>
 
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;">
@@ -518,10 +520,10 @@
                 <span class="card-title-left">🧳 個人行李清單</span>
                 <span style="display:flex; gap:6px;">
                     <button class="collapse-btn baggage-manage-toggle" onclick="toggleBaggageManage(this)" title="新增／編輯／刪除項目">✏️</button>
-                    <button class="collapse-btn" onclick="toggleCollapse('baggageBody', this)">▸</button>
+                    <button class="collapse-btn" onclick="toggleCollapse('baggageBody', this)">▾ 收合</button>
                 </span>
             </div>
-            <div id="baggageBody" class="collapsible-content" style="display:none;">
+            <div id="baggageBody" class="collapsible-content">
             <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0; white-space:nowrap; overflow-x:auto;">僅存本機不同步雲端☁️❌｜打勾＝已帶，✏️新增/編輯/刪除</p>
             <div class="baggage-col-wrap" id="baggageColWrap">
                 <div class="baggage-col">
@@ -585,7 +587,7 @@
                 <button class="comic-btn btn-pink" onclick="addExpense('local')" style="margin-top:15px;">🥞 儲存當地日常</button>
             </div>
 
-            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▸</button></div><div id="localHistoryList" class="collapsible-content" style="display:none;"></div></div>
+            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾ 收合</button></div><div id="localHistoryList" class="collapsible-content"></div></div>
             <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay" style="margin-top: 5px;"></div></div>
         </div>
 
@@ -632,7 +634,7 @@
         <div class="comic-card" style="background: #f3e5f5;">
             <div class="card-title">
                 <span class="card-title-left">👤 個人記帳（主控身分）</span>
-                <button class="collapse-btn" onclick="toggleCollapse('personalFormBody', this)">▾</button>
+                <button class="collapse-btn" onclick="toggleCollapse('personalFormBody', this)">▾ 收合</button>
             </div>
             <div id="personalFormBody" class="collapsible-content">
             <div style="background:#fff; padding:10px 14px; border:2px solid var(--border-color); border-radius:12px; margin-bottom:12px;">
@@ -654,14 +656,14 @@
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▸</button></div><div id="personalHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾ 收合</button></div><div id="personalHistoryList" class="collapsible-content"></div></div>
         </div>
 
         <div id="personalSubTab-proxy" class="subtab-content" style="display:none;">
         <div class="comic-card" style="background:#e8f5e9;">
             <div class="card-title">
                 <span class="card-title-left">🛍️ 幫別人代購紀錄</span>
-                <button class="collapse-btn" onclick="toggleCollapse('proxyFormBody', this)">▾</button>
+                <button class="collapse-btn" onclick="toggleCollapse('proxyFormBody', this)">▾ 收合</button>
             </div>
             <div id="proxyFormBody" class="collapsible-content">
             <label>🙋 幫誰代購？</label><input type="text" id="proxyFor" placeholder="小明、熊大...">
@@ -679,7 +681,7 @@
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▸</button></div><div id="proxyHistoryList" class="collapsible-content" style="display:none;"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾ 收合</button></div><div id="proxyHistoryList" class="collapsible-content"></div></div>
         </div>
     </div>
 
@@ -930,7 +932,8 @@
         if (!el) return;
         const isCollapsed = el.style.display === 'none';
         el.style.display = isCollapsed ? '' : 'none';
-        if (btn) btn.textContent = isCollapsed ? '▾' : '▸';
+        if (btn && btn.classList.contains('collapse-btn-compact')) btn.textContent = isCollapsed ? '▾' : '▸';
+        else if (btn && !btn.classList.contains('baggage-manage-toggle')) btn.textContent = isCollapsed ? '▾ 收合' : '▸ 展開';
     }
 
     // 🧳 個人行李清單：完全存於本機 localStorage，不寫入 Firebase，依 db.currentIdx 區分不同行程
@@ -1507,7 +1510,7 @@
                         <span class="proxy-person-meta">${g.items.length}筆・NT$${Math.round(g.subtotal)}</span>
                     </span>
                     <button class="settle-toggle ${settled ? 'settled' : 'unsettled'}" onclick="toggleProxySettlement(${gi})">${settled ? '✅ 已收款' : '⏳ 未收款'}</button>
-                    <button class="collapse-btn" onclick="toggleCollapse('${bodyId}', this)">${isOpen ? '▾' : '▸'}</button>
+                    <button class="collapse-btn collapse-btn-compact" onclick="toggleCollapse('${bodyId}', this)">${isOpen ? '▾' : '▸'}</button>
                 </div>
                 <div id="${bodyId}" class="collapsible-content proxy-person-body" style="${isOpen ? '' : 'display:none;'}">${itemsHtml}</div>
             </div>`;
@@ -1783,20 +1786,9 @@
         document.getElementById(type === 'pre' ? 'preAmount' : 'localAmount').value = "";
         refreshAll(); save();
     }
-    // 切換頁面（分頁）時，把所有頁面中已展開的收合區塊統一收回，避免切回來還留著上次展開的狀態
-    // 例外：📌 行前重要資訊（preInfoBody）、👤 個人記帳表單、🛍️ 代購表單 預設保持展開，交由使用者自己決定何時收合
-    // 例外：🧳 行李清單的 ✏️ 管理按鈕借用 .collapse-btn 樣式，但文字是固定的鉛筆圖示，不該被改成箭頭
-    const KEEP_EXPANDED_IDS = ['preInfoBody', 'personalFormBody', 'proxyFormBody'];
-    function collapseAllSections() {
-        document.querySelectorAll('.collapsible-content').forEach(el => { if (!KEEP_EXPANDED_IDS.includes(el.id)) el.style.display = 'none'; });
-        document.querySelectorAll('.collapse-btn').forEach(btn => {
-            if (btn.classList.contains('baggage-manage-toggle')) return;
-            const onclickAttr = btn.getAttribute('onclick') || '';
-            if (KEEP_EXPANDED_IDS.some(id => onclickAttr.includes(`'${id}'`))) return;
-            btn.textContent = '▸';
-        });
-    }
-    function switchTab(id, el) { collapseAllSections(); document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+    // 現在每頁都已有子導覽分類，收合區塊一律預設展開，切換分頁／子分頁時不再自動收合，
+    // 使用者想收合哪一塊就自己按「收合」按鈕，狀態會一直保留到自己再打開。
+    function switchTab(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 
     // 「當地日常」／「本次行程」合併成一頁後，用這個切換內部的兩個子分頁
     function switchLocalSubTab(name) {
