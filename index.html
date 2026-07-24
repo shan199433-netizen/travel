@@ -269,6 +269,38 @@
         .rc-footer { text-align: center; font-size: 10.5px; color: var(--text-soft); font-weight: 700; margin-top: 10px; letter-spacing: 0.5px; }
         .rc-actions { display: flex; gap: 10px; margin-top: 16px; width: 320px; flex-shrink: 0; }
         .rc-actions button { flex: 1; padding: 12px 6px; }
+
+        /* 💱 匯率設定 Modal：取代舊版 prompt() 對話框，直接在畫面上就能改 */
+        .rate-modal-card {
+            width: 320px; max-width: calc(100vw - 40px); max-height: 82vh; overflow-y: auto;
+            background: #fffdf5; border: 3px solid var(--border-color); border-radius: 22px;
+            box-shadow: var(--box-shadow); padding: 20px 18px; box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        .rate-modal-title { font-size: 18px; font-weight: 900; text-align: center; margin-bottom: 10px; }
+        .rate-modal-status {
+            font-size: 12.5px; text-align: center; font-weight: 700; padding: 9px 10px; border-radius: 12px;
+            background: #fff; border: 2px dashed var(--border-color); line-height: 1.5;
+        }
+        .rate-modal-status.ok { color: #2e7d32; }
+        .rate-modal-status.warn { color: #e65100; }
+        .rate-row { display: flex; align-items: center; gap: 8px; padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.18); }
+        .rate-row:last-child { border-bottom: none; }
+        .rate-row-label { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .rate-row-sub { font-size: 11px; color: var(--text-soft); font-weight: 600; }
+        .rate-row-input-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+        .rate-row-input {
+            width: 72px; text-align: right; padding: 7px 8px; border: 2px solid var(--border-color); border-radius: 10px;
+            font-size: 14px; font-family: inherit;
+        }
+        .rate-row-input.manual { background: #fff3e0; border-color: #ff9800; }
+        .rate-reset-btn {
+            background: #fff; border: 2px solid var(--border-color); border-radius: 10px; width: 30px; height: 30px;
+            font-size: 13px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .rate-manual-tag { font-size: 10px; background: #ff9800; color: #fff; padding: 1px 6px; border-radius: 8px; font-weight: 700; }
+        .rate-modal-hint { font-size: 11.5px; color: var(--text-soft); text-align: center; margin: 12px 0 0; line-height: 1.5; }
         .overview-cat-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14.5px; font-weight: 600; }
         .overview-cat-row:last-child { border-bottom: none; }
         
@@ -571,7 +603,7 @@
                     <div style="flex:1; min-width:0;"><label>🍡 買什麼</label><input type="text" id="localTitle" placeholder="拉麵、按摩..."></div>
                 </div>
                 <div style="display: flex; gap: 8px;" class="row-flex-nowrap">
-                    <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="localAmount" placeholder="金額"></div>
+                    <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="localAmount" placeholder="金額" oninput="updateExchangeHint()"></div>
                     <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                         <select id="localCurrency" class="currency-select" onchange="updateExchangeHint()"></select>
                     </div>
@@ -646,7 +678,7 @@
                 <div style="flex:1; min-width:0;"><label>🍡 買了什麼？</label><input type="text" id="personalTitle" placeholder="伴手禮、藥妝..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="personalAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="personalAmount" placeholder="輸入金額" oninput="updatePersonalExchangeHint()"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="personalCurrency" class="currency-select" onchange="updatePersonalExchangeHint()"></select>
                 </div>
@@ -672,7 +704,7 @@
                 <div style="flex:1; min-width:0;"><label>🍡 代購了什麼？</label><input type="text" id="proxyTitle" placeholder="藥妝、酒..."></div>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 8px;" class="row-flex-nowrap">
-                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="proxyAmount" placeholder="輸入金額"></div>
+                <div style="flex:1; min-width:0;"><label>💰 金額</label><input type="number" id="proxyAmount" placeholder="輸入金額" oninput="updateProxyExchangeHint()"></div>
                 <div style="flex:1; min-width:0;"><label>🌐 幣別</label>
                     <select id="proxyCurrency" class="currency-select" onchange="updateProxyExchangeHint()"></select>
                 </div>
@@ -715,6 +747,19 @@
             <div class="rc-actions">
                 <button class="comic-btn" onclick="closeReportCard()">✖️ 關閉</button>
                 <button class="comic-btn btn-pink" onclick="downloadReportCard()">⬇️ 下載圖片</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="rateOverlay" class="rc-overlay" style="display:none;" onclick="if(event.target===this) closeRateSettings();">
+        <div class="rc-scroll-wrap">
+            <div class="rate-modal-card">
+                <div class="rate-modal-title">💱 匯率設定</div>
+                <div id="rateModalStatus" class="rate-modal-status"></div>
+                <button class="comic-btn btn-blue" id="rateRefreshBtn" onclick="refreshRatesManual()" style="margin:12px 0 6px;">🔄 重新抓取今日匯率</button>
+                <div id="rateModalList" class="rate-modal-list"></div>
+                <p class="rate-modal-hint">💡 直接改數字就會自動套用；有標「手動」的幣別按 ↩️ 可恢復自動匯率</p>
+                <button class="comic-btn" onclick="closeRateSettings()" style="margin-top:14px; width:100%;">✅ 完成</button>
             </div>
         </div>
     </div>
@@ -801,35 +846,62 @@
         }
     }
 
-    // 點擊header上的💱：顯示目前所有匯率與更新狀態，並可手動修改／恢復自動／強制重抓
+    // 點擊header上的💱：開啟匯率設定 Modal，直接在畫面上看清單、改數字、恢復自動、強制重抓
     function openRateSettings() {
-        const lines = CURRENCIES.filter(c => c.v !== 'TWD').map(c => {
-            const mark = rateOverrides.hasOwnProperty(c.v) ? '（✏️手動設定）' : '';
-            return `${c.f} ${c.v}：1 ${c.v} ≈ ${formatRateForDisplay(rates[c.v])} 元${mark}`;
-        }).join('\n');
-        const choice = prompt(`${rateStatusText()}\n\n${lines}\n\n👉 輸入幣別代碼可手動修改匯率（例如 USD）\n👉 輸入「重抓」可強制重新抓取今日匯率\n👉 取消可直接關閉`);
-        if (choice === null) return;
-        const code = choice.trim().toUpperCase();
-        if (!code) return;
-        if (code === '重抓' || code === 'REFRESH' || code === 'RETRY') { fetchExchangeRates(true); return; }
-        if (code === 'TWD') { alert('台幣是換算基準，固定為 1，不需要設定喔！'); return; }
-        const found = CURRENCIES.find(c => c.v === code);
-        if (!found) { alert('找不到這個幣別代碼，請輸入清單中列出的代碼（例如 JPY、USD）喔！'); return; }
-        const input = prompt(`✏️ 手動設定「1 ${code} = 多少台幣」\n（目前：${formatRateForDisplay(rates[code])}；清空後直接送出可恢復自動匯率）`, formatRateForDisplay(rates[code]));
-        if (input === null) return;
-        if (input.trim() === '') {
-            delete rateOverrides[code];
-            saveRateOverrides();
-            applyRates(baseRatesRaw);
-            alert(`已恢復 ${code} 為自動匯率 🔄`);
-            return;
+        document.getElementById('rateOverlay').style.display = 'flex';
+        renderRateModal();
+    }
+    function closeRateSettings() { document.getElementById('rateOverlay').style.display = 'none'; }
+
+    function renderRateModal() {
+        const statusEl = document.getElementById('rateModalStatus');
+        if (statusEl) {
+            statusEl.textContent = rateStatusText();
+            statusEl.className = 'rate-modal-status ' + (rateMeta.source === 'auto' ? 'ok' : 'warn');
         }
-        const val = parseFloat(input);
-        if (isNaN(val) || val <= 0) { alert('請輸入大於 0 的數字喔！'); return; }
+        const listEl = document.getElementById('rateModalList');
+        if (!listEl) return;
+        listEl.innerHTML = CURRENCIES.filter(c => c.v !== 'TWD').map(c => {
+            const isManual = rateOverrides.hasOwnProperty(c.v);
+            return `<div class="rate-row">
+                <div class="rate-row-label">
+                    <span>${c.f} ${c.v}</span>
+                    <span class="rate-row-sub">${c.n}</span>
+                    ${isManual ? '<span class="rate-manual-tag">手動</span>' : ''}
+                </div>
+                <div class="rate-row-input-wrap">
+                    <span style="font-size:12px; color:var(--text-soft);">1=</span>
+                    <input type="number" step="0.0001" inputmode="decimal" class="rate-row-input${isManual ? ' manual' : ''}"
+                        id="rateInput_${c.v}" value="${formatRateForDisplay(rates[c.v])}"
+                        onchange="saveManualRate('${c.v}', this.value)">
+                    <span style="font-size:11px; color:var(--text-soft);">元</span>
+                    ${isManual ? `<button class="rate-reset-btn" onclick="resetManualRate('${c.v}')" title="恢復自動匯率">↩️</button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // 直接改數字框就套用，不需要再另外按「儲存」
+    function saveManualRate(code, value) {
+        const val = parseFloat(value);
+        if (isNaN(val) || val <= 0) { alert('請輸入大於 0 的數字喔！'); renderRateModal(); return; }
         rateOverrides[code] = val;
         saveRateOverrides();
         applyRates(baseRatesRaw);
-        alert(`已手動將 ${code} 匯率設定為 ${val} ✅`);
+        renderRateModal();
+    }
+    function resetManualRate(code) {
+        delete rateOverrides[code];
+        saveRateOverrides();
+        applyRates(baseRatesRaw);
+        renderRateModal();
+    }
+    async function refreshRatesManual() {
+        const btn = document.getElementById('rateRefreshBtn');
+        if (btn) { btn.disabled = true; btn.textContent = '🔄 更新中...'; }
+        await fetchExchangeRates(false);
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 重新抓取今日匯率'; }
+        renderRateModal();
     }
 
     // 三個表單（當地日常／個人記帳／代購）共用同一份幣別清單，避免各表單各自維護造成不一致或錯字
