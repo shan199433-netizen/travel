@@ -473,7 +473,8 @@
                 <button class="comic-btn" onclick="addMember()" style="width:90px; box-shadow:none; padding:5px;">加入</button>
             </div>
             <div style="margin-top: 20px; font-size:15px; line-height: 1.6;">
-                <b>🎯 當前查看專案：</b> <span id="curTripName" style="color:#ff5722; font-weight:bold;">請先建立行程</span><br><br>
+                <b>🎯 當前查看專案：</b> <span id="curTripName" style="color:#ff5722; font-weight:bold;">請先建立行程</span>
+                <button class="comic-btn btn-blue" onclick="copyGuestLink()" style="width:100%; margin:10px 0; box-shadow:none; padding:6px;">🔗 複製這一團的分享連結</button>
                 <b>🐾 成員名單：</b> 
                 <div id="curTripMembers" style="background:#fff; padding:10px; border:2px solid #333; border-radius:12px; margin-top: 8px; min-height: 30px;">無成員</div>
             </div>
@@ -1159,7 +1160,7 @@
     function createNewTrip() {
         const input = document.getElementById('newTripInput'); const name = input.value.trim();
         if (!name) return alert('請輸入分類名稱！🌻');
-        db.trips.push({ name, startDate: "", endDate: "", currentDayTab: 1, scheduleData: {}, members: [], expenses: [] });
+        db.trips.push({ id: genId(), name, startDate: "", endDate: "", currentDayTab: 1, scheduleData: {}, members: [], expenses: [] });
         db.currentIdx = db.trips.length - 1; input.value = ""; refreshAll(); save();
     }
     function deleteTrip(idx, event) { event.stopPropagation(); if(confirm(`確定刪除整趟行程分類嗎？`)) { db.trips.splice(idx, 1); if(db.currentIdx >= db.trips.length) db.currentIdx = db.trips.length - 1; refreshAll(); save(); } }
@@ -1603,7 +1604,28 @@
         }
         return `<div class="expense-cell-amount">NT$${Math.round(e.amount)}</div>`;
     }
+    // 🔗 幫舊行程（尚未有 id 的）補上專屬 id，讓分享連結可以指定唯一行程
+    function ensureTripIds() {
+        let changed = false;
+        (db.trips || []).forEach(t => { if (!t.id) { t.id = genId(); changed = true; } });
+        return changed;
+    }
+    // 🔗 複製「當前查看行程」的分享連結（guest.html?trip=行程id），朋友點進去只會看到這一團
+    function copyGuestLink() {
+        if (db.currentIdx === -1 || !db.trips.length) return alert('請先建立並選擇一個行程分類！');
+        const trip = db.trips[db.currentIdx];
+        if (!trip.id) { ensureTripIds(); save(); }
+        const url = new URL('guest.html', window.location.href);
+        url.searchParams.set('trip', trip.id);
+        const link = url.toString();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(link).then(() => alert('✅ 已複製「' + trip.name + '」的分享連結！貼給這一團的朋友吧～')).catch(() => prompt('請手動複製這條連結：', link));
+        } else {
+            prompt('請手動複製這條連結：', link);
+        }
+    }
     function refreshAll() {
+        if (ensureTripIds()) save();
         const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
         db.trips.forEach((t, i) => container.innerHTML += `<div class="trip-tag ${i === db.currentIdx ? 'active' : ''}" onclick="selectTrip(${i})">🎈 ${t.name}<button class="delete-trip-btn" onclick="deleteTrip(${i}, event)">❌</button></div>`);
         if (db.currentIdx === -1 || !db.trips.length) return;

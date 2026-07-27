@@ -738,6 +738,8 @@
     }
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
+    // 🔒 若網址帶有 ?trip=行程id，畫面只會鎖定顯示這個行程，看不到、也切不到其他團
+    const lockedTripId = new URLSearchParams(window.location.search).get('trip');
     const MY_NAME_KEY = 'travel33_my_device_identity_guest';
     const MY_LOCK_KEY = MY_NAME_KEY + '_locked';
 
@@ -943,12 +945,17 @@
         fetchExchangeRates();
         cloudDoc.onSnapshot((docSnap) => {
             if (docSnap.exists) db = docSnap.data();
-            if (db.trips && db.trips.length > 0 && db.currentIdx === -1) db.currentIdx = 0;
+            if (lockedTripId) {
+                db.currentIdx = (db.trips || []).findIndex(t => t.id === lockedTripId);
+            } else {
+                // 🔒 沒有帶 ?trip= 的舊連結：不再自動顯示任何行程資料，避免舊連結外流看到全部團
+                db.currentIdx = -1;
+            }
             mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll();
         }, (err) => { mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll(); });
     };
 
-    function selectTrip(idx) { db.currentIdx = idx; refreshAll(); }
+    function selectTrip(idx) { if (lockedTripId) return; db.currentIdx = idx; refreshAll(); }
     function generateDayTags() {
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         if(!trip.currentDayTab) trip.currentDayTab = 1;
@@ -1259,7 +1266,16 @@
     }
     function refreshAll() {
         const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
-        db.trips.forEach((t, i) => container.innerHTML += `<div class="trip-tag ${i === db.currentIdx ? 'active' : ''}" onclick="selectTrip(${i})">🎈 ${t.name}</div>`);
+        if (lockedTripId) {
+            // 🔒 鎖定模式：只顯示這一團的名字，不列出、也不能切換到其他行程
+            if (db.currentIdx > -1 && db.trips[db.currentIdx]) {
+                container.innerHTML = `<div class="trip-tag active">🎈 ${db.trips[db.currentIdx].name}</div>`;
+            } else {
+                container.innerHTML = `<div style="padding:10px; color:#c0564a; font-weight:bold;">⚠️ 找不到這個行程，連結可能已失效，請跟主辦人索取新連結</div>`;
+            }
+        } else {
+            container.innerHTML = `<div style="padding:10px; color:#c0564a; font-weight:bold;">🔒 這個連結沒有指定行程，請跟主辦人索取專屬的分享連結</div>`;
+        }
         if (db.currentIdx === -1 || !db.trips.length) return;
         let trip = db.trips[db.currentIdx];
         ensureExpenseIds(trip);
