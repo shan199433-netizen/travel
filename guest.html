@@ -9,12 +9,34 @@
     <meta property="og:type" content="website">
     <link rel="icon" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-180.png">
-    <!-- 📌 之前這裡曾用 blob: 網址動態產生 manifest，想讓 start_url 帶著 trip 參數，
-         但 blob 網址只在當下分頁存活，加入主畫面後系統重新讀取時會失效，
-         導致退回沒有參數的 start_url，這正是「加入主畫面後卡在載入中」的原因。
-         現在改成：進站時把 trip id 存進 localStorage，開圖示時直接從那裡讀回來，
-         不再依賴 manifest 的 start_url，穩定許多，所以這裡改回單純的靜態 manifest。 -->
     <link rel="manifest" href="manifest-guest.json" id="guestManifestLink">
+    <script>
+    // 🔗 動態產生帶有目前 trip 參數的 manifest，讓「加入主畫面」時 start_url 記住的是「這一團」的完整連結
+    // ⚠️ 這裡故意用 data: 網址，不用 blob: 網址：
+    //    blob: 網址只在「當下這個分頁還開著」時有效，分頁一關就失效；
+    //    iOS 的 localStorage 在「Safari 瀏覽器」跟「加入主畫面的獨立 App」之間也是分開、不互通的，
+    //    所以唯一穩定的做法，是讓 manifest 的內容本身（包含 start_url）直接「寫在網址字串裡」，
+    //    不管什麼時候被讀取都不會過期、不需要另外去抓資料。
+    (function () {
+        try {
+            var iconBase = new URL('.', window.location.href).href;
+            var manifest = {
+                name: "33旅遊手帳(分享版)",
+                short_name: "33旅遊(分享)",
+                start_url: window.location.href,
+                display: "standalone",
+                background_color: "#faf8f5",
+                theme_color: "#ffdf8e",
+                icons: [
+                    { src: iconBase + "icon-192.png", sizes: "192x192", type: "image/png" },
+                    { src: iconBase + "icon-512.png", sizes: "512x512", type: "image/png" }
+                ]
+            };
+            var dataUri = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest));
+            document.getElementById('guestManifestLink').setAttribute('href', dataUri);
+        } catch (e) { /* 若瀏覽器不支援，就繼續用原本的 manifest-guest.json，不影響其他功能 */ }
+    })();
+    </script>
     <meta name="theme-color" content="#ffdf8e">
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
