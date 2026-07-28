@@ -9,31 +9,12 @@
     <meta property="og:type" content="website">
     <link rel="icon" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-180.png">
-    <!-- 這行已經改成連結到專屬的 manifest-guest.json -->
+    <!-- 📌 之前這裡曾用 blob: 網址動態產生 manifest，想讓 start_url 帶著 trip 參數，
+         但 blob 網址只在當下分頁存活，加入主畫面後系統重新讀取時會失效，
+         導致退回沒有參數的 start_url，這正是「加入主畫面後卡在載入中」的原因。
+         現在改成：進站時把 trip id 存進 localStorage，開圖示時直接從那裡讀回來，
+         不再依賴 manifest 的 start_url，穩定許多，所以這裡改回單純的靜態 manifest。 -->
     <link rel="manifest" href="manifest-guest.json" id="guestManifestLink">
-    <script>
-    // 🔗 動態產生帶有目前 trip 參數的 manifest，取代寫死的 manifest-guest.json
-    // 這樣「加入主畫面」時，記住的網址才會是「這一團」的連結，而不是沒有 trip 參數的版本
-    (function () {
-        try {
-            var iconBase = new URL('.', window.location.href).href;
-            var manifest = {
-                name: "33旅遊手帳(分享版)",
-                short_name: "33旅遊(分享)",
-                start_url: window.location.href,
-                display: "standalone",
-                background_color: "#faf8f5",
-                theme_color: "#ffdf8e",
-                icons: [
-                    { src: iconBase + "icon-192.png", sizes: "192x192", type: "image/png" },
-                    { src: iconBase + "icon-512.png", sizes: "512x512", type: "image/png" }
-                ]
-            };
-            var blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
-            document.getElementById('guestManifestLink').setAttribute('href', URL.createObjectURL(blob));
-        } catch (e) { /* 若瀏覽器不支援，就繼續用原本的 manifest-guest.json，不影響其他功能 */ }
-    })();
-    </script>
     <meta name="theme-color" content="#ffdf8e">
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -765,7 +746,14 @@
     function genId() { return 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
     let db = { title: "🦊 我的萌寵五星旅遊手帳", currentIdx: -1, trips: [] };
     // 🔒 若網址帶有 ?trip=行程id，畫面只會鎖定顯示這個行程，看不到、也切不到其他團
-    const lockedTripId = new URLSearchParams(window.location.search).get('trip');
+    // 📌 同時把 trip id 記在這台裝置的 localStorage，之後從「加入主畫面」的圖示打開時
+    //    網址通常不會帶參數（iOS 的已知限制），改從這裡讀回上次記住的團，避免卡在載入中
+    const LAST_TRIP_ID_KEY = 'travel33_last_trip_id_guest';
+    const urlTripId = new URLSearchParams(window.location.search).get('trip');
+    if (urlTripId) {
+        localStorage.setItem(LAST_TRIP_ID_KEY, urlTripId);
+    }
+    const lockedTripId = urlTripId || localStorage.getItem(LAST_TRIP_ID_KEY) || '';
     const MY_NAME_KEY = 'travel33_my_device_identity_guest';
     const MY_LOCK_KEY = MY_NAME_KEY + '_locked';
 
