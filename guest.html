@@ -81,12 +81,13 @@
         .app-phone-container {
             width: 650px; max-width: 100vw; min-height: 100vh; min-height: 100dvh;
             background-color: var(--bg-color); box-sizing: border-box;
-            position: relative; padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); 
+            position: relative; padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+            padding-top: env(safe-area-inset-top, 0px);
             box-shadow: 0 0 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
         }
 
-        .header-box { background: var(--main-yellow); padding: 15px 20px 17px; text-align: center; position: sticky; top: 0; z-index: 99; border-bottom: 2.5px solid var(--border-color); }
+        .header-box { background: var(--main-yellow); padding: 15px 20px 17px; text-align: center; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 99; border-bottom: 2.5px solid var(--border-color); }
         .header-title { font-size: 20px; font-weight: 600; letter-spacing: 2px; color: var(--text-main); }
 
         .page { display: none; width: 100%; box-sizing: border-box; padding: 16px 14px; }
@@ -370,7 +371,7 @@
 
     <div id="page-trip" class="page active">
         <div class="comic-card">
-            <div class="card-title">🏕️ 旅遊項目切換</div>
+            <div class="card-title">🏕️ 本次旅遊項目</div>
             <div class="trip-scroll-box" id="tripTagsContainer"></div>
         </div>
         <div class="comic-card">
