@@ -9,34 +9,17 @@
     <meta property="og:type" content="website">
     <link rel="icon" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-180.png">
-    <link rel="manifest" href="manifest-guest.json" id="guestManifestLink">
-    <script>
-    // 🔗 動態產生帶有目前 trip 參數的 manifest，讓「加入主畫面」時 start_url 記住的是「這一團」的完整連結
-    // ⚠️ 這裡故意用 data: 網址，不用 blob: 網址：
-    //    blob: 網址只在「當下這個分頁還開著」時有效，分頁一關就失效；
-    //    iOS 的 localStorage 在「Safari 瀏覽器」跟「加入主畫面的獨立 App」之間也是分開、不互通的，
-    //    所以唯一穩定的做法，是讓 manifest 的內容本身（包含 start_url）直接「寫在網址字串裡」，
-    //    不管什麼時候被讀取都不會過期、不需要另外去抓資料。
-    (function () {
-        try {
-            var iconBase = new URL('.', window.location.href).href;
-            var manifest = {
-                name: "33旅遊手帳(分享版)",
-                short_name: "33旅遊(分享)",
-                start_url: window.location.href,
-                display: "standalone",
-                background_color: "#faf8f5",
-                theme_color: "#ffdf8e",
-                icons: [
-                    { src: iconBase + "icon-192.png", sizes: "192x192", type: "image/png" },
-                    { src: iconBase + "icon-512.png", sizes: "512x512", type: "image/png" }
-                ]
-            };
-            var dataUri = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest));
-            document.getElementById('guestManifestLink').setAttribute('href', dataUri);
-        } catch (e) { /* 若瀏覽器不支援，就繼續用原本的 manifest-guest.json，不影響其他功能 */ }
-    })();
-    </script>
+    <!-- 📌 這裡故意不接 manifest.json！
+         實測發現：只要頁面掛了 manifest.json、裡面又設定 "display":"standalone"，
+         iOS 的「加入主畫面」就會改成完全依照 manifest 裡的 start_url 開啟，
+         而不是你加入當下瀏覽器網址列的那個網址（就算用 JS 動態抽換 manifest 內容也不穩定）。
+         這正是「網頁打開正常、加到主畫面卻卡在載入中」的真正原因。
+         改用底下這幾個 iOS 專屬的 apple-mobile-web-app-* meta 標籤，
+         是蘋果自己更早、更穩定的做法：全螢幕獨立模式照樣有，
+         但「加入主畫面」會直接記住你當下瀏覽器網址列上的完整網址（含 ?trip=xxx）。 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="33旅遊(分享)">
     <meta name="theme-color" content="#ffdf8e">
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
