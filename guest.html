@@ -88,17 +88,26 @@
 
         .header-box { background: var(--main-yellow); padding: 15px 20px 17px; text-align: center; position: sticky; top: 0; z-index: 99; border-bottom: 2.5px solid var(--border-color); }
         .header-title { font-size: 20px; font-weight: 600; letter-spacing: 2px; color: var(--text-main); }
+        .edit-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-main); opacity: 0.65; margin-left: 6px; }
+        #rateBadge {
+            font-size: 13px; font-weight: 700; opacity: 1; display: inline-flex; align-items: center; gap: 4px;
+            background: #fff; border: 2px solid var(--border-color); border-radius: 999px; padding: 5px 11px 5px 9px;
+            box-shadow: 2px 2px 0px rgba(53,50,44,0.75); vertical-align: middle;
+        }
+        #rateBadge:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px rgba(53,50,44,0.75); }
+        #rateBadge::after { content: "匯率"; }
 
         .page { display: none; width: 100%; box-sizing: border-box; padding: 16px 14px; }
         .page.active { display: block; }
 
         .comic-card { background: #fffdf9; border: 2.5px solid var(--border-color); border-radius: 22px; box-shadow: var(--box-shadow); margin-bottom: 22px; padding: 20px 18px; box-sizing: border-box; }
-        .card-title { font-size: 17px; font-weight: 600; letter-spacing: 1px; margin-bottom: 14px; border-bottom: 2px dashed rgba(53,50,44,0.35); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 17px; font-weight: 600; letter-spacing: 1px; margin-bottom: 14px; border-bottom: 2px dashed rgba(53,50,44,0.35); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 
         .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .dash-item { border: 2px solid var(--border-color); border-radius: 14px; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 600; line-height: 1.7; }
 
         label { font-size: 13.5px; color: var(--text-main); font-weight: 600; }
+        #preInfoBody > label { font-size: 15.5px; font-weight: 700; }
         input, select, textarea { width: 100%; padding: 13px 14px; margin: 7px 0 10px 0; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #fff; color: var(--text-main); }
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; background: #fff; }
@@ -162,9 +171,14 @@
         .subtab-btn.active { background: var(--main-orange); box-shadow: var(--active-shadow); transform: translate(3px, 3px); }
 
         /* 總覽儀表板：圓餅圖與圖例 */
-        .pie-chart { width: 190px; height: 190px; border-radius: 50%; margin: 10px auto 18px; box-shadow: var(--box-shadow); }
-        .pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 14.5px; padding: 6px 2px; }
-        .pie-dot { width: 13px; height: 13px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid rgba(53,50,44,0.5); }
+        .pie-overview-row { display: flex; align-items: center; gap: 14px; margin: 6px 0 10px; }
+        .pie-chart { width: 118px; height: 118px; border-radius: 50%; box-shadow: var(--box-shadow); flex-shrink: 0; }
+        #overviewLegend { flex: 1; min-width: 0; }
+        .pie-legend-item { display: flex; align-items: flex-start; gap: 7px; font-size: 13px; padding: 5px 0; }
+        .pie-dot { width: 11px; height: 11px; margin-top: 4px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid rgba(53,50,44,0.5); }
+        .pie-legend-text { display: flex; flex-direction: column; line-height: 1.4; font-weight: 700; min-width: 0; word-break: break-word; }
+        .pie-legend-amt { font-size: 11.5px; font-weight: 500; color: var(--text-soft); }
+        @media (max-width: 360px) { .pie-overview-row { flex-direction: column; } .pie-chart { margin: 0 auto; } }
         .overview-total-row { font-size: 16px; font-weight: 700; padding: 4px 2px 12px; }
         .overview-empty-hint { color: var(--text-soft); font-size: 14px; text-align: center; padding: 24px 4px; }
         /* 🎉 戰報卡：直式限動風格，固定 9:16 比例方便輸出成圖片分享到 IG/LINE 限動 */
@@ -405,7 +419,7 @@
         </div>
 
         <div id="preSubTab-expense" class="subtab-content" style="display:none;">
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 行前個人總花費（<span id="preTotalSum" style="color:red;">$0</span>）及明細</span></span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾ 收合</button></div><div id="preHistoryList" class="collapsible-content"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 行前總花費及明細（<span id="preTotalSum" style="color:red;">$0</span>）</span></span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾ 收合</button></div><div id="preHistoryList" class="collapsible-content"></div></div>
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;"><div class="card-title">🧮 行前結算</div><div id="preSettlementDisplay"></div></div>
         </div>
 
@@ -498,7 +512,7 @@
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾ 收合</button></div><div id="personalHistoryList" class="collapsible-content"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾ 收合</button></div><div id="personalHistoryList" class="collapsible-content"></div></div>
         </div>
 
         <div id="personalSubTab-proxy" class="subtab-content" style="display:none;">
@@ -523,7 +537,7 @@
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 我的代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾ 收合</button></div><div id="proxyHistoryList" class="collapsible-content"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾ 收合</button></div><div id="proxyHistoryList" class="collapsible-content"></div></div>
         </div>
     </div>
 
@@ -537,8 +551,10 @@
         <div class="comic-card">
             <div class="card-title">📊 我的消費總覽</div>
             <p style="font-size:12px; color:var(--text-soft); margin:-4px 0 14px 0; white-space:nowrap; overflow-x:auto;">範圍：個人自付＋行前代墊均攤額＋個人記帳私物／代購（不含他人）</p>
-            <div id="overviewChartWrap"></div>
-            <div id="overviewLegend"></div>
+            <div class="pie-overview-row">
+                <div id="overviewChartWrap"></div>
+                <div id="overviewLegend"></div>
+            </div>
         </div>
         <div class="comic-card">
             <div class="card-title">🧾 分類明細</div>
@@ -767,7 +783,7 @@
     function setMyIdentity(name) {
         if (!name) return;
         localStorage.setItem(MY_NAME_KEY, name.trim());
-        refreshPersonalPage();
+        refreshAll();
     }
     // 花費總覽頁選擇身分後跳出二次確認，確認後就鎖定身分、不能再更動
     function confirmIdentitySelection(selectEl) {
@@ -1409,10 +1425,30 @@
         const node = document.getElementById('reportCardContent');
         if (!node || typeof html2canvas === 'undefined') return alert('圖片產生功能載入中，請稍後再試一次！');
         html2canvas(node, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `旅遊戰報卡_${(db.trips[db.currentIdx].name || 'trip')}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            const fileName = `旅遊戰報卡_${(db.trips[db.currentIdx].name || 'trip')}.png`;
+            canvas.toBlob(async (blob) => {
+                if (!blob) { alert('圖片產生失敗了，請再試一次！'); return; }
+                // 手機（尤其 iOS Safari）對 <a download> 搭配圖片資料常常沒反應，改用系統分享面板，
+                // 讓使用者可以直接「儲存至照片」；沒有分享功能的瀏覽器則退回開新分頁讓使用者長按儲存
+                const file = new File([blob], fileName, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try { await navigator.share({ files: [file], title: fileName }); return; } catch (e) { /* 使用者取消分享，繼續走下面的備援方式 */ }
+                }
+                const url = URL.createObjectURL(blob);
+                const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+                if (isIOS) {
+                    window.open(url, '_blank');
+                    alert('圖片已在新分頁打開，請長按圖片並選「儲存影像」即可存到相簿！');
+                } else {
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = url;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                setTimeout(() => URL.revokeObjectURL(url), 15000);
+            }, 'image/png');
         }).catch(() => alert('圖片產生失敗了，請再試一次！'));
     }
 
@@ -1462,7 +1498,7 @@
 
         legend.innerHTML = rows.map(r => {
             const pct = Math.round(r.amount / grandTotal * 1000) / 10;
-            return `<div class="pie-legend-item"><span class="pie-dot" style="background:${r.color};"></span>${r.e} ${r.n}　$${Math.round(r.amount)}　(${pct}%)</div>`;
+            return `<div class="pie-legend-item"><span class="pie-dot" style="background:${r.color};"></span><span class="pie-legend-text">${r.e} ${r.n}<span class="pie-legend-amt">$${Math.round(r.amount)}　${pct}%</span></span></div>`;
         }).join('');
 
         catList.innerHTML = `<div class="overview-total-row">💰 個人消費總計：$${Math.round(grandTotal)}</div>` +
