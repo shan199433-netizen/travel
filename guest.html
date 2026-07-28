@@ -18,7 +18,7 @@
          是蘋果自己更早、更穩定的做法：全螢幕獨立模式照樣有，
          但「加入主畫面」會直接記住你當下瀏覽器網址列上的完整網址（含 ?trip=xxx）。 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="33旅遊(分享)">
     <meta name="theme-color" content="#ffdf8e">
 
@@ -82,12 +82,11 @@
             width: 650px; max-width: 100vw; min-height: 100vh; min-height: 100dvh;
             background-color: var(--bg-color); box-sizing: border-box;
             position: relative; padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
-            padding-top: env(safe-area-inset-top, 0px);
             box-shadow: 0 0 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
         }
 
-        .header-box { background: var(--main-yellow); padding: 15px 20px 17px; text-align: center; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 99; border-bottom: 2.5px solid var(--border-color); }
+        .header-box { background: var(--main-yellow); padding: 15px 20px 17px; text-align: center; position: sticky; top: 0; z-index: 99; border-bottom: 2.5px solid var(--border-color); }
         .header-title { font-size: 20px; font-weight: 600; letter-spacing: 2px; color: var(--text-main); }
 
         .page { display: none; width: 100%; box-sizing: border-box; padding: 16px 14px; }
