@@ -1616,7 +1616,27 @@
         setTimeout(() => el.remove(), 250);
     }
 
-    function save() { cloudDoc.set(db).catch(err => showToast('⚠️ 離線中,這筆還沒同步到雲端喔')); }
+    // 離線重試佇列：save() 失敗時，不再只是跳個 toast 就沒事了，而是每隔幾秒自動重試，
+    // 並且監聽瀏覽器 online 事件，一恢復網路就馬上補送，確保離線時做的修改最後一定會同步上雲端
+    let pendingSyncTimer = null;
+    let offlineToastShown = false;
+    function scheduleSaveRetry() {
+        if (pendingSyncTimer) return; // 已經在重試中，不用重複建立
+        pendingSyncTimer = setInterval(attemptSync, 5000);
+    }
+    function attemptSync() {
+        cloudDoc.set(db).then(() => {
+            if (pendingSyncTimer) { clearInterval(pendingSyncTimer); pendingSyncTimer = null; }
+            if (offlineToastShown) { showToast('✅ 網路恢復，資料已同步完成'); offlineToastShown = false; }
+        }).catch(() => { scheduleSaveRetry(); });
+    }
+    window.addEventListener('online', attemptSync);
+    function save() {
+        cloudDoc.set(db).catch(err => {
+            if (!offlineToastShown) { showToast('⚠️ 離線中,這筆還沒同步到雲端喔,恢復網路後會自動補送'); offlineToastShown = true; }
+            scheduleSaveRetry();
+        });
+    }
     function editAppTitle() { showPrompt("修改新手帳標題：", db.title, (t) => { if (t) { db.title = t; document.getElementById('appTitle').innerText = t; save(); } }); }
     function createNewTrip() {
         const input = document.getElementById('newTripInput'); const name = input.value.trim();
@@ -1712,12 +1732,14 @@
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         const start = new Date(trip.startDate); const end = new Date(trip.endDate);
         const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-        const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
+        const container = document.getElementById('dayTagsContainer');
+        let tagsHtml = [];
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
             const label = formatDayDate(start, i);
             const c = getDayColor(i); const isActive = i === trip.currentDayTab;
-            container.innerHTML += `<div class="day-tag ${isActive ? 'active' : ''}" style="border-color:${c};${isActive ? 'background:'+c+';' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`;
+            tagsHtml.push(`<div class="day-tag ${isActive ? 'active' : ''}" style="border-color:${c};${isActive ? 'background:'+c+';' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`);
         }
+        container.innerHTML = tagsHtml.join('');
         renderTimeline();
     }
     // 依出發日期算出第i天實際是幾月幾號，例如 Day1 (7/10)
@@ -2073,18 +2095,19 @@
         let myName = getMyIdentity();
         populateIdentitySelect();
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
-        const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
+        const hist = document.getElementById('personalHistoryList');
         const personalKeyword = (document.getElementById('personalHistorySearch') || {}).value?.trim().toLowerCase() || '';
         let personalTotal = 0; let personalMatchCount = 0;
+        const personalHtmlParts = [];
         (trip.expenses || []).forEach((e) => {
             if (e.type === 'personalItem' && e.payer === myName) {
                 if (personalKeyword && !(e.title || '').toLowerCase().includes(personalKeyword)) return;
                 personalMatchCount++;
                 personalTotal += e.amount;
                 if (e.id === editingPersonalId) {
-                    hist.innerHTML += renderPersonalEditForm(e);
+                    personalHtmlParts.push(renderPersonalEditForm(e));
                 } else {
-                    hist.innerHTML += `<div class="expense-grid-item">
+                    personalHtmlParts.push(`<div class="expense-grid-item">
                         <div class="expense-cell-date">${e.date}</div>
                         <div class="expense-cell-title">${getCategoryInfo(e.category).e} ${e.title}</div>
                         ${formatAmountCell(e)}
@@ -2092,11 +2115,11 @@
                             <button class="delete-btn" style="float:none;" onclick="editPersonalExpense('${e.id}')">✏️</button>
                             <button class="delete-btn" style="float:none;" onclick="deletePersonalExpense('${e.id}')">❌</button>
                         </div>
-                    </div>`;
+                    </div>`);
                 }
             }
         });
-        if (personalKeyword && !personalMatchCount) hist.innerHTML = "<p style='color:gray; font-size:14px;'>🔍 找不到符合的紀錄</p>";
+        hist.innerHTML = (personalKeyword && !personalMatchCount) ? "<p style='color:gray; font-size:14px;'>🔍 找不到符合的紀錄</p>" : personalHtmlParts.join('');
         document.getElementById('personalTotalSum').innerText = `目前總花費：$${Math.round(personalTotal)}`;
         if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) { fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); fillEditCategorySelect('editPersonalCategory_' + e.id, e.category); } }
 
@@ -2247,8 +2270,8 @@
             fillTripDateSelects('tripStart', trip.startDate || '');
             fillTripDateSelects('tripEnd', trip.endDate || '');
         }
-        const memDiv = document.getElementById('curTripMembers'); memDiv.innerHTML = "";
-        trip.members.forEach(m => memDiv.innerHTML += `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m} <span style="color:red; cursor:pointer;" onclick="deleteMember('${m}')">x</span></span>`);
+        const memDiv = document.getElementById('curTripMembers');
+        memDiv.innerHTML = trip.members.map(m => `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m} <span style="color:red; cursor:pointer;" onclick="deleteMember('${m}')">x</span></span>`).join('');
         generateDayTags(); refreshPersonalPage(); loadPreInfo(); renderBaggageList(); renderShoppingList();
         renderExpenseHistory('pre', 'preHistoryList');
         updatePreDashboard();
@@ -2261,27 +2284,18 @@
         const preSel = document.getElementById('prePayerSelect');
         const localSel = document.getElementById('localPayerSelect');
         if(preSel && localSel) {
-            preSel.innerHTML = ""; localSel.innerHTML = "";
-            trip.members.forEach(m => {
-                preSel.innerHTML += `<option value="${m}">${m}</option>`;
-                localSel.innerHTML += `<option value="${m}">${m}</option>`;
-            });
+            const optionsHtml = trip.members.map(m => `<option value="${m}">${m}</option>`).join('');
+            preSel.innerHTML = optionsHtml; localSel.innerHTML = optionsHtml;
         }
         const preGroup = document.getElementById('preShareGroup');
         const localGroup = document.getElementById('localShareGroup');
         if(preGroup && localGroup) {
-            preGroup.innerHTML = ""; localGroup.innerHTML = "";
-            trip.members.forEach(m => {
-                preGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`;
-                localGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`;
-            });
+            const checkedHtml = trip.members.map(m => `<label class="checkbox-label"><input type="checkbox" checked value="${m}">${m}</label>`).join('');
+            preGroup.innerHTML = checkedHtml; localGroup.innerHTML = checkedHtml;
         }
         const preSelfGroup = document.getElementById('preSelfGroup');
         if (preSelfGroup) {
-            preSelfGroup.innerHTML = "";
-            trip.members.forEach(m => {
-                preSelfGroup.innerHTML += `<label class="checkbox-label"><input type="checkbox" value="${m}">${m}</label>`;
-            });
+            preSelfGroup.innerHTML = trip.members.map(m => `<label class="checkbox-label"><input type="checkbox" value="${m}">${m}</label>`).join('');
         }
     }
 
@@ -2818,7 +2832,7 @@
         }
         if (!GROUP_BY_DATE_TYPES.includes(type)) {
             // 扁平清單模式（不分組）：只保留類別篩選跟搜尋，新到舊排列
-            items.slice().reverse().forEach(e => { listDiv.innerHTML += renderOneItem(e); });
+            listDiv.innerHTML = items.slice().reverse().map(renderOneItem).join('');
             if (editingExpenseId) {
                 const editingItem = items.find(x => x.id === editingExpenseId);
                 if (editingItem && (editingItem.type === 'pre' || editingItem.type === 'local')) fillEditCategorySelect('editExp_' + editingItem.id + '_category', editingItem.category);
@@ -2836,20 +2850,22 @@
         const dateKeys = Object.keys(groups).sort().reverse();
         // 第一次渲染還沒有任何展開紀錄時，預設展開最新一天
         if (expandedHistoryDate[type] === undefined) expandedHistoryDate[type] = dateKeys[0];
+        const groupHtmlParts = [];
         dateKeys.forEach(dateKey => {
             const dayItems = groups[dateKey];
             const daySubtotal = dayItems.reduce((s, e) => s + (e.amount || 0), 0);
             const isOpen = expandedHistoryDate[type] === dateKey;
             const bodyId = 'histDay_' + type + '_' + dateKey.replace(/[^0-9a-zA-Z]/g, '');
             const bodyHtml = isOpen ? dayItems.map(renderOneItem).join('') : '';
-            listDiv.innerHTML += `<div class="history-day-group">
+            groupHtmlParts.push(`<div class="history-day-group">
                 <div class="history-day-header" onclick="toggleHistoryDateGroup('${type}','${dateKey}','${listId}')">
                     <span>📅 ${dateKey}</span>
                     <span class="history-day-meta">${dayItems.length}筆・$${Math.round(daySubtotal)}　${isOpen ? '▾' : '▸'}</span>
                 </div>
                 <div id="${bodyId}" class="history-day-body" style="${isOpen ? '' : 'display:none;'}">${bodyHtml}</div>
-            </div>`;
+            </div>`);
         });
+        listDiv.innerHTML = groupHtmlParts.join('');
         if (editingExpenseId) {
             const editingItem = items.find(x => x.id === editingExpenseId);
             if (editingItem && (editingItem.type === 'pre' || editingItem.type === 'local')) fillEditCategorySelect('editExp_' + editingItem.id + '_category', editingItem.category);

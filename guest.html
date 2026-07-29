@@ -1312,12 +1312,14 @@
         if(!trip.currentDayTab) trip.currentDayTab = 1;
         const start = new Date(trip.startDate); const end = new Date(trip.endDate);
         const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
-        const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
+        const container = document.getElementById('dayTagsContainer');
+        let tagsHtml = [];
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
             const label = formatDayDate(start, i);
             const c = getDayColor(i); const isActive = i === trip.currentDayTab;
-            container.innerHTML += `<div class="day-tag ${isActive ? 'active' : ''}" style="border-color:${c};${isActive ? 'background:'+c+';' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`;
+            tagsHtml.push(`<div class="day-tag ${isActive ? 'active' : ''}" style="border-color:${c};${isActive ? 'background:'+c+';' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`);
         }
+        container.innerHTML = tagsHtml.join('');
         renderTimeline();
     }
     function formatDayDate(start, dayNum) {
@@ -1533,15 +1535,16 @@
         populateIdentitySelect();
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
 
-        const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
+        const hist = document.getElementById('personalHistoryList');
         let personalTotal = 0;
+        const personalHtmlParts = [];
         (trip.expenses || []).forEach((e) => {
             if (e.type === 'personalItem' && e.payer === myName) {
                 personalTotal += e.amount;
                 if (e.id === editingPersonalId) {
-                    hist.innerHTML += renderPersonalEditForm(e);
+                    personalHtmlParts.push(renderPersonalEditForm(e));
                 } else {
-                    hist.innerHTML += `<div class="expense-grid-item">
+                    personalHtmlParts.push(`<div class="expense-grid-item">
                         <div class="expense-cell-date">${e.date}</div>
                         <div class="expense-cell-title">${getCategoryInfo(e.category).e} ${e.title}</div>
                         ${formatAmountCell(e)}
@@ -1549,10 +1552,11 @@
                             <button class="delete-btn" style="float:none;" onclick="editPersonalExpense('${e.id}')">✏️</button>
                             <button class="delete-btn" style="float:none;" onclick="deletePersonalExpense('${e.id}')">❌</button>
                         </div>
-                    </div>`;
+                    </div>`);
                 }
             }
         });
+        hist.innerHTML = personalHtmlParts.join('');
         document.getElementById('personalTotalSum').innerText = `目前總花費：$${Math.round(personalTotal)}`;
         if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) { fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); fillEditCategorySelect('editPersonalCategory_' + e.id, e.category); } }
 
@@ -1965,7 +1969,7 @@
         }
         if (!GROUP_BY_DATE_TYPES.includes(type)) {
             // 扁平清單模式（不分組）：只保留類別篩選，新到舊排列
-            items.slice().reverse().forEach(e => { listDiv.innerHTML += renderOneItem(e); });
+            listDiv.innerHTML = items.slice().reverse().map(renderOneItem).join('');
             return;
         }
         // 依日期分組，新到舊排列
@@ -1974,20 +1978,22 @@
         const dateKeys = Object.keys(groups).sort().reverse();
         // 第一次渲染還沒有任何展開紀錄時，預設展開最新一天
         if (expandedHistoryDate[type] === undefined) expandedHistoryDate[type] = dateKeys[0];
+        const groupHtmlParts = [];
         dateKeys.forEach(dateKey => {
             const dayItems = groups[dateKey];
             const daySubtotal = dayItems.reduce((s, e) => s + (e.amount || 0), 0);
             const isOpen = expandedHistoryDate[type] === dateKey;
             const bodyId = 'histDay_' + type + '_' + dateKey.replace(/[^0-9a-zA-Z]/g, '');
             const bodyHtml = isOpen ? dayItems.map(renderOneItem).join('') : '';
-            listDiv.innerHTML += `<div class="history-day-group">
+            groupHtmlParts.push(`<div class="history-day-group">
                 <div class="history-day-header" onclick="toggleHistoryDateGroup('${type}','${dateKey}','${listId}')">
                     <span>📅 ${dateKey}</span>
                     <span class="history-day-meta">${dayItems.length}筆・$${Math.round(daySubtotal)}　${isOpen ? '▾' : '▸'}</span>
                 </div>
                 <div id="${bodyId}" class="history-day-body" style="${isOpen ? '' : 'display:none;'}">${bodyHtml}</div>
-            </div>`;
+            </div>`);
         });
+        listDiv.innerHTML = groupHtmlParts.join('');
     }
 
     function updatePreDashboard() {
