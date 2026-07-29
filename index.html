@@ -442,26 +442,26 @@
         }
         .history-day-meta { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
         .history-day-body { padding: 8px 4px 2px; }
-        .timeline-item { border-left: 3px solid var(--day-accent, var(--border-color)); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
-        .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
+        .timeline-item-wrap { position: relative; padding-left: 22px; border-left: 3px solid var(--day-accent, var(--border-color)); margin-left: 8px; padding-bottom: 14px; }
+        .timeline-item-wrap::before {
+            content: ''; position: absolute; left: -9px; top: 2px; width: 16px; height: 16px; border-radius: 50%;
+            background: var(--day-accent, var(--border-color)); border: 2.5px solid var(--border-color);
+        }
+        .timeline-item {
+            background: #fffdf9; border: 2.5px solid var(--border-color); border-radius: 14px;
+            box-shadow: 3px 3px 0px rgba(53,50,44,0.85); padding: 10px 12px; position: relative; line-height: 1.7;
+        }
         .timeline-item .item-desc { font-weight: bold; font-size: 16.5px; }
         .timeline-item .item-memo { display: block; margin-top: 5px; font-size: 14.5px; color: var(--text-soft); line-height: 1.65; }
+        .timeline-item .delete-btn, .timeline-item .edit-btn { opacity: 0.4; }
         .item-link {
             font-size: 14px; font-weight: 400; color: #4a95c9; text-decoration: underline;
             text-underline-offset: 2px; word-break: break-all;
         }
 
-        .timeline-period-tag {
-            display: inline-flex; align-items: center; gap: 5px; background: #fff; border: 2px solid var(--border-color);
-            border-radius: 20px; padding: 4px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-main);
-            margin: 4px 0 12px -10px;
-        }
-        .timeline-period-tag.tp-dawn { background: #d6def6; }
-        .timeline-period-tag.tp-day { background: #fff2cf; }
-        .timeline-period-tag.tp-night { background: #e3d4f2; }
         .timeline-time-badge {
             display: inline-block; min-width: 46px; text-align: center; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
-            padding: 3px 12px; font-size: 14.5px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
+            padding: 3px 12px; font-size: 13px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
         }
         /* 凌晨／白天／晚上 三種時段跳色，讓時間一眼就能分辨 */
         .timeline-time-badge.tb-dawn { background: #c3d2f2; color: #2c3a70; }
@@ -1829,16 +1829,7 @@
         ta.setSelectionRange(cursorPos, cursorPos);
         closeLinkInsert();
     }
-    // 依時間分凌晨／白天／晚上，讓時間軸新增行程後可以分段顯示；沒有指定時間的項目歸類成「未定時間」
-    function getTimePeriod(timeStr) {
-        if (!timeStr) return '';
-        const hour = parseInt(timeStr.split(':')[0], 10);
-        if (isNaN(hour)) return '';
-        if (hour < 6) return '🌌 凌晨';
-        if (hour < 17) return '☀️ 白天';
-        return '🌙 晚上';
-    }
-    // 依時段回傳對應的跳色 class（凌晨／白天／晚上），套用在時間徽章與分段標籤上
+    // 依時段回傳對應的跳色 class（凌晨／白天／晚上），套用在時間徽章上
     function getTimePeriodClass(timeStr) {
         if (!timeStr) return '';
         const hour = parseInt(timeStr.split(':')[0], 10);
@@ -1846,10 +1837,6 @@
         if (hour < 6) return 'tb-dawn';
         if (hour < 17) return 'tb-day';
         return 'tb-night';
-    }
-    function getPeriodTagClass(timeStr) {
-        const c = getTimePeriodClass(timeStr);
-        return c ? c.replace('tb-', 'tp-') : '';
     }
     // 產生24小時制的「時」「分」下拉選單選項（不依賴裝置語系，避免被顯示成12小時制AM/PM）
     function hourOptionsHtml(selected) {
@@ -1917,15 +1904,13 @@
         listDiv.style.setProperty('--day-accent', getDayColor(trip.currentDayTab || 1));
         const items = (trip.scheduleData || {})[trip.currentDayTab] || [];
         if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; renderAddColorPickers(); return; }
-        let html = ""; let lastPeriod = null;
+        let html = "";
         items.forEach((item, idx) => {
-            const period = getTimePeriod(item.time);
-            if (period && period !== lastPeriod) { html += `<div class="timeline-period-tag ${getPeriodTagClass(item.time)}">${period}</div>`; lastPeriod = period; }
             if (editingScheduleIdx === idx) {
                 const hasTime = !!item.time;
                 const editHour = hasTime ? item.time.split(':')[0] : '12';
                 const editMinute = hasTime ? item.time.split(':')[1] : '00';
-                html += `<div class="timeline-item" style="background:#fffde7; border-radius:8px; padding:8px;">
+                html += `<div class="timeline-item-wrap"><div class="timeline-item" style="background:#fffde7; border-radius:14px; padding:10px 12px;">
                     <label class="time-toggle-label">
                         <input type="checkbox" id="editSchedTimeEnabled_${idx}" ${hasTime ? 'checked' : ''} onchange="document.getElementById('editSchedTimeWrap_${idx}').style.display=this.checked?'flex':'none'">
                         🕒 設定時間（取消勾選＝不指定時間）
@@ -1944,7 +1929,7 @@
                         <button class="comic-btn btn-blue" style="padding:6px 10px; font-size:13px;" onclick="saveScheduleItem(${idx})">✅ 儲存</button>
                         <button class="comic-btn" style="padding:6px 10px; font-size:13px;" onclick="cancelEditSchedule()">取消</button>
                     </div>
-                </div>`;
+                </div></div>`;
             } else {
                 const descColor = scheduleColorPalette[item.descColor] || scheduleColorPalette.black;
                 // item.link/item.linkLabel 是舊版資料格式的相容顯示（新項目已改用備忘錄內自動連結）
@@ -1955,7 +1940,7 @@
                     : (legacyLinkHtml ? '<span class="item-memo">' + legacyLinkHtml + '</span>' : '');
                 const timeLabel = item.time ? item.time : '➖';
                 const tClass = item.time ? (' ' + getTimePeriodClass(item.time)) : ' no-time';
-                html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge${tClass}">${timeLabel}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
+                html += `<div class="timeline-item-wrap"><div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge${tClass}">${timeLabel}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div></div>`;
             }
         });
         listDiv.innerHTML = html;
