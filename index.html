@@ -366,21 +366,27 @@
 
         /* ✈️ 機票小卡：把班機資訊做成像機票 App 一樣的卡片 */
         .flight-ticket-card {
-            background: linear-gradient(180deg, #dfeaf9 0%, #dfeaf9 40%, #fffdf9 40%, #fffdf9 100%);
+            background: linear-gradient(180deg, #fff3d6 0%, #fff3d6 26%, #fffdf9 26%, #fffdf9 100%);
             border: 2.5px solid var(--border-color); border-radius: 20px; box-shadow: var(--box-shadow);
             padding: 14px 14px 16px; margin: 4px 0 14px; box-sizing: border-box;
         }
-        .flight-ticket-airline { text-align: center; font-size: 13px; font-weight: 700; color: var(--text-soft); letter-spacing: 1.5px; margin-bottom: 8px; }
-        .flight-ticket-number { text-align: center; font-size: 25px; font-weight: 900; letter-spacing: 3px; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; padding: 8px 6px; margin-bottom: 12px; }
+        .flight-ticket-card.dir-go { background: linear-gradient(180deg, #d9ecfb 0%, #d9ecfb 26%, #fffdf9 26%, #fffdf9 100%); }
+        .flight-ticket-card.dir-back { background: linear-gradient(180deg, #fbe1ec 0%, #fbe1ec 26%, #fffdf9 26%, #fffdf9 100%); }
+        .flight-direction-wrap { text-align: center; margin-bottom: 8px; }
+        .flight-direction-badge { display: inline-block; padding: 6px 18px; border-radius: 999px; font-size: 14.5px; font-weight: 800; border: 2.5px solid var(--border-color); background: #fff3d6; color: #7a5a12; }
+        .flight-direction-badge.dir-go { background: var(--main-blue); color: #0c4a78; }
+        .flight-direction-badge.dir-back { background: var(--main-pink); color: #8a2f4a; }
+        .flight-ticket-subline { text-align: center; font-size: 13.5px; font-weight: 700; color: var(--text-soft); margin-bottom: 10px; }
+        .flight-ticket-date { text-align: center; font-size: 18px; font-weight: 900; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; padding: 8px 6px; margin-bottom: 12px; letter-spacing: 0.5px; }
         .flight-route-row { display: flex; align-items: center; background: #fff; border: 2.5px solid var(--border-color); border-radius: 16px; padding: 14px 8px; gap: 4px; }
         .flight-route-col { flex: 1 1 0; min-width: 0; }
         .flight-route-col.dep { text-align: left; }
         .flight-route-col.arr { text-align: right; }
         .flight-route-code { font-size: 21px; font-weight: 900; word-break: break-all; }
         .flight-route-time { font-size: 14.5px; font-weight: 700; color: var(--text-soft); margin-top: 2px; }
-        .flight-route-tag { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }
-        .flight-route-tag.dep-tag { background: #7cb342; }
-        .flight-route-tag.arr-tag { background: #ff9800; }
+        .flight-route-tag { display: inline-block; margin-top: 6px; padding: 3px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 800; border: 1.5px solid rgba(53,50,44,0.4); }
+        .flight-route-tag.dep-tag { background: var(--main-green); color: #275b1d; }
+        .flight-route-tag.arr-tag { background: var(--main-purple); color: #4a2d6b; }
         .flight-route-mid { flex: 0 0 auto; font-size: 10.5px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
         .flight-route-line { width: 48px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
         .flight-route-plane { font-size: 13px; }
@@ -652,8 +658,6 @@
             <label>✈️ 機票資訊</label>
             <div id="flightTicketList"></div>
             <button class="comic-btn btn-blue" onclick="openFlightModal()" style="margin:2px 0 14px;">➕ 新增一張機票</button>
-            <label>📝 其他機票備註（選填）</label>
-            <textarea id="infoFlightNote" rows="2" placeholder="退稅、行李規定、其他航班補充..."></textarea>
             <label>🏠 民宿 / 住宿地址</label>
             <textarea id="infoHotel" rows="3" placeholder="民宿名稱、地址..."></textarea>
             <label>📝 行前準備（退稅流程 / 天氣 / 提醒）</label>
@@ -955,6 +959,12 @@
             <div class="flight-modal-card">
                 <div class="flight-modal-title" id="flightModalTitle">✈️ 新增機票</div>
                 <input type="hidden" id="flightTicketId">
+                <label>🧭 這是去程還是回程？</label>
+                <select id="flightDirection">
+                    <option value="go">🛫 去程航班</option>
+                    <option value="back">🛬 回程航班</option>
+                    <option value="other">✈️ 其他航班</option>
+                </select>
                 <label>🛫 航空公司</label>
                 <input type="text" id="flightAirline" placeholder="例如：釜山航空">
                 <div style="display:flex; gap:8px;" class="row-flex-nowrap">
@@ -966,8 +976,18 @@
                     <div style="flex:1; min-width:0;"><label>🏙️ 出發城市</label><input type="text" id="flightDepCity" placeholder="高雄"></div>
                 </div>
                 <div style="display:flex; gap:8px;" class="row-flex-nowrap">
-                    <div style="flex:1; min-width:0;"><label>🛫 出發時間</label><input type="time" id="flightDepTime"></div>
-                    <div style="flex:1; min-width:0;"><label>🛬 抵達時間</label><input type="time" id="flightArrTime"></div>
+                    <div style="flex:1; min-width:0;"><label>🛫 出發時間（24時制）</label>
+                        <div style="display:flex; gap:6px;">
+                            <select id="flightDepHour" style="flex:1;"><option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option></select>
+                            <select id="flightDepMin" style="flex:1;"><option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option></select>
+                        </div>
+                    </div>
+                    <div style="flex:1; min-width:0;"><label>🛬 抵達時間（24時制）</label>
+                        <div style="display:flex; gap:6px;">
+                            <select id="flightArrHour" style="flex:1;"><option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option></select>
+                            <select id="flightArrMin" style="flex:1;"><option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option></select>
+                        </div>
+                    </div>
                 </div>
                 <div style="display:flex; gap:8px;" class="row-flex-nowrap">
                     <div style="flex:1; min-width:0;"><label>🏳️ 抵達機場代碼</label><input type="text" id="flightArrCode" placeholder="PUS" style="text-transform:uppercase;"></div>
@@ -2295,18 +2315,22 @@
     function loadPreInfo() {
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
         let trip = db.trips[db.currentIdx]; const info = trip.preInfo || {};
-        document.getElementById('infoFlightNote').value = info.flightNote || info.flight || "";
         document.getElementById('infoHotel').value = info.hotel || "";
         document.getElementById('infoPrep').value = info.prep || "";
         renderFlightTickets();
     }
     function savePreInfo() {
         if (db.currentIdx === -1) return; let trip = db.trips[db.currentIdx];
-        trip.preInfo = { flightNote: document.getElementById('infoFlightNote').value, hotel: document.getElementById('infoHotel').value, prep: document.getElementById('infoPrep').value };
+        trip.preInfo = { hotel: document.getElementById('infoHotel').value, prep: document.getElementById('infoPrep').value };
         save(); document.getElementById('preInfoSavedHint').innerText = '✅ 已儲存！'; setTimeout(() => document.getElementById('preInfoSavedHint').innerText = '', 2000);
     }
 
     // ✈️ 機票小卡：把班機資訊改成像機票 App 一樣的卡片，一趟旅程可以放好幾張（去程／回程／段落機票）
+    function flightDirectionMeta(direction) {
+        if (direction === 'go') return { cls: 'dir-go', label: '🛫 去程航班' };
+        if (direction === 'back') return { cls: 'dir-back', label: '🛬 回程航班' };
+        return { cls: 'dir-other', label: '✈️ 航班資訊' };
+    }
     function renderFlightTickets() {
         const wrap = document.getElementById('flightTicketList');
         if (!wrap) return;
@@ -2314,10 +2338,13 @@
         const trip = db.trips[db.currentIdx];
         const tickets = trip.flightTickets || [];
         if (!tickets.length) { wrap.innerHTML = '<div class="flight-ticket-empty-hint">還沒有機票資料，點下面「➕ 新增一張機票」開始建立吧！</div>'; return; }
-        wrap.innerHTML = tickets.map(t => `
-            <div class="flight-ticket-card">
-                <div class="flight-ticket-airline">${escapeHtml(t.airline || '未填寫航空公司')}</div>
-                <div class="flight-ticket-number">${escapeHtml(t.flightNo || '—')}</div>
+        wrap.innerHTML = tickets.map(t => {
+            const dir = flightDirectionMeta(t.direction);
+            return `
+            <div class="flight-ticket-card ${dir.cls}">
+                <div class="flight-direction-wrap"><span class="flight-direction-badge ${dir.cls}">${dir.label}</span></div>
+                <div class="flight-ticket-subline">${escapeHtml(t.airline || '未填寫航空公司')}${t.flightNo ? ' · ' + escapeHtml(t.flightNo) : ''}</div>
+                ${t.date ? `<div class="flight-ticket-date">📅 ${escapeHtml(t.date)}</div>` : ''}
                 <div class="flight-route-row">
                     <div class="flight-route-col dep">
                         <div class="flight-route-code">${escapeHtml(t.depCode || '?')}</div>
@@ -2328,7 +2355,6 @@
                         ${t.duration ? escapeHtml(t.duration) : ''}
                         <div class="flight-route-line"></div>
                         <div class="flight-route-plane">✈️</div>
-                        ${t.date ? escapeHtml(t.date) : ''}
                     </div>
                     <div class="flight-route-col arr">
                         <div class="flight-route-code">${escapeHtml(t.arrCode || '?')}</div>
@@ -2345,7 +2371,8 @@
                     <button class="comic-btn btn-blue" onclick="openFlightModal('${t.id}')">✏️ 編輯航班資訊</button>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
     function openFlightModal(ticketId) {
         if (db.currentIdx === -1 || !db.trips.length) return showToast('請先建立並選擇一個行程分類！');
@@ -2353,13 +2380,24 @@
         const t = ticketId ? (trip.flightTickets || []).find(x => x.id === ticketId) : null;
         document.getElementById('flightModalTitle').innerText = t ? '✏️ 編輯機票' : '✈️ 新增機票';
         document.getElementById('flightTicketId').value = t ? t.id : '';
+        let defaultDir = 'go';
+        if (!t) {
+            const existing = trip.flightTickets || [];
+            if (existing.some(x => x.direction === 'go') && !existing.some(x => x.direction === 'back')) defaultDir = 'back';
+            else if (existing.length) defaultDir = 'other';
+        }
+        document.getElementById('flightDirection').value = t?.direction || defaultDir;
         document.getElementById('flightAirline').value = t?.airline || '';
         document.getElementById('flightNo').value = t?.flightNo || '';
         document.getElementById('flightDate').value = t?.date || '';
         document.getElementById('flightDepCode').value = t?.depCode || '';
         document.getElementById('flightDepCity').value = t?.depCity || '';
-        document.getElementById('flightDepTime').value = t?.depTime || '';
-        document.getElementById('flightArrTime').value = t?.arrTime || '';
+        const [depH, depM] = (t?.depTime || '00:00').split(':');
+        document.getElementById('flightDepHour').value = depH || '00';
+        document.getElementById('flightDepMin').value = depM || '00';
+        const [arrH, arrM] = (t?.arrTime || '00:00').split(':');
+        document.getElementById('flightArrHour').value = arrH || '00';
+        document.getElementById('flightArrMin').value = arrM || '00';
         document.getElementById('flightArrCode').value = t?.arrCode || '';
         document.getElementById('flightArrCity').value = t?.arrCity || '';
         document.getElementById('flightDuration').value = t?.duration || '';
@@ -2375,13 +2413,14 @@
         const id = document.getElementById('flightTicketId').value;
         const ticket = {
             id: id || genId(),
+            direction: document.getElementById('flightDirection').value,
             airline: document.getElementById('flightAirline').value.trim(),
             flightNo: document.getElementById('flightNo').value.trim(),
             date: document.getElementById('flightDate').value,
             depCode: document.getElementById('flightDepCode').value.trim().toUpperCase(),
             depCity: document.getElementById('flightDepCity').value.trim(),
-            depTime: document.getElementById('flightDepTime').value,
-            arrTime: document.getElementById('flightArrTime').value,
+            depTime: document.getElementById('flightDepHour').value + ':' + document.getElementById('flightDepMin').value,
+            arrTime: document.getElementById('flightArrHour').value + ':' + document.getElementById('flightArrMin').value,
             arrCode: document.getElementById('flightArrCode').value.trim().toUpperCase(),
             arrCity: document.getElementById('flightArrCity').value.trim(),
             duration: document.getElementById('flightDuration').value.trim(),
