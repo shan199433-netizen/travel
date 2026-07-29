@@ -342,6 +342,15 @@
             width: 100%; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 10px;
             padding: 9px 10px; font-size: 15px; font-family: inherit; margin-bottom: 16px;
         }
+
+        /* 🌱 首次載入畫面：等雲端資料第一次回傳前顯示，避免看到空白/半套資料 */
+        #appLoadingScreen {
+            position: fixed; inset: 0; background: var(--bg-color); z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+        }
+        #appLoadingScreen .loading-emoji { font-size: 44px; animation: loadingBounce 1s ease-in-out infinite; }
+        #appLoadingScreen .loading-text { font-size: 14px; font-weight: 700; color: var(--text-soft); font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; }
+        @keyframes loadingBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         
         .delete-trip-btn { background: none; border: none; color: #c0564a; cursor: pointer; font-weight: bold; padding: 0 2px; }
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
@@ -487,6 +496,11 @@
     </style>
 </head>
 <body>
+
+<div id="appLoadingScreen">
+    <div class="loading-emoji">🌱</div>
+    <div class="loading-text">資料同步中...</div>
+</div>
 
 <div class="app-phone-container">
     <div class="header-box">
@@ -1276,13 +1290,22 @@
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
         fetchExchangeRates();
+        setTimeout(hideAppLoading, 6000); // 保險：萬一完全連不上網路，6 秒後還是先讓畫面顯示出來，不要卡死在 loading
         cloudDoc.onSnapshot((docSnap) => {
             if (docSnap.exists) db = docSnap.data(); else cloudDoc.set(db);
             mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll();
-        }, (err) => { mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll(); });
+            hideAppLoading();
+        }, (err) => { mergeLocalData(); document.getElementById('appTitle').innerText = db.title; refreshAll(); hideAppLoading(); });
     };
+    function hideAppLoading() {
+        const el = document.getElementById('appLoadingScreen');
+        if (!el) return;
+        el.style.transition = 'opacity .25s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 250);
+    }
 
-    function save() { cloudDoc.set(db).catch(err => {}); }
+    function save() { cloudDoc.set(db).catch(err => showToast('⚠️ 離線中,這筆還沒同步到雲端喔')); }
     function editAppTitle() { showPrompt("修改新手帳標題：", db.title, (t) => { if (t) { db.title = t; document.getElementById('appTitle').innerText = t; save(); } }); }
     function createNewTrip() {
         const input = document.getElementById('newTripInput'); const name = input.value.trim();
