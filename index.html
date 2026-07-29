@@ -563,17 +563,20 @@
 
         <div class="comic-card">
             <div class="card-title">🏕️ 旅遊項目切換</div>
-            <div class="trip-scroll-box" id="tripTagsContainer"></div>
-        </div>
-
-        <div class="comic-card">
-            <div class="card-title">➕ 新增行程</div>
             <div style="display: flex; gap: 8px;">
-                <input type="text" id="newTripInput" placeholder="加新行程分類（如：2026泰國 🇹🇭）" onkeydown="if(event.key==='Enter'){event.preventDefault(); createNewTrip();}">
-                <button class="comic-btn btn-blue" onclick="createNewTrip()" style="width:90px; box-shadow:none; padding:5px;">新增</button>
+                <select id="tripSwitchSelect" onchange="selectTrip(parseInt(this.value))" style="flex:1;"></select>
+                <button class="comic-btn" onclick="deleteCurrentTrip()" style="width:44px; box-shadow:none; padding:5px; flex-shrink:0;" title="刪除目前行程">🗑️</button>
+            </div>
+
+            <div style="border-top: 2px dashed rgba(53,50,44,0.25); margin-top: 15px; padding-top: 12px;">
+                <label style="font-size: 13px; font-weight: 700; display:block; margin-bottom:6px;">➕ 新增行程</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="newTripInput" placeholder="加新行程分類（如：2026泰國 🇹🇭）" onkeydown="if(event.key==='Enter'){event.preventDefault(); createNewTrip();}">
+                    <button class="comic-btn btn-blue" onclick="createNewTrip()" style="width:90px; box-shadow:none; padding:5px;">新增</button>
+                </div>
             </div>
             <div style="border-top: 2px dashed rgba(53,50,44,0.25); margin-top: 15px; padding-top: 12px;">
-                <label style="font-size: 13px;">🐾 新增成員</label>
+                <label style="font-size: 13px; font-weight: 700; display:block; margin-bottom:6px;">🐾 新增成員</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="newMemberInput" placeholder="輸入成員名字（如:小兔、熊大）" onkeydown="if(event.key==='Enter'){event.preventDefault(); addMember();}">
                     <button class="comic-btn" onclick="addMember()" style="width:90px; box-shadow:none; padding:5px;">加入</button>
@@ -1393,15 +1396,18 @@
     // 新增行程後，把剛新增的分類捲動到畫面內並閃一下，避免列表一長就看不出新行程跑到哪去了
     function highlightNewTripTag() {
         setTimeout(() => {
-            const container = document.getElementById('tripTagsContainer');
-            const tag = container && container.querySelector(`.trip-tag[data-idx="${db.currentIdx}"]`);
-            if (!tag) return;
-            tag.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            tag.classList.add('new-flash');
-            setTimeout(() => tag.classList.remove('new-flash'), 2000);
+            const sel = document.getElementById('tripSwitchSelect');
+            if (!sel) return;
+            sel.classList.add('new-flash');
+            setTimeout(() => sel.classList.remove('new-flash'), 2000);
         }, 50);
     }
-    function deleteTrip(idx, event) { event.stopPropagation(); showConfirm('確定刪除整趟行程分類嗎？', () => { db.trips.splice(idx, 1); if(db.currentIdx >= db.trips.length) db.currentIdx = db.trips.length - 1; refreshAll(); save(); }, { icon: '🗑️' }); }
+    function deleteTrip(idx, event) { if (event) event.stopPropagation(); showConfirm('確定刪除整趟行程分類嗎？', () => { db.trips.splice(idx, 1); if(db.currentIdx >= db.trips.length) db.currentIdx = db.trips.length - 1; refreshAll(); save(); }, { icon: '🗑️' }); }
+    // 🗑️ 下拉選單旁的刪除鈕：直接刪除目前選中的行程
+    function deleteCurrentTrip() {
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('目前沒有選擇任何行程！');
+        deleteTrip(db.currentIdx);
+    }
     function selectTrip(idx) { db.currentIdx = idx; refreshAll(); save(); }
     function addMember() {
         if (db.currentIdx === -1 || db.trips.length === 0) return showToast('請先新增並點選一個行程分類！');
@@ -1979,8 +1985,8 @@
     }
     function refreshAll() {
         if (ensureTripIds()) save();
-        const container = document.getElementById('tripTagsContainer'); container.innerHTML = "";
-        db.trips.forEach((t, i) => container.innerHTML += `<div class="trip-tag ${i === db.currentIdx ? 'active' : ''}" data-idx="${i}" onclick="selectTrip(${i})">🎈 ${t.name}<button class="delete-trip-btn" onclick="deleteTrip(${i}, event)">❌</button></div>`);
+        const sel = document.getElementById('tripSwitchSelect');
+        sel.innerHTML = db.trips.map((t, i) => `<option value="${i}" ${i === db.currentIdx ? 'selected' : ''}>🎈 ${escapeHtml(t.name)}</option>`).join('') || '<option value="-1">🧸選擇此趟旅程吧！</option>';
         if (db.currentIdx === -1 || !db.trips.length) return;
         let trip = db.trips[db.currentIdx];
         if (ensureExpenseIds(trip)) save();
