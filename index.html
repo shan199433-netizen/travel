@@ -335,6 +335,13 @@
             animation: toastIn .25s ease; transition: opacity .2s ease;
         }
         @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .toast-undo { display: flex; align-items: center; gap: 10px; }
+        .toast-undo-btn {
+            background: #fff; border: 2px solid var(--border-color); border-radius: 999px; padding: 4px 10px;
+            font-size: 12.5px; font-weight: 700; color: var(--text-main); cursor: pointer; white-space: nowrap;
+            font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; -webkit-tap-highlight-color: transparent;
+        }
+        .toast-undo-btn:active { transform: scale(0.95); }
         .confirm-modal-card {
             width: 280px; max-width: calc(100vw - 40px);
             background: #fffdf5; border: 3px solid var(--border-color); border-radius: 20px;
@@ -371,6 +378,23 @@
         
         .delete-trip-btn { background: none; border: none; color: #c0564a; cursor: pointer; font-weight: bold; padding: 0 2px; }
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
+
+        /* 📅 花費明細依日期分組摺疊 + 類別篩選 chip：避免天數一多整頁滑不完 */
+        .cat-chip-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; -webkit-overflow-scrolling: touch; }
+        .cat-chip {
+            background: #fff; border: 2px solid var(--border-color); border-radius: 20px; padding: 6px 12px;
+            font-size: 12px; font-weight: 700; color: var(--text-main); white-space: nowrap; cursor: pointer;
+            -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+        }
+        .cat-chip.active { background: var(--main-yellow); box-shadow: 2px 2px 0px rgba(53,50,44,0.85); }
+        .history-day-group { margin-bottom: 8px; }
+        .history-day-header {
+            background: var(--bg-color); border: 2.5px solid var(--border-color); border-radius: 14px;
+            box-shadow: var(--box-shadow); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; font-size: 13px; font-weight: 700; -webkit-tap-highlight-color: transparent;
+        }
+        .history-day-meta { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+        .history-day-body { padding: 8px 4px 2px; }
         .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
         .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
         .timeline-item .item-desc { font-weight: bold; font-size: 16.5px; }
@@ -564,6 +588,7 @@
                 <div id="curTripMembers" style="background:#fff; padding:10px; border:2px solid #333; border-radius:12px; margin-top: 8px; min-height: 30px;">無成員</div>
                 <b style="display:block; margin-top:16px;">🎯 當前查看專案：</b> <span id="curTripName" style="color:#ff5722; font-weight:bold;">請先建立行程</span>
                 <button class="comic-btn btn-blue" onclick="copyGuestLink()" style="width:100%; margin-top:10px; box-shadow:none; padding:6px;">🔗 複製這一團的分享連結</button>
+                <button class="comic-btn btn-orange" onclick="exportTripCSV()" style="width:100%; margin-top:8px; box-shadow:none; padding:6px;">📤 匯出這一團的花費紀錄</button>
             </div>
         </div>
     </div>
@@ -625,6 +650,8 @@
                 <span class="card-title-left"><span>📋 行前總花費及明細（<span id="preTotalSum" style="color:red;">$0</span>）</span></span>
                 <button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾ 收合</button>
             </div>
+            <input type="text" id="preHistorySearch" placeholder="🔍 搜尋項目名稱..." oninput="renderExpenseHistory('pre', 'preHistoryList')" style="margin-bottom:8px;">
+            <div class="cat-chip-row" id="preCatChips"></div>
             <div id="preHistoryList" class="collapsible-content"></div>
         </div>
 
@@ -707,7 +734,7 @@
                 <button class="comic-btn btn-pink" onclick="addExpense('local')" style="margin-top:15px;">🥞 儲存當地日常</button>
             </div>
 
-            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾ 收合</button></div><div id="localHistoryList" class="collapsible-content"></div></div>
+            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾ 收合</button></div><input type="text" id="localHistorySearch" placeholder="🔍 搜尋項目名稱..." oninput="renderExpenseHistory('local', 'localHistoryList')" style="margin-bottom:8px;"><div class="cat-chip-row" id="localCatChips"></div><div id="localHistoryList" class="collapsible-content"></div></div>
             <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay" style="margin-top: 5px;"></div></div>
         </div>
 
@@ -786,7 +813,7 @@
             <button class="comic-btn" style="background-color: var(--main-purple);" onclick="addPersonalExpense()">🎁 記下這筆花費</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾ 收合</button></div><div id="personalHistoryList" class="collapsible-content"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 個人私物紀錄</span><span id="personalTotalSum" class="total-badge" style="color:#7b1fa2;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('personalHistoryList', this)">▾ 收合</button></div><input type="text" id="personalHistorySearch" placeholder="🔍 搜尋項目名稱..." oninput="refreshPersonalPage()" style="margin-bottom:8px;"><div id="personalHistoryList" class="collapsible-content"></div></div>
         </div>
 
         <div id="personalSubTab-proxy" class="subtab-content" style="display:none;">
@@ -811,7 +838,7 @@
             <button class="comic-btn btn-green" onclick="addProxyExpense()">🛍️ 記下這筆代購</button>
             </div>
         </div>
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾ 收合</button></div><div id="proxyHistoryList" class="collapsible-content"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾ 收合</button></div><input type="text" id="proxyHistorySearch" placeholder="🔍 搜尋項目名稱或幫誰代購..." oninput="refreshPersonalPage()" style="margin-bottom:8px;"><div id="proxyHistoryList" class="collapsible-content"></div></div>
         </div>
     </div>
 
@@ -1225,6 +1252,27 @@
         wrap.appendChild(item);
         setTimeout(() => { item.style.opacity = '0'; setTimeout(() => item.remove(), 200); }, ms || 1800);
     }
+    // 🌟 帶「復原」按鈕的 toast：用於刪除帳目紀錄，倒數期間沒按復原才會真的送出雲端刪除
+    function showUndoToast(msg, onUndo, onFinalize, ms) {
+        ms = ms || 5000;
+        const wrap = ensureToastWrap();
+        const item = document.createElement('div');
+        item.className = 'toast-item toast-undo';
+        item.innerHTML = `<span>${escapeHtml(msg)}</span><button type="button" class="toast-undo-btn">↩️ 復原</button>`;
+        wrap.appendChild(item);
+        let done = false;
+        const timer = setTimeout(() => {
+            if (done) return; done = true;
+            item.style.opacity = '0'; setTimeout(() => item.remove(), 200);
+            if (onFinalize) onFinalize();
+        }, ms);
+        item.querySelector('.toast-undo-btn').onclick = () => {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            item.style.opacity = '0'; setTimeout(() => item.remove(), 200);
+            if (onUndo) onUndo();
+        };
+    }
     function showConfirm(msg, onYes, opts) {
         opts = opts || {};
         const overlay = document.createElement('div');
@@ -1309,6 +1357,8 @@
     window.onload = function() {
         populateCurrencySelects();
         populateCategorySelects();
+        renderCategoryChips('pre', 'preCatChips');
+        renderCategoryChips('local', 'localCatChips');
         document.getElementById('schedHour').innerHTML = hourOptionsHtml('12');
         document.getElementById('schedMinute').innerHTML = minuteOptionsHtml('00');
         fillTripDateSelects('tripStart', ''); fillTripDateSelects('tripEnd', '');
@@ -1652,9 +1702,16 @@
         showConfirm('確定刪除這筆紀錄嗎？', () => {
             const trip = db.trips[db.currentIdx];
             const idx = trip.expenses.findIndex(e => e.id === id);
-            if (idx > -1) trip.expenses.splice(idx, 1);
+            if (idx === -1) return;
+            const removed = trip.expenses[idx];
+            trip.expenses.splice(idx, 1);
             removeLocalPersonalExpense(id);
-            refreshAll(); save();
+            refreshAll();
+            showUndoToast('已刪除這筆紀錄', () => {
+                trip.expenses.splice(idx, 0, removed);
+                saveLocalPersonalExpense(removed);
+                refreshAll();
+            }, () => save());
         }, { icon: '🗑️' });
     }
     // 個人記帳／代購 編輯：點✏️把該筆紀錄換成可編輯表單，儲存後直接更新原紀錄（不用整筆刪除重建）
@@ -1708,9 +1765,16 @@
         showConfirm('確定刪除這筆紀錄嗎？', () => {
             const trip = db.trips[db.currentIdx];
             const idx = trip.expenses.findIndex(e => e.id === id);
-            if (idx > -1) trip.expenses.splice(idx, 1);
+            if (idx === -1) return;
+            const removed = trip.expenses[idx];
+            trip.expenses.splice(idx, 1);
             removeLocalPersonalExpense(id);
-            refreshAll(); save();
+            refreshAll();
+            showUndoToast('已刪除這筆紀錄', () => {
+                trip.expenses.splice(idx, 0, removed);
+                saveLocalPersonalExpense(removed);
+                refreshAll();
+            }, () => save());
         }, { icon: '🗑️' });
     }
     // 代購編輯：連「幫誰代購」都能改，改完存檔後清單會依新的名字重新分組
@@ -1753,9 +1817,12 @@
         populateIdentitySelect();
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         const hist = document.getElementById('personalHistoryList'); hist.innerHTML = "";
-        let personalTotal = 0;
+        const personalKeyword = (document.getElementById('personalHistorySearch') || {}).value?.trim().toLowerCase() || '';
+        let personalTotal = 0; let personalMatchCount = 0;
         (trip.expenses || []).forEach((e) => {
             if (e.type === 'personalItem' && e.payer === myName) {
+                if (personalKeyword && !(e.title || '').toLowerCase().includes(personalKeyword)) return;
+                personalMatchCount++;
                 personalTotal += e.amount;
                 if (e.id === editingPersonalId) {
                     hist.innerHTML += renderPersonalEditForm(e);
@@ -1772,6 +1839,7 @@
                 }
             }
         });
+        if (personalKeyword && !personalMatchCount) hist.innerHTML = "<p style='color:gray; font-size:14px;'>🔍 找不到符合的紀錄</p>";
         document.getElementById('personalTotalSum').innerText = `目前總花費：$${Math.round(personalTotal)}`;
         if (editingPersonalId) { const e = (trip.expenses || []).find(x => x.id === editingPersonalId); if (e) { fillEditCurrencySelect('editPersonalCurrency_' + e.id, e.currency); fillEditCategorySelect('editPersonalCategory_' + e.id, e.category); } }
 
@@ -1796,7 +1864,9 @@
     function renderProxyGroupedList(trip, myName) {
         const proxyList = document.getElementById('proxyHistoryList'); proxyList.innerHTML = "";
         const settleMap = getProxySettleMap(trip);
-        const items = (trip.expenses || []).filter(e => e.type === 'proxy' && e.payer === myName);
+        const proxyKeyword = (document.getElementById('proxyHistorySearch') || {}).value?.trim().toLowerCase() || '';
+        let items = (trip.expenses || []).filter(e => e.type === 'proxy' && e.payer === myName);
+        if (proxyKeyword) items = items.filter(e => (e.title || '').toLowerCase().includes(proxyKeyword) || (e.forWho || '').toLowerCase().includes(proxyKeyword));
         let proxyTotal = 0; const groups = []; const groupIndex = {};
         items.forEach(e => {
             proxyTotal += e.amount;
@@ -1806,7 +1876,7 @@
         });
         document.getElementById('proxyTotalSum').innerText = `目前總花費：$${Math.round(proxyTotal)}`;
         _proxyGroupsCache = groups;
-        if (!groups.length) { proxyList.innerHTML = '<p style="font-size:13px; color:var(--text-soft); padding:8px 2px;">尚無代購紀錄</p>'; return; }
+        if (!groups.length) { proxyList.innerHTML = proxyKeyword ? '<p style="font-size:13px; color:var(--text-soft); padding:8px 2px;">🔍 找不到符合的紀錄</p>' : '<p style="font-size:13px; color:var(--text-soft); padding:8px 2px;">尚無代購紀錄</p>'; return; }
         groups.forEach((g, gi) => {
             const settled = !!settleMap[g.key];
             const containsEditing = g.items.some(x => x.id === editingProxyId);
@@ -1870,6 +1940,29 @@
     function closeGuestPreview() {
         document.getElementById('guestPreviewOverlay').style.display = 'none';
         document.getElementById('guestPreviewFrame').src = 'about:blank';
+    }
+    // 📤 匯出這一團的花費紀錄成 CSV，可以用 Excel/Numbers 打開，或存一份到手機當備份
+    function exportTripCSV() {
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('請先建立並選擇一個行程分類！');
+        const trip = db.trips[db.currentIdx];
+        const typeLabel = { pre: '行前花費', local: '當地日常', personalItem: '個人記帳', proxy: '代購' };
+        const rows = [['日期', '類型', '項目', '金額(台幣)', '原始金額', '幣別', '付款人/幫誰代購', '消費類型']];
+        (trip.expenses || []).forEach(e => {
+            const payerField = e.type === 'proxy' ? (e.forWho || '') : (e.payer || (e.payers || []).join('、'));
+            rows.push([
+                e.date || '', typeLabel[e.type] || e.type || '', e.title || '',
+                e.amount != null ? e.amount : '', e.rawAmount != null ? e.rawAmount : '',
+                e.currency || '', payerField, e.category || (e.costType === 'personal' ? '個人自付' : '共同分攤')
+            ]);
+        });
+        const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${trip.name || '旅遊分帳'}_花費紀錄.csv`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
+        showToast('✅ 已匯出紀錄！');
     }
     function copyGuestLink() {
         if (db.currentIdx === -1 || !db.trips.length) return showToast('請先建立並選擇一個行程分類！');
@@ -2191,9 +2284,15 @@
         showConfirm('確定刪除這筆紀錄嗎？', () => {
             const trip = db.trips[db.currentIdx];
             const idx = (trip.expenses || []).findIndex(x => x.id === id);
-            if (idx > -1) trip.expenses.splice(idx, 1);
+            if (idx === -1) return;
+            const removed = trip.expenses[idx];
+            trip.expenses.splice(idx, 1);
             if (editingExpenseId === id) editingExpenseId = null;
-            refreshAll(); save();
+            refreshAll();
+            showUndoToast('已刪除這筆紀錄', () => {
+                trip.expenses.splice(idx, 0, removed);
+                refreshAll();
+            }, () => save());
         }, { icon: '🗑️' });
     }
 
@@ -2270,30 +2369,85 @@
         </div>`;
     }
 
+    // 記住每種類型目前展開的日期分組（同時間只開一組，避免手機上一次全部展開太長）
+    let expandedHistoryDate = { pre: undefined, local: undefined };
+    // 記住每種類型目前選的類別篩選
+    let historyCategoryFilter = { pre: 'all', local: 'all' };
+    function renderCategoryChips(type, containerId) {
+        const el = document.getElementById(containerId); if (!el) return;
+        const current = historyCategoryFilter[type] || 'all';
+        const chips = [{ v: 'all', e: '', n: '全部' }].concat(EXPENSE_CATEGORIES);
+        el.innerHTML = chips.map(c => `<span class="cat-chip${c.v === current ? ' active' : ''}" onclick="setHistoryCategoryFilter('${type}','${c.v}')">${c.e ? c.e + ' ' : ''}${c.n}</span>`).join('');
+    }
+    function setHistoryCategoryFilter(type, cat) {
+        historyCategoryFilter[type] = cat;
+        renderCategoryChips(type, type + 'CatChips');
+        renderExpenseHistory(type, type + 'HistoryList');
+    }
+    function toggleHistoryDateGroup(type, dateKey, listId) {
+        expandedHistoryDate[type] = (expandedHistoryDate[type] === dateKey) ? null : dateKey;
+        renderExpenseHistory(type, listId);
+    }
     function renderExpenseHistory(type, listId) {
         const listDiv = document.getElementById(listId); if (!listDiv) return;
         listDiv.innerHTML = "";
         if (db.currentIdx === -1 || !db.trips.length) return;
         const trip = db.trips[db.currentIdx];
-        const items = (trip.expenses || []).filter(e => e.type === type);
-        if (!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>"; return; }
-        // 由新到舊排列
-        items.slice().reverse().forEach(e => {
-            if (e.id === editingExpenseId) { listDiv.innerHTML += renderExpenseEditForm(e, trip); return; }
-            const badge = e.costType === 'personal'
-                ? `<span class="type-badge" style="background:#7b1fa2;">個人自付</span>`
-                : `<span class="type-badge" style="background:#2e7d32;">代墊分攤</span>`;
-            const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
-            const catTag = catInfo ? `<span class="type-badge" style="background:${catInfo.color}; color:#35322c;">${catInfo.e} ${catInfo.n}</span>` : '';
-            const shareInfo = e.costType === 'share'
-                ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
-                : '';
-            const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
-            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
-            const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
-                ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
-                : '';
-            listDiv.innerHTML += `<div class="history-item"><button class="delete-btn" onclick="editExpenseItem('${e.id}')">✏️</button><button class="delete-btn" onclick="deleteExpense('${e.id}')">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
+        const searchEl = document.getElementById(type + 'HistorySearch');
+        const keyword = searchEl ? searchEl.value.trim().toLowerCase() : '';
+        const catFilter = historyCategoryFilter[type] || 'all';
+        let items = (trip.expenses || []).filter(e => e.type === type);
+        if (keyword) items = items.filter(e => (e.title || '').toLowerCase().includes(keyword));
+        if (catFilter !== 'all') items = items.filter(e => (e.category || 'other') === catFilter);
+        if (!items.length) {
+            listDiv.innerHTML = (keyword || catFilter !== 'all')
+                ? "<p style='color:gray; font-size:14px;'>🔍 找不到符合的紀錄</p>"
+                : "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>";
+            return;
+        }
+        // 正在編輯某一筆時，強制展開它所在的日期分組，不然編輯表單會被收合藏起來
+        if (editingExpenseId) {
+            const editingItem = items.find(x => x.id === editingExpenseId);
+            if (editingItem) expandedHistoryDate[type] = editingItem.date;
+        }
+        // 依日期分組，新到舊排列
+        const groups = {};
+        items.forEach(e => { (groups[e.date] = groups[e.date] || []).push(e); });
+        const dateKeys = Object.keys(groups).sort().reverse();
+        // 第一次渲染還沒有任何展開紀錄時，預設展開最新一天
+        if (expandedHistoryDate[type] === undefined) expandedHistoryDate[type] = dateKeys[0];
+        dateKeys.forEach(dateKey => {
+            const dayItems = groups[dateKey];
+            const daySubtotal = dayItems.reduce((s, e) => s + (e.amount || 0), 0);
+            const isOpen = expandedHistoryDate[type] === dateKey;
+            const bodyId = 'histDay_' + type + '_' + dateKey.replace(/[^0-9a-zA-Z]/g, '');
+            let bodyHtml = '';
+            if (isOpen) {
+                dayItems.forEach(e => {
+                    if (e.id === editingExpenseId) { bodyHtml += renderExpenseEditForm(e, trip); return; }
+                    const badge = e.costType === 'personal'
+                        ? `<span class="type-badge" style="background:#7b1fa2;">個人自付</span>`
+                        : `<span class="type-badge" style="background:#2e7d32;">代墊分攤</span>`;
+                    const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
+                    const catTag = catInfo ? `<span class="type-badge" style="background:${catInfo.color}; color:#35322c;">${catInfo.e} ${catInfo.n}</span>` : '';
+                    const shareInfo = e.costType === 'share'
+                        ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
+                        : '';
+                    const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+                    const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
+                    const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
+                        ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
+                        : '';
+                    bodyHtml += `<div class="history-item"><button class="delete-btn" onclick="editExpenseItem('${e.id}')">✏️</button><button class="delete-btn" onclick="deleteExpense('${e.id}')">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
+                });
+            }
+            listDiv.innerHTML += `<div class="history-day-group">
+                <div class="history-day-header" onclick="toggleHistoryDateGroup('${type}','${dateKey}','${listId}')">
+                    <span>📅 ${dateKey}</span>
+                    <span class="history-day-meta">${dayItems.length}筆・$${Math.round(daySubtotal)}　${isOpen ? '▾' : '▸'}</span>
+                </div>
+                <div id="${bodyId}" class="history-day-body" style="${isOpen ? '' : 'display:none;'}">${bodyHtml}</div>
+            </div>`;
         });
         if (editingExpenseId) {
             const editingItem = items.find(x => x.id === editingExpenseId);

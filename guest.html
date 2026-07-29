@@ -263,6 +263,13 @@
             animation: toastIn .25s ease; transition: opacity .2s ease;
         }
         @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .toast-undo { display: flex; align-items: center; gap: 10px; }
+        .toast-undo-btn {
+            background: #fff; border: 2px solid var(--border-color); border-radius: 999px; padding: 4px 10px;
+            font-size: 12.5px; font-weight: 700; color: var(--text-main); cursor: pointer; white-space: nowrap;
+            font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; -webkit-tap-highlight-color: transparent;
+        }
+        .toast-undo-btn:active { transform: scale(0.95); }
         .confirm-modal-card {
             width: 280px; max-width: calc(100vw - 40px);
             background: #fffdf5; border: 3px solid var(--border-color); border-radius: 20px;
@@ -288,6 +295,23 @@
         @keyframes loadingBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
+
+        /* 📅 花費明細依日期分組摺疊 + 類別篩選 chip：避免天數一多整頁滑不完 */
+        .cat-chip-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; -webkit-overflow-scrolling: touch; }
+        .cat-chip {
+            background: #fff; border: 2px solid var(--border-color); border-radius: 20px; padding: 6px 12px;
+            font-size: 12px; font-weight: 700; color: var(--text-main); white-space: nowrap; cursor: pointer;
+            -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+        }
+        .cat-chip.active { background: var(--main-yellow); box-shadow: 2px 2px 0px rgba(53,50,44,0.85); }
+        .history-day-group { margin-bottom: 8px; }
+        .history-day-header {
+            background: var(--bg-color); border: 2.5px solid var(--border-color); border-radius: 14px;
+            box-shadow: var(--box-shadow); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; font-size: 13px; font-weight: 700; -webkit-tap-highlight-color: transparent;
+        }
+        .history-day-meta { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
+        .history-day-body { padding: 8px 4px 2px; }
         .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
         .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
         .timeline-item .item-desc { font-weight: bold; font-size: 16.5px; }
@@ -457,7 +481,7 @@
         </div>
 
         <div id="preSubTab-expense" class="subtab-content" style="display:none;">
-        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 行前總花費及明細（<span id="preTotalSum" style="color:red;">$0</span>）</span></span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾ 收合</button></div><div id="preHistoryList" class="collapsible-content"></div></div>
+        <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 行前總花費及明細（<span id="preTotalSum" style="color:red;">$0</span>）</span></span><button class="collapse-btn" onclick="toggleCollapse('preHistoryList', this)">▾ 收合</button></div><div class="cat-chip-row" id="preCatChips"></div><div id="preHistoryList" class="collapsible-content"></div></div>
         <div class="comic-card" style="background: #e1f5fe; border: 3px solid #333;"><div class="card-title">🧮 行前結算</div><div id="preSettlementDisplay"></div></div>
         </div>
 
@@ -509,7 +533,7 @@
                     <div class="dash-item" style="background: #c8e6c9;">代墊平分<br><span id="localShareSum" style="color:green;">$0</span></div>
                 </div>
             </div>
-            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾ 收合</button></div><div id="localHistoryList" class="collapsible-content"></div></div>
+            <div class="comic-card"><div class="card-title"><span class="card-title-left">📋 當地明細歷史</span><button class="collapse-btn" onclick="toggleCollapse('localHistoryList', this)">▾ 收合</button></div><div class="cat-chip-row" id="localCatChips"></div><div id="localHistoryList" class="collapsible-content"></div></div>
             <div class="comic-card" style="background: #fffde7; border: 3px solid #333;"><div class="card-title">🧮 當地日常結算（誰該給誰錢）</div><div id="localSettlementDisplay"></div></div>
         </div>
 
@@ -985,6 +1009,27 @@
         wrap.appendChild(item);
         setTimeout(() => { item.style.opacity = '0'; setTimeout(() => item.remove(), 200); }, ms || 1800);
     }
+    // 🌟 帶「復原」按鈕的 toast：用於刪除自己的個人記帳/代購紀錄，只存在本機、沒有雲端備份，更需要有反悔空間
+    function showUndoToast(msg, onUndo, onFinalize, ms) {
+        ms = ms || 5000;
+        const wrap = ensureToastWrap();
+        const item = document.createElement('div');
+        item.className = 'toast-item toast-undo';
+        item.innerHTML = `<span>${escapeHtml(msg)}</span><button type="button" class="toast-undo-btn">↩️ 復原</button>`;
+        wrap.appendChild(item);
+        let done = false;
+        const timer = setTimeout(() => {
+            if (done) return; done = true;
+            item.style.opacity = '0'; setTimeout(() => item.remove(), 200);
+            if (onFinalize) onFinalize();
+        }, ms);
+        item.querySelector('.toast-undo-btn').onclick = () => {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            item.style.opacity = '0'; setTimeout(() => item.remove(), 200);
+            if (onUndo) onUndo();
+        };
+    }
     function showConfirm(msg, onYes, opts) {
         opts = opts || {};
         const overlay = document.createElement('div');
@@ -1066,6 +1111,8 @@
     window.onload = function() {
         populateCurrencySelects();
         populateCategorySelects();
+        renderCategoryChips('pre', 'preCatChips');
+        renderCategoryChips('local', 'localCatChips');
         document.getElementById('personalAmount').addEventListener('input', updatePersonalExchangeHint);
         document.getElementById('proxyAmount').addEventListener('input', updateProxyExchangeHint);
         fetchExchangeRates();
@@ -1188,9 +1235,14 @@
         showConfirm('確定刪除這筆紀錄嗎？', () => {
             const trip = db.trips[db.currentIdx];
             const idx = trip.expenses.findIndex(e => e.id === id);
-            if (idx > -1) trip.expenses.splice(idx, 1);
-            removeLocalPersonalExpense(id);
+            if (idx === -1) return;
+            const removed = trip.expenses[idx];
+            trip.expenses.splice(idx, 1);
             refreshAll();
+            showUndoToast('已刪除這筆紀錄', () => {
+                trip.expenses.splice(idx, 0, removed);
+                refreshAll();
+            }, () => removeLocalPersonalExpense(id));
         }, { icon: '🗑️' });
     }
     // 個人記帳／代購 編輯：點✏️把該筆紀錄換成可編輯表單，儲存後直接更新原紀錄（不用整筆刪除重建）
@@ -1245,9 +1297,14 @@
         showConfirm('確定刪除這筆紀錄嗎？', () => {
             const trip = db.trips[db.currentIdx];
             const idx = trip.expenses.findIndex(e => e.id === id);
-            if (idx > -1) trip.expenses.splice(idx, 1);
-            removeLocalPersonalExpense(id);
+            if (idx === -1) return;
+            const removed = trip.expenses[idx];
+            trip.expenses.splice(idx, 1);
             refreshAll();
+            showUndoToast('已刪除這筆紀錄', () => {
+                trip.expenses.splice(idx, 0, removed);
+                refreshAll();
+            }, () => removeLocalPersonalExpense(id));
         }, { icon: '🗑️' });
     }
     // 代購編輯：連「幫誰代購」都能改，改完存檔後清單會依新的名字重新分組
@@ -1611,28 +1668,76 @@
     }
 
     // ↓↓↓ 補上原本缺少的「行前/當地」明細顯示、統計、結算邏輯（唯讀，無刪除按鈕） ↓↓↓
+    // 記住每種類型目前展開的日期分組（同時間只開一組，避免手機上一次全部展開太長）
+    let expandedHistoryDate = { pre: undefined, local: undefined };
+    // 記住每種類型目前選的類別篩選
+    let historyCategoryFilter = { pre: 'all', local: 'all' };
+    function renderCategoryChips(type, containerId) {
+        const el = document.getElementById(containerId); if (!el) return;
+        const current = historyCategoryFilter[type] || 'all';
+        const chips = [{ v: 'all', e: '', n: '全部' }].concat(EXPENSE_CATEGORIES);
+        el.innerHTML = chips.map(c => `<span class="cat-chip${c.v === current ? ' active' : ''}" onclick="setHistoryCategoryFilter('${type}','${c.v}')">${c.e ? c.e + ' ' : ''}${c.n}</span>`).join('');
+    }
+    function setHistoryCategoryFilter(type, cat) {
+        historyCategoryFilter[type] = cat;
+        renderCategoryChips(type, type + 'CatChips');
+        renderExpenseHistory(type, type + 'HistoryList');
+    }
+    function toggleHistoryDateGroup(type, dateKey, listId) {
+        expandedHistoryDate[type] = (expandedHistoryDate[type] === dateKey) ? null : dateKey;
+        renderExpenseHistory(type, listId);
+    }
     function renderExpenseHistory(type, listId) {
         const listDiv = document.getElementById(listId); if (!listDiv) return;
         listDiv.innerHTML = "";
         if (db.currentIdx === -1 || !db.trips.length) return;
         const trip = db.trips[db.currentIdx];
-        const items = (trip.expenses || []).filter(e => e.type === type);
-        if (!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>"; return; }
-        items.slice().reverse().forEach(e => {
-            const badge = e.costType === 'personal'
-                ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
-                : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
-            const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
-            const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
-            const shareInfo = e.costType === 'share'
-                ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
-                : '';
-            const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
-            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
-            const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
-                ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
-                : '';
-            listDiv.innerHTML += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
+        const catFilter = historyCategoryFilter[type] || 'all';
+        let items = (trip.expenses || []).filter(e => e.type === type);
+        if (catFilter !== 'all') items = items.filter(e => (e.category || 'other') === catFilter);
+        if (!items.length) {
+            listDiv.innerHTML = catFilter !== 'all'
+                ? "<p style='color:gray; font-size:14px;'>🔍 找不到符合的紀錄</p>"
+                : "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>";
+            return;
+        }
+        // 依日期分組，新到舊排列
+        const groups = {};
+        items.forEach(e => { (groups[e.date] = groups[e.date] || []).push(e); });
+        const dateKeys = Object.keys(groups).sort().reverse();
+        // 第一次渲染還沒有任何展開紀錄時，預設展開最新一天
+        if (expandedHistoryDate[type] === undefined) expandedHistoryDate[type] = dateKeys[0];
+        dateKeys.forEach(dateKey => {
+            const dayItems = groups[dateKey];
+            const daySubtotal = dayItems.reduce((s, e) => s + (e.amount || 0), 0);
+            const isOpen = expandedHistoryDate[type] === dateKey;
+            const bodyId = 'histDay_' + type + '_' + dateKey.replace(/[^0-9a-zA-Z]/g, '');
+            let bodyHtml = '';
+            if (isOpen) {
+                dayItems.forEach(e => {
+                    const badge = e.costType === 'personal'
+                        ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
+                        : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
+                    const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
+                    const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
+                    const shareInfo = e.costType === 'share'
+                        ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
+                        : '';
+                    const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+                    const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
+                    const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
+                        ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
+                        : '';
+                    bodyHtml += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
+                });
+            }
+            listDiv.innerHTML += `<div class="history-day-group">
+                <div class="history-day-header" onclick="toggleHistoryDateGroup('${type}','${dateKey}','${listId}')">
+                    <span>📅 ${dateKey}</span>
+                    <span class="history-day-meta">${dayItems.length}筆・$${Math.round(daySubtotal)}　${isOpen ? '▾' : '▸'}</span>
+                </div>
+                <div id="${bodyId}" class="history-day-body" style="${isOpen ? '' : 'display:none;'}">${bodyHtml}</div>
+            </div>`;
         });
     }
 
