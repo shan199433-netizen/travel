@@ -239,6 +239,7 @@
         @keyframes tripTagFlash { 0%, 100% { box-shadow: 2.5px 2.5px 0px rgba(53,50,44,0.8); } 40% { box-shadow: 0 0 0 5px rgba(255,193,7,0.55); } }
         .trip-tag.new-flash { animation: tripTagFlash 1s ease 2; }
         .day-tag.active { background: var(--main-orange); font-weight: 700; box-shadow: 2px 2px 0px rgba(53,50,44,0.8); }
+        .day-tag { border-width: 2.5px; }
 
         /* 「當地日常」＋「本次行程」合併頁用的子分頁切換按鈕 */
         .subtab-row { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -376,20 +377,22 @@
         .flight-direction-badge { display: inline-block; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 800; border: 2px solid var(--border-color); background: #fff3d6; color: #7a5a12; white-space: nowrap; }
         .flight-direction-badge.dir-go { background: var(--main-blue); color: #0c4a78; }
         .flight-direction-badge.dir-back { background: var(--main-pink); color: #8a2f4a; }
-        .flight-ticket-subline { text-align: right; font-size: 12px; font-weight: 700; color: var(--text-soft); }
+        .flight-airline-badge { display: inline-flex; align-items: center; background: #fff; border: 1.5px solid var(--border-color); border-radius: 10px; overflow: hidden; font-size: 12px; font-weight: 800; box-shadow: 1.5px 1.5px 0px rgba(53,50,44,0.5); }
+        .flight-airline-name { padding: 5px 10px; color: var(--text-main); white-space: nowrap; }
+        .flight-airline-no { padding: 5px 10px; background: var(--main-yellow); color: #7a5a12; border-left: 1.5px solid var(--border-color); white-space: nowrap; }
         .flight-route-row { display: flex; align-items: center; background: #fff; border: 2.5px solid var(--border-color); border-radius: 14px; padding: 10px 8px; gap: 4px; }
         .flight-route-col { flex: 1 1 0; min-width: 0; }
         .flight-route-col.dep { text-align: left; }
         .flight-route-col.arr { text-align: right; }
-        .flight-route-code { font-size: 18px; font-weight: 900; word-break: break-all; }
-        .flight-route-time { font-size: 17px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+        .flight-route-code { font-size: 22px; font-weight: 900; letter-spacing: 0.5px; color: var(--text-main); word-break: break-all; }
+        .flight-route-time { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; background: #f4f0e4; border: 1.5px dashed rgba(53,50,44,0.4); font-size: 13px; font-weight: 800; color: var(--text-soft); letter-spacing: 0.3px; }
         .flight-route-tag { display: inline-block; margin-top: 5px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; border: 1.5px solid rgba(53,50,44,0.4); }
         .flight-route-tag.dep-tag { background: var(--main-green); color: #275b1d; }
         .flight-route-tag.arr-tag { background: var(--main-purple); color: #4a2d6b; }
         .flight-route-mid { flex: 0 0 auto; font-size: 10px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
-        .flight-route-date-mini { font-size: 11.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; white-space: nowrap; }
+        .flight-route-date-mini { display: inline-block; font-size: 13px; font-weight: 800; color: #7a5a12; background: var(--main-yellow); border: 1.5px solid var(--border-color); border-radius: 8px; padding: 2px 9px; margin-bottom: 4px; white-space: nowrap; }
         .flight-route-line { width: 40px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
-        .flight-route-plane { font-size: 12px; }
+        .flight-route-plane { font-size: 12.5px; font-weight: 800; color: var(--text-soft); margin-top: 3px; white-space: nowrap; }
         .flight-ticket-infogrid { display: flex; background: #fff; border: 2px solid var(--border-color); border-radius: 12px; margin-top: 8px; }
         .flight-info-box { flex: 1; min-width: 0; text-align: center; padding: 6px 4px; }
         .flight-info-box + .flight-info-box { border-left: 2px dashed rgba(53,50,44,0.3); }
@@ -440,7 +443,7 @@
         }
         .history-day-meta { font-size: 12px; font-weight: 700; color: var(--text-soft); white-space: nowrap; }
         .history-day-body { padding: 8px 4px 2px; }
-        .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
+        .timeline-item { border-left: 3px solid var(--day-accent, var(--border-color)); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
         .timeline-item::before { content: '📍'; position: absolute; left: -11px; top: 0; background: var(--bg-color); font-size: 14px; }
         .timeline-item .item-desc { font-weight: bold; font-size: 16.5px; }
         .timeline-item .item-memo { display: block; margin-top: 5px; font-size: 14.5px; color: var(--text-soft); line-height: 1.65; }
@@ -454,10 +457,17 @@
             border-radius: 20px; padding: 4px 14px; font-size: 12.5px; font-weight: 600; color: var(--text-main);
             margin: 4px 0 12px -10px;
         }
+        .timeline-period-tag.tp-dawn { background: #d6def6; }
+        .timeline-period-tag.tp-day { background: #fff2cf; }
+        .timeline-period-tag.tp-night { background: #e3d4f2; }
         .timeline-time-badge {
             display: inline-block; min-width: 46px; text-align: center; background: var(--main-orange); border: 2px solid var(--border-color); border-radius: 20px;
             padding: 3px 12px; font-size: 14.5px; font-weight: 600; margin-right: 8px; letter-spacing: 0.5px;
         }
+        /* 凌晨／白天／晚上 三種時段跳色，讓時間一眼就能分辨 */
+        .timeline-time-badge.tb-dawn { background: #c3d2f2; color: #2c3a70; }
+        .timeline-time-badge.tb-day { background: var(--main-orange); color: #7a4a12; }
+        .timeline-time-badge.tb-night { background: #b9a0d9; color: #3b2160; }
         .timeline-time-badge.no-time { background: transparent; border: none; padding: 0 8px 0 0; font-size: 17.5px; min-width: auto; }
 
         /* 24小時制時間選擇（自訂下拉選單，避免手機瀏覽器依裝置語系把time欄位改成12小時制AM/PM顯示） */
@@ -1573,6 +1583,9 @@
         trip.startDate = assembleTripDate('tripStart'); trip.endDate = assembleTripDate('tripEnd');
         generateDayTags(); save();
     }
+    // 每個 Day 循環使用不同顏色，讓天數一多也能一眼分辨
+    const dayColorPalette = ['#ffdf8e', '#b9dcb4', '#aed6ea', '#f6bfae', '#dcc8ea', '#ffc98e'];
+    function getDayColor(dayNum) { return dayColorPalette[(dayNum - 1) % dayColorPalette.length]; }
     function generateDayTags() {
         if (db.currentIdx === -1 || !db.trips.length) return; let trip = db.trips[db.currentIdx];
         const start = new Date(trip.startDate); const end = new Date(trip.endDate);
@@ -1580,7 +1593,8 @@
         const container = document.getElementById('dayTagsContainer'); container.innerHTML = "";
         for(let i=1; i<= (isNaN(diffDays)? 1 : diffDays); i++) {
             const label = formatDayDate(start, i);
-            container.innerHTML += `<div class="day-tag ${i === trip.currentDayTab ? 'active' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`;
+            const c = getDayColor(i); const isActive = i === trip.currentDayTab;
+            container.innerHTML += `<div class="day-tag ${isActive ? 'active' : ''}" style="border-color:${c};${isActive ? 'background:'+c+';' : ''}" onclick="switchDayTab(${i})"><b style="font-weight:900;">Day${i}${label ? '︱'+label : ''}</b></div>`;
         }
         renderTimeline();
     }
@@ -1680,6 +1694,19 @@
         if (hour < 17) return '☀️ 白天';
         return '🌙 晚上';
     }
+    // 依時段回傳對應的跳色 class（凌晨／白天／晚上），套用在時間徽章與分段標籤上
+    function getTimePeriodClass(timeStr) {
+        if (!timeStr) return '';
+        const hour = parseInt(timeStr.split(':')[0], 10);
+        if (isNaN(hour)) return '';
+        if (hour < 6) return 'tb-dawn';
+        if (hour < 17) return 'tb-day';
+        return 'tb-night';
+    }
+    function getPeriodTagClass(timeStr) {
+        const c = getTimePeriodClass(timeStr);
+        return c ? c.replace('tb-', 'tp-') : '';
+    }
     // 產生24小時制的「時」「分」下拉選單選項（不依賴裝置語系，避免被顯示成12小時制AM/PM）
     function hourOptionsHtml(selected) {
         let html = '';
@@ -1743,12 +1770,13 @@
         const listDiv = document.getElementById('timelineDisplayList');
         if (db.currentIdx === -1 || !db.trips.length) { listDiv.innerHTML = ""; renderAddColorPickers(); return; }
         const trip = db.trips[db.currentIdx];
+        listDiv.style.setProperty('--day-accent', getDayColor(trip.currentDayTab || 1));
         const items = (trip.scheduleData || {})[trip.currentDayTab] || [];
         if(!items.length) { listDiv.innerHTML = "<p style='color:gray; font-size:14px;'>今天空空如也！</p>"; renderAddColorPickers(); return; }
         let html = ""; let lastPeriod = null;
         items.forEach((item, idx) => {
             const period = getTimePeriod(item.time);
-            if (period && period !== lastPeriod) { html += `<div class="timeline-period-tag">${period}</div>`; lastPeriod = period; }
+            if (period && period !== lastPeriod) { html += `<div class="timeline-period-tag ${getPeriodTagClass(item.time)}">${period}</div>`; lastPeriod = period; }
             if (editingScheduleIdx === idx) {
                 const hasTime = !!item.time;
                 const editHour = hasTime ? item.time.split(':')[0] : '12';
@@ -1782,7 +1810,8 @@
                     ? '<span class="item-memo" style="color:var(--text-main);">📝 ' + memoHtml + legacyLinkHtml + '</span>'
                     : (legacyLinkHtml ? '<span class="item-memo">' + legacyLinkHtml + '</span>' : '');
                 const timeLabel = item.time ? item.time : '➖';
-                html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge${item.time ? '' : ' no-time'}">${timeLabel}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
+                const tClass = item.time ? (' ' + getTimePeriodClass(item.time)) : ' no-time';
+                html += `<div class="timeline-item"><button class="delete-btn" onclick="deleteScheduleItem(${idx})">❌</button><button class="edit-btn" style="float:right; margin-right:8px; font-size:16px;" onclick="editScheduleItem(${idx})">✏️</button><span class="timeline-time-badge${tClass}">${timeLabel}</span><span class="item-desc" style="color:${descColor};">${escapeHtml(item.desc)}</span>${memoOrLinkHtml}</div>`;
             }
         });
         listDiv.innerHTML = html;
@@ -2331,6 +2360,16 @@
         if (direction === 'back') return { cls: 'dir-back', label: '🛬 回程航班' };
         return { cls: 'dir-other', label: '✈️ 航班資訊' };
     }
+    // 把「02h25m」這類飛行時間輸入，轉成更精簡的顯示格式，例如 2h25
+    function formatFlightDuration(str) {
+        if (!str) return '';
+        const s = String(str).trim();
+        const m = s.match(/(\d{1,3})\s*[hH小時]\s*(\d{1,2})?\s*[mM分]?/);
+        if (!m) return s;
+        const h = parseInt(m[1], 10);
+        const mm = m[2] !== undefined ? parseInt(m[2], 10) : null;
+        return mm !== null ? `${h}h${mm}` : `${h}h`;
+    }
     function renderFlightTickets() {
         const wrap = document.getElementById('flightTicketList');
         if (!wrap) return;
@@ -2341,28 +2380,30 @@
         wrap.innerHTML = tickets.map((t, i) => {
             const inferredDir = t.direction || (i === 0 ? 'go' : (i === 1 ? 'back' : 'other'));
             const dir = flightDirectionMeta(inferredDir);
+            // 回程時把出發／抵達城市的顏色對調，讓同一個城市在整趟行程中顏色保持一致（例如首爾去回程都用同一色）
+            const depTagCls = inferredDir === 'back' ? 'arr-tag' : 'dep-tag';
+            const arrTagCls = inferredDir === 'back' ? 'dep-tag' : 'arr-tag';
             return `
             <div class="flight-ticket-card ${dir.cls}">
                 <div class="flight-ticket-headrow">
                     <span class="flight-direction-badge ${dir.cls}">${dir.label}</span>
-                    <span class="flight-ticket-subline">${escapeHtml(t.airline || '未填寫航空公司')}${t.flightNo ? ' · ' + escapeHtml(t.flightNo) : ''}</span>
+                    <span class="flight-airline-badge"><span class="flight-airline-name">${escapeHtml(t.airline || '未填寫航空公司')}</span>${t.flightNo ? `<span class="flight-airline-no">${escapeHtml(t.flightNo)}</span>` : ''}</span>
                 </div>
                 <div class="flight-route-row">
                     <div class="flight-route-col dep">
                         <div class="flight-route-code">${escapeHtml(t.depCode || '?')}</div>
-                        <div class="flight-route-time">${escapeHtml(t.depTime || '--:--')}</div>
-                        ${t.depCity ? `<span class="flight-route-tag dep-tag">${escapeHtml(t.depCity)}</span>` : ''}
+                        <div class="flight-route-time">🕐 ${escapeHtml(t.depTime || '--:--')}</div>
+                        ${t.depCity ? `<span class="flight-route-tag ${depTagCls}">${escapeHtml(t.depCity)}</span>` : ''}
                     </div>
                     <div class="flight-route-mid">
-                        ${t.date ? `<div class="flight-route-date-mini">${escapeHtml(t.date)}</div>` : ''}
-                        ${t.duration ? escapeHtml(t.duration) : ''}
+                        ${t.date ? `<div class="flight-route-date-mini">📅 ${escapeHtml(t.date)}</div>` : ''}
                         <div class="flight-route-line"></div>
-                        <div class="flight-route-plane">✈️</div>
+                        <div class="flight-route-plane">✈️${t.duration ? '飛行' + formatFlightDuration(t.duration) : ''}</div>
                     </div>
                     <div class="flight-route-col arr">
                         <div class="flight-route-code">${escapeHtml(t.arrCode || '?')}</div>
-                        <div class="flight-route-time">${escapeHtml(t.arrTime || '--:--')}</div>
-                        ${t.arrCity ? `<span class="flight-route-tag arr-tag">${escapeHtml(t.arrCity)}</span>` : ''}
+                        ${t.arrCity ? `<span class="flight-route-tag ${arrTagCls}">${escapeHtml(t.arrCity)}</span>` : ''}
+                        <div class="flight-route-time">🕐 ${escapeHtml(t.arrTime || '--:--')}</div>
                     </div>
                 </div>
                 ${(t.baggage || t.aircraft) ? `
