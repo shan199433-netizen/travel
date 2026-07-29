@@ -107,7 +107,6 @@
         .dash-item { border: 2px solid var(--border-color); border-radius: 14px; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 600; line-height: 1.7; }
 
         label { font-size: 13.5px; color: var(--text-main); font-weight: 600; }
-        #preInfoBody > label { font-size: 15.5px; font-weight: 700; }
         input, select, textarea { width: 100%; padding: 13px 14px; margin: 7px 0 10px 0; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #fff; color: var(--text-main); }
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; background: #fff; }
@@ -310,7 +309,7 @@
         .flight-route-tag.dep-tag { background: var(--main-green); color: #275b1d; }
         .flight-route-tag.arr-tag { background: var(--main-purple); color: #4a2d6b; }
         .flight-route-mid { flex: 0 0 auto; font-size: 10px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
-        .flight-route-date-mini { display: inline-block; font-size: 13px; font-weight: 800; color: #7a5a12; background: var(--main-yellow); border: 1.5px solid var(--border-color); border-radius: 8px; padding: 2px 9px; margin-bottom: 4px; white-space: nowrap; }
+        .flight-route-date-mini { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-soft); margin-bottom: 4px; white-space: nowrap; }
         .flight-route-line { width: 40px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
         .flight-route-plane { font-size: 12.5px; font-weight: 800; color: var(--text-soft); margin-top: 3px; white-space: nowrap; }
         .flight-ticket-infogrid { display: flex; background: #fff; border: 2px solid var(--border-color); border-radius: 12px; margin-top: 8px; }
@@ -329,7 +328,7 @@
         #appLoadingScreen .loading-text { font-size: 14px; font-weight: 700; color: var(--text-soft); font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; }
         @keyframes loadingBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         
-        .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
+        .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 8px 0; font-size: 14px; line-height: 1.5; position: relative; }
 
         /* 📅 花費明細依日期分組摺疊 + 類別篩選 chip：避免天數一多整頁滑不完 */
         .cat-chip-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 10px; -webkit-overflow-scrolling: touch; }
@@ -468,6 +467,8 @@
         .baggage-empty-hint { font-size: 13px; color: var(--text-soft); padding: 8px 2px; }
         #baggageColWrap.manage-mode .baggage-add-row { display: flex; }
         #baggageColWrap.manage-mode .baggage-item-actions { display: flex; }
+        #shoppingColWrap.manage-mode .baggage-add-row { display: flex; }
+        #shoppingColWrap.manage-mode .baggage-item-actions { display: flex; }
         .baggage-manage-toggle.active { background: var(--main-pink); }
     </style>
 </head>
@@ -511,14 +512,31 @@
         <div id="preSubTab-info" class="subtab-content">
         <div class="comic-card" style="background:#fff8e1;">
             <div class="card-title">
-                <span class="card-title-left">📌 行前重要資訊</span>
-                <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾ 收合</button>
+                <span class="card-title-left">✈️ 機票資訊</span>
+                <button class="collapse-btn" onclick="toggleCollapse('flightInfoBody', this)">▾ 收合</button>
             </div>
-            <div id="preInfoBody" class="collapsible-content">
-            <label>✈️ 機票資訊</label>
+            <div id="flightInfoBody" class="collapsible-content">
             <div id="flightTicketList"></div>
-            <label>🏠 民宿 / 住宿地址</label><div id="infoHotelView" class="info-view"></div>
-            <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
+            </div>
+        </div>
+
+        <div class="comic-card" style="background:#e8f5e9;">
+            <div class="card-title">
+                <span class="card-title-left">🏠 民宿 / 住宿地址</span>
+                <button class="collapse-btn" onclick="toggleCollapse('hotelInfoBody', this)">▾ 收合</button>
+            </div>
+            <div id="hotelInfoBody" class="collapsible-content">
+            <div id="infoHotelView" class="info-view"></div>
+            </div>
+        </div>
+
+        <div class="comic-card" style="background:#f3e8fa;">
+            <div class="card-title">
+                <span class="card-title-left">📝 行前準備</span>
+                <button class="collapse-btn" onclick="toggleCollapse('prepInfoBody', this)">▾ 收合</button>
+            </div>
+            <div id="prepInfoBody" class="collapsible-content">
+            <div id="infoPrepView" class="info-view"></div>
             </div>
         </div>
         </div>
@@ -589,6 +607,7 @@
         <div class="subtab-row">
             <button class="subtab-btn active" id="personalSubTabBtn-mine" onclick="switchPersonalSubTab('mine')">👤 個人記帳</button>
             <button class="subtab-btn" id="personalSubTabBtn-proxy" onclick="switchPersonalSubTab('proxy')">🛍️ 代購紀錄</button>
+            <button class="subtab-btn" id="personalSubTabBtn-shopping" onclick="switchPersonalSubTab('shopping')">🛒 購物清單</button>
         </div>
 
         <div id="personalSubTab-mine" class="subtab-content">
@@ -643,6 +662,28 @@
             </div>
         </div>
         <div class="comic-card"><div class="card-title"><span class="card-title-left"><span>📋 代購清單紀錄</span><span id="proxyTotalSum" class="total-badge" style="color:#2e7d32;">目前總花費：$0</span></span><button class="collapse-btn" onclick="toggleCollapse('proxyHistoryList', this)">▾ 收合</button></div><div id="proxyHistoryList" class="collapsible-content"></div></div>
+        </div>
+
+        <div id="personalSubTab-shopping" class="subtab-content" style="display:none;">
+        <div class="comic-card" style="background:#fff3e0;">
+            <div class="card-title">
+                <span class="card-title-left">🛒 購物清單</span>
+                <span style="display:flex; gap:6px;">
+                    <button class="collapse-btn shopping-manage-toggle" onclick="toggleShoppingManage(this)" title="新增／編輯／刪除項目">✏️</button>
+                    <button class="collapse-btn" onclick="toggleCollapse('shoppingBody', this)">▾ 收合</button>
+                </span>
+            </div>
+            <div id="shoppingBody" class="collapsible-content">
+            <p style="font-size:12px; color:var(--text-soft); margin:-6px 0 12px 0;">僅存本機不同步雲端☁️❌｜打勾＝已買，✏️新增/編輯/刪除</p>
+            <div class="baggage-col" id="shoppingColWrap">
+                <div id="shoppingList"></div>
+                <div class="baggage-add-row">
+                    <input type="text" id="shoppingInput" placeholder="新增想買的東西...">
+                    <button class="comic-btn btn-blue" onclick="addShoppingItem()">➕ 新增</button>
+                </div>
+            </div>
+            </div>
+        </div>
         </div>
     </div>
 
@@ -1037,6 +1078,88 @@
     function renderBaggageList() {
         renderBaggageItems('carry', 'baggageCarryList');
         renderBaggageItems('checked', 'baggageCheckedList');
+    }
+
+    // 🛒 購物清單（訪客版）：想買的東西＋打勾（買了沒），跟行李清單同一套邏輯，僅存本機不同步雲端
+    const SHOPPING_KEY = 'travel33_shopping_guest';
+    function genShoppingId() { return 's_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6); }
+    function getShoppingStore() { try { return JSON.parse(localStorage.getItem(SHOPPING_KEY)) || {}; } catch (e) { return {}; } }
+    function saveShoppingStore(store) { localStorage.setItem(SHOPPING_KEY, JSON.stringify(store)); }
+    function getShoppingList() {
+        const store = getShoppingStore();
+        const key = String(db.currentIdx);
+        if (!store[key]) store[key] = [];
+        return store[key];
+    }
+    function setShoppingList(list) {
+        const store = getShoppingStore();
+        store[String(db.currentIdx)] = list;
+        saveShoppingStore(store);
+    }
+    function addShoppingItem() {
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('請先選擇一個行程！');
+        const input = document.getElementById('shoppingInput');
+        const name = input.value.trim();
+        if (!name) return;
+        const list = getShoppingList();
+        list.push({ id: genShoppingId(), name, done: false });
+        setShoppingList(list);
+        input.value = "";
+        renderShoppingList();
+    }
+    function toggleShoppingDone(id) {
+        const list = getShoppingList();
+        const item = list.find(i => i.id === id);
+        if (item) item.done = !item.done;
+        setShoppingList(list);
+        renderShoppingList();
+    }
+    function editShoppingItem(id) {
+        const list = getShoppingList();
+        const item = list.find(i => i.id === id);
+        if (!item) return;
+        showPrompt('修改購物項目名稱：', item.name, (name) => {
+            if (name && name.trim()) { item.name = name.trim(); setShoppingList(list); renderShoppingList(); }
+        });
+    }
+    function deleteShoppingItem(id) {
+        showConfirm('確定刪除這個購物項目嗎？', () => {
+            const list = getShoppingList();
+            setShoppingList(list.filter(i => i.id !== id));
+            renderShoppingList();
+        }, { icon: '🛒' });
+    }
+    function toggleShoppingManage(btn) {
+        const wrap = document.getElementById('shoppingColWrap');
+        if (!wrap) return;
+        const isOn = wrap.classList.toggle('manage-mode');
+        btn.classList.toggle('active', isOn);
+        if (isOn) {
+            const body = document.getElementById('shoppingBody');
+            if (body && body.style.display === 'none') {
+                body.style.display = '';
+                const arrowBtn = btn.nextElementSibling;
+                if (arrowBtn) arrowBtn.textContent = '▾';
+            }
+        }
+    }
+    function renderShoppingList() {
+        const el = document.getElementById('shoppingList');
+        if (!el) return;
+        if (db.currentIdx === -1 || !db.trips.length) { el.innerHTML = '<div class="baggage-empty-hint">請先選擇一個行程</div>'; return; }
+        const items = getShoppingList();
+        if (!items.length) { el.innerHTML = '<div class="baggage-empty-hint">尚未新增想買的東西</div>'; return; }
+        el.innerHTML = items.map(i => `
+            <div class="baggage-item">
+                <label class="baggage-check-label">
+                    <input type="checkbox" ${i.done ? 'checked' : ''} onchange="toggleShoppingDone('${i.id}')">
+                    <span class="baggage-item-text ${i.done ? 'done' : ''}">${escapeHtml(i.name)}</span>
+                </label>
+                <span class="baggage-item-actions">
+                    <button onclick="editShoppingItem('${i.id}')">✏️</button>
+                    <button onclick="deleteShoppingItem('${i.id}')">❌</button>
+                </span>
+            </div>`).join('');
     }
 
     // 🌟 自訂 toast / 確認框 / 輸入框：取代原生 alert() / confirm() / prompt()，統一成漫畫風
@@ -1543,7 +1666,7 @@
         document.getElementById('infoHotelView').textContent = trip.preInfo?.hotel || "（尚未填寫）";
         document.getElementById('infoPrepView').textContent = trip.preInfo?.prep || "（尚未填寫）";
 
-        generateDayTags(); refreshPersonalPage(); renderBaggageList();
+        generateDayTags(); refreshPersonalPage(); renderBaggageList(); renderShoppingList();
         renderExpenseHistory('pre', 'preHistoryList');
         updatePreDashboard();
         calcSettlement('pre', 'preSettlementDisplay');
@@ -1592,14 +1715,14 @@
                         ${t.depCity ? `<span class="flight-route-tag ${depTagCls}">${escapeHtml(t.depCity)}</span>` : ''}
                     </div>
                     <div class="flight-route-mid">
-                        ${t.date ? `<div class="flight-route-date-mini">📅 ${escapeHtml(t.date)}</div>` : ''}
+                        ${t.date ? `<div class="flight-route-date-mini">${escapeHtml(t.date)}</div>` : ''}
                         <div class="flight-route-line"></div>
                         <div class="flight-route-plane">✈️${t.duration ? '飛行' + formatFlightDuration(t.duration) : ''}</div>
                     </div>
                     <div class="flight-route-col arr">
                         <div class="flight-route-code">${escapeHtml(t.arrCode || '?')}</div>
-                        ${t.arrCity ? `<span class="flight-route-tag ${arrTagCls}">${escapeHtml(t.arrCity)}</span>` : ''}
                         <div class="flight-route-time">🕐 ${escapeHtml(t.arrTime || '--:--')}</div>
+                        ${t.arrCity ? `<span class="flight-route-tag ${arrTagCls}">${escapeHtml(t.arrCity)}</span>` : ''}
                     </div>
                 </div>
                 ${(t.baggage || t.aircraft) ? `
@@ -1995,7 +2118,7 @@
 
     // 「個人記帳」頁的子分頁：個人記帳／代購紀錄
     function switchPersonalSubTab(name) {
-        ['mine', 'proxy'].forEach(n => {
+        ['mine', 'proxy', 'shopping'].forEach(n => {
             document.getElementById('personalSubTab-' + n).style.display = (n === name) ? '' : 'none';
             document.getElementById('personalSubTabBtn-' + n).classList.toggle('active', n === name);
         });
