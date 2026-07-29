@@ -364,6 +364,38 @@
             padding: 9px 10px; font-size: 15px; font-family: inherit; margin-bottom: 16px;
         }
 
+        /* ✈️ 機票小卡：把班機資訊做成像機票 App 一樣的卡片 */
+        .flight-ticket-card {
+            background: linear-gradient(180deg, #dfeaf9 0%, #dfeaf9 40%, #fffdf9 40%, #fffdf9 100%);
+            border: 2.5px solid var(--border-color); border-radius: 20px; box-shadow: var(--box-shadow);
+            padding: 14px 14px 16px; margin: 4px 0 14px; box-sizing: border-box;
+        }
+        .flight-ticket-airline { text-align: center; font-size: 13px; font-weight: 700; color: var(--text-soft); letter-spacing: 1.5px; margin-bottom: 8px; }
+        .flight-ticket-number { text-align: center; font-size: 25px; font-weight: 900; letter-spacing: 3px; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; padding: 8px 6px; margin-bottom: 12px; }
+        .flight-route-row { display: flex; align-items: center; background: #fff; border: 2.5px solid var(--border-color); border-radius: 16px; padding: 14px 8px; gap: 4px; }
+        .flight-route-col { flex: 1 1 0; min-width: 0; }
+        .flight-route-col.dep { text-align: left; }
+        .flight-route-col.arr { text-align: right; }
+        .flight-route-code { font-size: 21px; font-weight: 900; word-break: break-all; }
+        .flight-route-time { font-size: 14.5px; font-weight: 700; color: var(--text-soft); margin-top: 2px; }
+        .flight-route-tag { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }
+        .flight-route-tag.dep-tag { background: #7cb342; }
+        .flight-route-tag.arr-tag { background: #ff9800; }
+        .flight-route-mid { flex: 0 0 auto; font-size: 10.5px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
+        .flight-route-line { width: 48px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
+        .flight-route-plane { font-size: 13px; }
+        .flight-ticket-infogrid { display: flex; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; margin-top: 12px; }
+        .flight-info-box { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; }
+        .flight-info-box + .flight-info-box { border-left: 2px dashed rgba(53,50,44,0.3); }
+        .flight-info-label { font-size: 10px; color: var(--text-soft); font-weight: 700; letter-spacing: 0.5px; }
+        .flight-info-value { font-size: 13.5px; font-weight: 700; margin-top: 2px; word-break: break-word; }
+        .flight-ticket-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .flight-ticket-actions .comic-btn { padding: 9px 4px; font-size: 13px; box-shadow: 2px 2px 0px rgba(53,50,44,0.85); }
+        .flight-ticket-actions .comic-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px rgba(53,50,44,0.85); }
+        .flight-ticket-empty-hint { font-size: 13px; color: var(--text-soft); text-align: center; padding: 14px 4px; }
+        .flight-modal-card { width: 340px; max-width: calc(100vw - 40px); max-height: 86vh; overflow-y: auto; background: #fffdf5; border: 3px solid var(--border-color); border-radius: 22px; box-shadow: var(--box-shadow); padding: 20px 18px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+        .flight-modal-title { font-size: 18px; font-weight: 900; text-align: center; margin-bottom: 4px; }
+
         /* 🌱 首次載入畫面：等雲端資料第一次回傳前顯示，避免看到空白/半套資料 */
         #appLoadingScreen {
             position: fixed; inset: 0; background: var(--bg-color); z-index: 2000;
@@ -606,7 +638,7 @@
     <div id="page-pre" class="page">
         <div class="subtab-row">
             <button class="subtab-btn active" id="preSubTabBtn-info" onclick="switchPreSubTab('info')">📌 行前資訊</button>
-            <button class="subtab-btn" id="preSubTabBtn-expense" onclick="switchPreSubTab('expense')">💰 花費記帳</button>
+            <button class="subtab-btn" id="preSubTabBtn-expense" onclick="switchPreSubTab('expense')">💰 行前花費</button>
             <button class="subtab-btn" id="preSubTabBtn-baggage" onclick="switchPreSubTab('baggage')">🧳 行李清單</button>
         </div>
 
@@ -617,8 +649,11 @@
                 <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾ 收合</button>
             </div>
             <div id="preInfoBody" class="collapsible-content">
-            <label>✈️ 班機資訊</label>
-            <textarea id="infoFlight" rows="3" placeholder="去程：酷航 TR899..."></textarea>
+            <label>✈️ 機票資訊</label>
+            <div id="flightTicketList"></div>
+            <button class="comic-btn btn-blue" onclick="openFlightModal()" style="margin:2px 0 14px;">➕ 新增一張機票</button>
+            <label>📝 其他機票備註（選填）</label>
+            <textarea id="infoFlightNote" rows="2" placeholder="退稅、行李規定、其他航班補充..."></textarea>
             <label>🏠 民宿 / 住宿地址</label>
             <textarea id="infoHotel" rows="3" placeholder="民宿名稱、地址..."></textarea>
             <label>📝 行前準備（退稅流程 / 天氣 / 提醒）</label>
@@ -911,6 +946,44 @@
             <div style="display:flex; gap:10px; margin-top:6px;">
                 <button class="comic-btn" style="flex:1; background:#eee;" onclick="closeLinkInsert()">✖ 取消</button>
                 <button class="comic-btn btn-blue" style="flex:1;" onclick="confirmLinkInsert()">✅ 插入</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="flightModalOverlay" class="rc-overlay" style="display:none;" onclick="if(event.target===this) closeFlightModal();">
+        <div class="rc-scroll-wrap">
+            <div class="flight-modal-card">
+                <div class="flight-modal-title" id="flightModalTitle">✈️ 新增機票</div>
+                <input type="hidden" id="flightTicketId">
+                <label>🛫 航空公司</label>
+                <input type="text" id="flightAirline" placeholder="例如：釜山航空">
+                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>🎫 航班編號</label><input type="text" id="flightNo" placeholder="BX 796"></div>
+                    <div style="flex:1; min-width:0;"><label>📅 飛行日期</label><input type="date" id="flightDate"></div>
+                </div>
+                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>🏳️ 出發機場代碼</label><input type="text" id="flightDepCode" placeholder="KHH" style="text-transform:uppercase;"></div>
+                    <div style="flex:1; min-width:0;"><label>🏙️ 出發城市</label><input type="text" id="flightDepCity" placeholder="高雄"></div>
+                </div>
+                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>🛫 出發時間</label><input type="time" id="flightDepTime"></div>
+                    <div style="flex:1; min-width:0;"><label>🛬 抵達時間</label><input type="time" id="flightArrTime"></div>
+                </div>
+                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>🏳️ 抵達機場代碼</label><input type="text" id="flightArrCode" placeholder="PUS" style="text-transform:uppercase;"></div>
+                    <div style="flex:1; min-width:0;"><label>🏙️ 抵達城市</label><input type="text" id="flightArrCity" placeholder="釜山"></div>
+                </div>
+                <div style="display:flex; gap:8px;" class="row-flex-nowrap">
+                    <div style="flex:1; min-width:0;"><label>⏱️ 飛行時間</label><input type="text" id="flightDuration" placeholder="02h25m"></div>
+                    <div style="flex:1; min-width:0;"><label>✈️ 機型</label><input type="text" id="flightAircraft" placeholder="A321"></div>
+                </div>
+                <label>🧳 行李額度</label>
+                <input type="text" id="flightBaggage" placeholder="15kg">
+                <div style="display:flex; gap:10px; margin-top:6px;">
+                    <button class="comic-btn" style="flex:1; background:#eee;" onclick="closeFlightModal()">✖ 取消</button>
+                    <button class="comic-btn btn-green" style="flex:1;" onclick="saveFlightTicket()">💾 儲存</button>
+                </div>
+                <button class="comic-btn btn-pink" id="flightDeleteBtn" style="margin-top:10px; display:none;" onclick="deleteFlightTicket()">🗑️ 刪除這張機票</button>
             </div>
         </div>
     </div>
@@ -2222,14 +2295,115 @@
     function loadPreInfo() {
         if (db.currentIdx === -1 || !db.trips[db.currentIdx]) return;
         let trip = db.trips[db.currentIdx]; const info = trip.preInfo || {};
-        document.getElementById('infoFlight').value = info.flight || "";
+        document.getElementById('infoFlightNote').value = info.flightNote || info.flight || "";
         document.getElementById('infoHotel').value = info.hotel || "";
         document.getElementById('infoPrep').value = info.prep || "";
+        renderFlightTickets();
     }
     function savePreInfo() {
         if (db.currentIdx === -1) return; let trip = db.trips[db.currentIdx];
-        trip.preInfo = { flight: document.getElementById('infoFlight').value, hotel: document.getElementById('infoHotel').value, prep: document.getElementById('infoPrep').value };
+        trip.preInfo = { flightNote: document.getElementById('infoFlightNote').value, hotel: document.getElementById('infoHotel').value, prep: document.getElementById('infoPrep').value };
         save(); document.getElementById('preInfoSavedHint').innerText = '✅ 已儲存！'; setTimeout(() => document.getElementById('preInfoSavedHint').innerText = '', 2000);
+    }
+
+    // ✈️ 機票小卡：把班機資訊改成像機票 App 一樣的卡片，一趟旅程可以放好幾張（去程／回程／段落機票）
+    function renderFlightTickets() {
+        const wrap = document.getElementById('flightTicketList');
+        if (!wrap) return;
+        if (db.currentIdx === -1 || !db.trips[db.currentIdx]) { wrap.innerHTML = ''; return; }
+        const trip = db.trips[db.currentIdx];
+        const tickets = trip.flightTickets || [];
+        if (!tickets.length) { wrap.innerHTML = '<div class="flight-ticket-empty-hint">還沒有機票資料，點下面「➕ 新增一張機票」開始建立吧！</div>'; return; }
+        wrap.innerHTML = tickets.map(t => `
+            <div class="flight-ticket-card">
+                <div class="flight-ticket-airline">${escapeHtml(t.airline || '未填寫航空公司')}</div>
+                <div class="flight-ticket-number">${escapeHtml(t.flightNo || '—')}</div>
+                <div class="flight-route-row">
+                    <div class="flight-route-col dep">
+                        <div class="flight-route-code">${escapeHtml(t.depCode || '?')}</div>
+                        <div class="flight-route-time">${escapeHtml(t.depTime || '--:--')}</div>
+                        ${t.depCity ? `<span class="flight-route-tag dep-tag">${escapeHtml(t.depCity)}</span>` : ''}
+                    </div>
+                    <div class="flight-route-mid">
+                        ${t.duration ? escapeHtml(t.duration) : ''}
+                        <div class="flight-route-line"></div>
+                        <div class="flight-route-plane">✈️</div>
+                        ${t.date ? escapeHtml(t.date) : ''}
+                    </div>
+                    <div class="flight-route-col arr">
+                        <div class="flight-route-code">${escapeHtml(t.arrCode || '?')}</div>
+                        <div class="flight-route-time">${escapeHtml(t.arrTime || '--:--')}</div>
+                        ${t.arrCity ? `<span class="flight-route-tag arr-tag">${escapeHtml(t.arrCity)}</span>` : ''}
+                    </div>
+                </div>
+                ${(t.baggage || t.aircraft) ? `
+                <div class="flight-ticket-infogrid">
+                    <div class="flight-info-box"><div class="flight-info-label">BAGGAGE</div><div class="flight-info-value">🧳 ${escapeHtml(t.baggage || '—')}</div></div>
+                    <div class="flight-info-box"><div class="flight-info-label">AIRCRAFT</div><div class="flight-info-value">✈️ ${escapeHtml(t.aircraft || '—')}</div></div>
+                </div>` : ''}
+                <div class="flight-ticket-actions">
+                    <button class="comic-btn btn-blue" onclick="openFlightModal('${t.id}')">✏️ 編輯航班資訊</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    function openFlightModal(ticketId) {
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('請先建立並選擇一個行程分類！');
+        const trip = db.trips[db.currentIdx];
+        const t = ticketId ? (trip.flightTickets || []).find(x => x.id === ticketId) : null;
+        document.getElementById('flightModalTitle').innerText = t ? '✏️ 編輯機票' : '✈️ 新增機票';
+        document.getElementById('flightTicketId').value = t ? t.id : '';
+        document.getElementById('flightAirline').value = t?.airline || '';
+        document.getElementById('flightNo').value = t?.flightNo || '';
+        document.getElementById('flightDate').value = t?.date || '';
+        document.getElementById('flightDepCode').value = t?.depCode || '';
+        document.getElementById('flightDepCity').value = t?.depCity || '';
+        document.getElementById('flightDepTime').value = t?.depTime || '';
+        document.getElementById('flightArrTime').value = t?.arrTime || '';
+        document.getElementById('flightArrCode').value = t?.arrCode || '';
+        document.getElementById('flightArrCity').value = t?.arrCity || '';
+        document.getElementById('flightDuration').value = t?.duration || '';
+        document.getElementById('flightAircraft').value = t?.aircraft || '';
+        document.getElementById('flightBaggage').value = t?.baggage || '';
+        document.getElementById('flightDeleteBtn').style.display = t ? 'block' : 'none';
+        document.getElementById('flightModalOverlay').style.display = 'flex';
+    }
+    function closeFlightModal() { document.getElementById('flightModalOverlay').style.display = 'none'; }
+    function saveFlightTicket() {
+        if (db.currentIdx === -1) return; const trip = db.trips[db.currentIdx];
+        if (!trip.flightTickets) trip.flightTickets = [];
+        const id = document.getElementById('flightTicketId').value;
+        const ticket = {
+            id: id || genId(),
+            airline: document.getElementById('flightAirline').value.trim(),
+            flightNo: document.getElementById('flightNo').value.trim(),
+            date: document.getElementById('flightDate').value,
+            depCode: document.getElementById('flightDepCode').value.trim().toUpperCase(),
+            depCity: document.getElementById('flightDepCity').value.trim(),
+            depTime: document.getElementById('flightDepTime').value,
+            arrTime: document.getElementById('flightArrTime').value,
+            arrCode: document.getElementById('flightArrCode').value.trim().toUpperCase(),
+            arrCity: document.getElementById('flightArrCity').value.trim(),
+            duration: document.getElementById('flightDuration').value.trim(),
+            aircraft: document.getElementById('flightAircraft').value.trim(),
+            baggage: document.getElementById('flightBaggage').value.trim()
+        };
+        if (id) {
+            const idx = trip.flightTickets.findIndex(x => x.id === id);
+            if (idx > -1) trip.flightTickets[idx] = ticket; else trip.flightTickets.push(ticket);
+        } else {
+            trip.flightTickets.push(ticket);
+        }
+        save(); closeFlightModal(); renderFlightTickets(); showToast('✅ 機票已儲存！');
+    }
+    function deleteFlightTicket() {
+        const id = document.getElementById('flightTicketId').value;
+        if (!id || db.currentIdx === -1) return;
+        showConfirm('確定要刪除這張機票嗎？', () => {
+            const trip = db.trips[db.currentIdx];
+            trip.flightTickets = (trip.flightTickets || []).filter(x => x.id !== id);
+            save(); closeFlightModal(); renderFlightTickets(); showToast('🗑️ 已刪除這張機票！');
+        });
     }
     function addExpense(type) {
         if (db.currentIdx === -1 || !db.trips.length) return showToast('請先建立並選擇一個行程分類！');

@@ -285,6 +285,33 @@
             padding: 9px 10px; font-size: 15px; font-family: inherit; margin-bottom: 16px;
         }
 
+        /* ✈️ 機票小卡：把班機資訊做成像機票 App 一樣的卡片（訪客唯讀顯示版） */
+        .flight-ticket-card {
+            background: linear-gradient(180deg, #dfeaf9 0%, #dfeaf9 40%, #fffdf9 40%, #fffdf9 100%);
+            border: 2.5px solid var(--border-color); border-radius: 20px; box-shadow: var(--box-shadow);
+            padding: 14px 14px 16px; margin: 4px 0 14px; box-sizing: border-box;
+        }
+        .flight-ticket-airline { text-align: center; font-size: 13px; font-weight: 700; color: var(--text-soft); letter-spacing: 1.5px; margin-bottom: 8px; }
+        .flight-ticket-number { text-align: center; font-size: 25px; font-weight: 900; letter-spacing: 3px; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; padding: 8px 6px; margin-bottom: 12px; }
+        .flight-route-row { display: flex; align-items: center; background: #fff; border: 2.5px solid var(--border-color); border-radius: 16px; padding: 14px 8px; gap: 4px; }
+        .flight-route-col { flex: 1 1 0; min-width: 0; }
+        .flight-route-col.dep { text-align: left; }
+        .flight-route-col.arr { text-align: right; }
+        .flight-route-code { font-size: 21px; font-weight: 900; word-break: break-all; }
+        .flight-route-time { font-size: 14.5px; font-weight: 700; color: var(--text-soft); margin-top: 2px; }
+        .flight-route-tag { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }
+        .flight-route-tag.dep-tag { background: #7cb342; }
+        .flight-route-tag.arr-tag { background: #ff9800; }
+        .flight-route-mid { flex: 0 0 auto; font-size: 10.5px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
+        .flight-route-line { width: 48px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
+        .flight-route-plane { font-size: 13px; }
+        .flight-ticket-infogrid { display: flex; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; margin-top: 12px; }
+        .flight-info-box { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; }
+        .flight-info-box + .flight-info-box { border-left: 2px dashed rgba(53,50,44,0.3); }
+        .flight-info-label { font-size: 10px; color: var(--text-soft); font-weight: 700; letter-spacing: 0.5px; }
+        .flight-info-value { font-size: 13.5px; font-weight: 700; margin-top: 2px; word-break: break-word; }
+        .flight-ticket-empty-hint { font-size: 13px; color: var(--text-soft); text-align: center; padding: 14px 4px; }
+
         /* 🌱 首次載入畫面：等雲端資料第一次回傳前顯示，避免看到空白/半套資料 */
         #appLoadingScreen {
             position: fixed; inset: 0; background: var(--bg-color); z-index: 2000;
@@ -462,7 +489,7 @@
     <div id="page-pre" class="page">
         <div class="subtab-row">
             <button class="subtab-btn active" id="preSubTabBtn-info" onclick="switchPreSubTab('info')">📌 行前資訊</button>
-            <button class="subtab-btn" id="preSubTabBtn-expense" onclick="switchPreSubTab('expense')">💰 花費記帳</button>
+            <button class="subtab-btn" id="preSubTabBtn-expense" onclick="switchPreSubTab('expense')">💰 行前花費</button>
             <button class="subtab-btn" id="preSubTabBtn-baggage" onclick="switchPreSubTab('baggage')">🧳 行李清單</button>
         </div>
 
@@ -473,7 +500,9 @@
                 <button class="collapse-btn" onclick="toggleCollapse('preInfoBody', this)">▾ 收合</button>
             </div>
             <div id="preInfoBody" class="collapsible-content">
-            <label>✈️ 班機資訊</label><div id="infoFlightView" class="info-view"></div>
+            <label>✈️ 機票資訊</label>
+            <div id="flightTicketList"></div>
+            <div id="infoFlightNoteView" class="info-view" style="display:none;"></div>
             <label>🏠 民宿 / 住宿地址</label><div id="infoHotelView" class="info-view"></div>
             <label>📝 行前準備</label><div id="infoPrepView" class="info-view"></div>
             </div>
@@ -1477,10 +1506,13 @@
         document.getElementById('curTripName').innerText = trip.name;
         document.getElementById('curTripMembers').innerHTML = (trip.members || []).map(m => `<span style="background:#fff3e0; border:2px solid #333; padding:4px 10px; margin:4px; border-radius:15px; font-size:14px;">${m}</span>`).join('') || "暫無成員";
         
-        document.getElementById('infoFlightView').textContent = trip.preInfo?.flight || "（尚未填寫）";
+        renderFlightTickets(trip);
+        const flightNote = trip.preInfo?.flightNote || (trip.flightTickets && trip.flightTickets.length ? "" : (trip.preInfo?.flight || ""));
+        const flightNoteEl = document.getElementById('infoFlightNoteView');
+        if (flightNote) { flightNoteEl.textContent = flightNote; flightNoteEl.style.display = 'block'; } else { flightNoteEl.style.display = 'none'; }
         document.getElementById('infoHotelView').textContent = trip.preInfo?.hotel || "（尚未填寫）";
         document.getElementById('infoPrepView').textContent = trip.preInfo?.prep || "（尚未填寫）";
-        
+
         generateDayTags(); refreshPersonalPage(); renderBaggageList();
         renderExpenseHistory('pre', 'preHistoryList');
         updatePreDashboard();
@@ -1489,6 +1521,42 @@
         updateLocalDashboard();
         renderLocalDailySettlement();
         renderOverview();
+    }
+    // ✈️ 機票小卡（唯讀）：訪客版只顯示班機資訊，不能新增／編輯／刪除
+    function renderFlightTickets(trip) {
+        const wrap = document.getElementById('flightTicketList');
+        if (!wrap) return;
+        const tickets = (trip && trip.flightTickets) || [];
+        if (!tickets.length) { wrap.innerHTML = '<div class="flight-ticket-empty-hint">主辦人還沒有填寫機票資料</div>'; return; }
+        wrap.innerHTML = tickets.map(t => `
+            <div class="flight-ticket-card">
+                <div class="flight-ticket-airline">${escapeHtml(t.airline || '未填寫航空公司')}</div>
+                <div class="flight-ticket-number">${escapeHtml(t.flightNo || '—')}</div>
+                <div class="flight-route-row">
+                    <div class="flight-route-col dep">
+                        <div class="flight-route-code">${escapeHtml(t.depCode || '?')}</div>
+                        <div class="flight-route-time">${escapeHtml(t.depTime || '--:--')}</div>
+                        ${t.depCity ? `<span class="flight-route-tag dep-tag">${escapeHtml(t.depCity)}</span>` : ''}
+                    </div>
+                    <div class="flight-route-mid">
+                        ${t.duration ? escapeHtml(t.duration) : ''}
+                        <div class="flight-route-line"></div>
+                        <div class="flight-route-plane">✈️</div>
+                        ${t.date ? escapeHtml(t.date) : ''}
+                    </div>
+                    <div class="flight-route-col arr">
+                        <div class="flight-route-code">${escapeHtml(t.arrCode || '?')}</div>
+                        <div class="flight-route-time">${escapeHtml(t.arrTime || '--:--')}</div>
+                        ${t.arrCity ? `<span class="flight-route-tag arr-tag">${escapeHtml(t.arrCity)}</span>` : ''}
+                    </div>
+                </div>
+                ${(t.baggage || t.aircraft) ? `
+                <div class="flight-ticket-infogrid">
+                    <div class="flight-info-box"><div class="flight-info-label">BAGGAGE</div><div class="flight-info-value">🧳 ${escapeHtml(t.baggage || '—')}</div></div>
+                    <div class="flight-info-box"><div class="flight-info-label">AIRCRAFT</div><div class="flight-info-value">✈️ ${escapeHtml(t.aircraft || '—')}</div></div>
+                </div>` : ''}
+            </div>
+        `).join('');
     }
 
     // 📊 總覽儀表板：行前＋當地的「個人自付」項目 ＋ 個人記帳頁面花費（不含代購、不含其他人花費）
