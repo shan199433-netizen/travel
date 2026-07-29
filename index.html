@@ -351,6 +351,16 @@
         #appLoadingScreen .loading-emoji { font-size: 44px; animation: loadingBounce 1s ease-in-out infinite; }
         #appLoadingScreen .loading-text { font-size: 14px; font-weight: 700; color: var(--text-soft); font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; }
         @keyframes loadingBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        /* 👀 主控版內嵌分享版检視：iframe 疊在主控畫面上方，按返回鈕瞬間切回主控，不用另外裝一個 app */
+        #guestPreviewOverlay { position: fixed; inset: 0; z-index: 1500; display: flex; flex-direction: column; background: var(--bg-color); }
+        #guestPreviewBar {
+            flex-shrink: 0; background: var(--main-blue); border-bottom: 2.5px solid var(--border-color);
+            padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding-top: calc(10px + env(safe-area-inset-top, 0px));
+        }
+        #guestPreviewLabel { font-size: 13px; font-weight: 700; color: var(--text-main); font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif; }
+        #guestPreviewFrame { flex: 1; width: 100%; border: none; }
         
         .delete-trip-btn { background: none; border: none; color: #c0564a; cursor: pointer; font-weight: bold; padding: 0 2px; }
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
@@ -507,6 +517,15 @@
         <span class="header-title" id="appTitle">🦊 33旅遊分帳</span>
         <button class="edit-btn" onclick="editAppTitle()">✏️</button>
         <button class="edit-btn" id="rateBadge" onclick="openRateSettings()" title="匯率設定">💱</button>
+        <button class="edit-btn" onclick="openGuestPreview()" title="切換成分享版">👀</button>
+    </div>
+
+    <div id="guestPreviewOverlay" style="display:none;">
+        <div id="guestPreviewBar">
+            <span id="guestPreviewLabel">👀 分享版检視中</span>
+            <button class="comic-btn btn-blue" onclick="closeGuestPreview()" style="width:auto; padding:6px 16px; box-shadow:2px 2px 0px rgba(53,50,44,0.85);">↩️ 返回主控台</button>
+        </div>
+        <iframe id="guestPreviewFrame" src="about:blank" allow="clipboard-write; web-share"></iframe>
     </div>
 
     <div id="page-trip" class="page active">
@@ -1830,6 +1849,21 @@
         return changed;
     }
     // 🔗 複製「當前查看行程」的分享連結（guest.html?trip=行程id），朋友點進去只會看到這一團
+    // 👀 主控版內嵌分享版检視：iframe 顯示原封不動的 guest.html，按返回鈕瞬間切回主控，主控當下操作到一半的畫面不會不見
+    function openGuestPreview() {
+        const trip = (db.currentIdx > -1 && db.trips.length) ? db.trips[db.currentIdx] : null;
+        const url = new URL('guest.html', window.location.href);
+        if (trip) {
+            if (!trip.id) { ensureTripIds(); save(); }
+            url.searchParams.set('trip', trip.id);
+        }
+        document.getElementById('guestPreviewFrame').src = url.toString();
+        document.getElementById('guestPreviewOverlay').style.display = 'flex';
+    }
+    function closeGuestPreview() {
+        document.getElementById('guestPreviewOverlay').style.display = 'none';
+        document.getElementById('guestPreviewFrame').src = 'about:blank';
+    }
     function copyGuestLink() {
         if (db.currentIdx === -1 || !db.trips.length) return showToast('請先建立並選擇一個行程分類！');
         const trip = db.trips[db.currentIdx];
