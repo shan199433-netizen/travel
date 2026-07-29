@@ -2370,6 +2370,8 @@
     }
 
     // 記住每種類型目前展開的日期分組（同時間只開一組，避免手機上一次全部展開太長）
+    // 哪些類型要依日期分組摺疊：行前明細筆數通常不多，維持扁平清單就好；當地日常天數一多才需要分組
+    const GROUP_BY_DATE_TYPES = ['local'];
     let expandedHistoryDate = { pre: undefined, local: undefined };
     // 記住每種類型目前選的類別篩選
     let historyCategoryFilter = { pre: 'all', local: 'all' };
@@ -2405,6 +2407,32 @@
                 : "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>";
             return;
         }
+        function renderOneItem(e) {
+            if (e.id === editingExpenseId) return renderExpenseEditForm(e, trip);
+            const badge = e.costType === 'personal'
+                ? `<span class="type-badge" style="background:#7b1fa2;">個人自付</span>`
+                : `<span class="type-badge" style="background:#2e7d32;">代墊分攤</span>`;
+            const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
+            const catTag = catInfo ? `<span class="type-badge" style="background:${catInfo.color}; color:#35322c;">${catInfo.e} ${catInfo.n}</span>` : '';
+            const shareInfo = e.costType === 'share'
+                ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
+                : '';
+            const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
+            const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
+                ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
+                : '';
+            return `<div class="history-item"><button class="delete-btn" onclick="editExpenseItem('${e.id}')">✏️</button><button class="delete-btn" onclick="deleteExpense('${e.id}')">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
+        }
+        if (!GROUP_BY_DATE_TYPES.includes(type)) {
+            // 扁平清單模式（不分組）：只保留類別篩選跟搜尋，新到舊排列
+            items.slice().reverse().forEach(e => { listDiv.innerHTML += renderOneItem(e); });
+            if (editingExpenseId) {
+                const editingItem = items.find(x => x.id === editingExpenseId);
+                if (editingItem && (editingItem.type === 'pre' || editingItem.type === 'local')) fillEditCategorySelect('editExp_' + editingItem.id + '_category', editingItem.category);
+            }
+            return;
+        }
         // 正在編輯某一筆時，強制展開它所在的日期分組，不然編輯表單會被收合藏起來
         if (editingExpenseId) {
             const editingItem = items.find(x => x.id === editingExpenseId);
@@ -2421,26 +2449,7 @@
             const daySubtotal = dayItems.reduce((s, e) => s + (e.amount || 0), 0);
             const isOpen = expandedHistoryDate[type] === dateKey;
             const bodyId = 'histDay_' + type + '_' + dateKey.replace(/[^0-9a-zA-Z]/g, '');
-            let bodyHtml = '';
-            if (isOpen) {
-                dayItems.forEach(e => {
-                    if (e.id === editingExpenseId) { bodyHtml += renderExpenseEditForm(e, trip); return; }
-                    const badge = e.costType === 'personal'
-                        ? `<span class="type-badge" style="background:#7b1fa2;">個人自付</span>`
-                        : `<span class="type-badge" style="background:#2e7d32;">代墊分攤</span>`;
-                    const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
-                    const catTag = catInfo ? `<span class="type-badge" style="background:${catInfo.color}; color:#35322c;">${catInfo.e} ${catInfo.n}</span>` : '';
-                    const shareInfo = e.costType === 'share'
-                        ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
-                        : '';
-                    const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
-                    const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
-                    const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
-                        ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
-                        : '';
-                    bodyHtml += `<div class="history-item"><button class="delete-btn" onclick="editExpenseItem('${e.id}')">✏️</button><button class="delete-btn" onclick="deleteExpense('${e.id}')">❌</button><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
-                });
-            }
+            const bodyHtml = isOpen ? dayItems.map(renderOneItem).join('') : '';
             listDiv.innerHTML += `<div class="history-day-group">
                 <div class="history-day-header" onclick="toggleHistoryDateGroup('${type}','${dateKey}','${listId}')">
                     <span>📅 ${dateKey}</span>

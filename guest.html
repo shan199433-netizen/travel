@@ -1669,6 +1669,8 @@
 
     // ↓↓↓ 補上原本缺少的「行前/當地」明細顯示、統計、結算邏輯（唯讀，無刪除按鈕） ↓↓↓
     // 記住每種類型目前展開的日期分組（同時間只開一組，避免手機上一次全部展開太長）
+    // 哪些類型要依日期分組摺疊：行前明細筆數通常不多，維持扁平清單就好；當地日常天數一多才需要分組
+    const GROUP_BY_DATE_TYPES = ['local'];
     let expandedHistoryDate = { pre: undefined, local: undefined };
     // 記住每種類型目前選的類別篩選
     let historyCategoryFilter = { pre: 'all', local: 'all' };
@@ -1701,6 +1703,27 @@
                 : "<p style='color:gray; font-size:14px;'>目前還沒有紀錄</p>";
             return;
         }
+        function renderOneItem(e) {
+            const badge = e.costType === 'personal'
+                ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
+                : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
+            const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
+            const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
+            const shareInfo = e.costType === 'share'
+                ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
+                : '';
+            const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
+            const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
+            const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
+                ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
+                : '';
+            return `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
+        }
+        if (!GROUP_BY_DATE_TYPES.includes(type)) {
+            // 扁平清單模式（不分組）：只保留類別篩選，新到舊排列
+            items.slice().reverse().forEach(e => { listDiv.innerHTML += renderOneItem(e); });
+            return;
+        }
         // 依日期分組，新到舊排列
         const groups = {};
         items.forEach(e => { (groups[e.date] = groups[e.date] || []).push(e); });
@@ -1712,25 +1735,7 @@
             const daySubtotal = dayItems.reduce((s, e) => s + (e.amount || 0), 0);
             const isOpen = expandedHistoryDate[type] === dateKey;
             const bodyId = 'histDay_' + type + '_' + dateKey.replace(/[^0-9a-zA-Z]/g, '');
-            let bodyHtml = '';
-            if (isOpen) {
-                dayItems.forEach(e => {
-                    const badge = e.costType === 'personal'
-                        ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#7b1fa2;">個人自付</span>`
-                        : `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#fff;background:#2e7d32;">代墊分攤</span>`;
-                    const catInfo = (type === 'pre' || type === 'local') ? getCategoryInfo(e.category) : null;
-                    const catTag = catInfo ? `<span style="font-size:11px;padding:2px 6px;border-radius:6px;color:#35322c;background:${catInfo.color};">${catInfo.e} ${catInfo.n}</span>` : '';
-                    const shareInfo = e.costType === 'share'
-                        ? `<br><small>💞 分攤：${(e.participants||[]).join('、') || '（無）'}</small>`
-                        : '';
-                    const selfPayers = (e.payers && e.payers.length) ? e.payers : (e.payer ? [e.payer] : []);
-                    const payerInfo = e.costType === 'share' ? `　👑 ${e.payer}` : (selfPayers.length === 1 ? `　👤 ${selfPayers[0]}` : '');
-                    const selfInfo = (e.costType === 'personal' && selfPayers.length > 1)
-                        ? `<br><small>👤 名單：${selfPayers.join('、')}</small>`
-                        : '';
-                    bodyHtml += `<div class="history-item"><small>${e.date}</small> ${badge}${catTag}<br>🎈 ${e.title}　<b>$${e.amount} 元</b>${payerInfo}${shareInfo}${selfInfo}</div>`;
-                });
-            }
+            const bodyHtml = isOpen ? dayItems.map(renderOneItem).join('') : '';
             listDiv.innerHTML += `<div class="history-day-group">
                 <div class="history-day-header" onclick="toggleHistoryDateGroup('${type}','${dateKey}','${listId}')">
                     <span>📅 ${dateKey}</span>
