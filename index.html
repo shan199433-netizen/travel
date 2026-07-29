@@ -366,36 +366,36 @@
 
         /* ✈️ 機票小卡：把班機資訊做成像機票 App 一樣的卡片 */
         .flight-ticket-card {
-            background: linear-gradient(180deg, #fff3d6 0%, #fff3d6 26%, #fffdf9 26%, #fffdf9 100%);
-            border: 2.5px solid var(--border-color); border-radius: 20px; box-shadow: var(--box-shadow);
-            padding: 14px 14px 16px; margin: 4px 0 14px; box-sizing: border-box;
+            background: linear-gradient(180deg, #fff3d6 0%, #fff3d6 30%, #fffdf9 30%, #fffdf9 100%);
+            border: 2.5px solid var(--border-color); border-radius: 18px; box-shadow: var(--box-shadow);
+            padding: 11px 12px 12px; margin: 4px 0 10px; box-sizing: border-box;
         }
-        .flight-ticket-card.dir-go { background: linear-gradient(180deg, #d9ecfb 0%, #d9ecfb 26%, #fffdf9 26%, #fffdf9 100%); }
-        .flight-ticket-card.dir-back { background: linear-gradient(180deg, #fbe1ec 0%, #fbe1ec 26%, #fffdf9 26%, #fffdf9 100%); }
-        .flight-direction-wrap { text-align: center; margin-bottom: 8px; }
-        .flight-direction-badge { display: inline-block; padding: 6px 18px; border-radius: 999px; font-size: 14.5px; font-weight: 800; border: 2.5px solid var(--border-color); background: #fff3d6; color: #7a5a12; }
+        .flight-ticket-card.dir-go { background: linear-gradient(180deg, #d9ecfb 0%, #d9ecfb 30%, #fffdf9 30%, #fffdf9 100%); }
+        .flight-ticket-card.dir-back { background: linear-gradient(180deg, #fbe1ec 0%, #fbe1ec 30%, #fffdf9 30%, #fffdf9 100%); }
+        .flight-ticket-headrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+        .flight-direction-badge { display: inline-block; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 800; border: 2px solid var(--border-color); background: #fff3d6; color: #7a5a12; white-space: nowrap; }
         .flight-direction-badge.dir-go { background: var(--main-blue); color: #0c4a78; }
         .flight-direction-badge.dir-back { background: var(--main-pink); color: #8a2f4a; }
-        .flight-ticket-subline { text-align: center; font-size: 13.5px; font-weight: 700; color: var(--text-soft); margin-bottom: 10px; }
-        .flight-ticket-date { text-align: center; font-size: 18px; font-weight: 900; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; padding: 8px 6px; margin-bottom: 12px; letter-spacing: 0.5px; }
-        .flight-route-row { display: flex; align-items: center; background: #fff; border: 2.5px solid var(--border-color); border-radius: 16px; padding: 14px 8px; gap: 4px; }
+        .flight-ticket-subline { text-align: right; font-size: 12px; font-weight: 700; color: var(--text-soft); }
+        .flight-route-row { display: flex; align-items: center; background: #fff; border: 2.5px solid var(--border-color); border-radius: 14px; padding: 10px 8px; gap: 4px; }
         .flight-route-col { flex: 1 1 0; min-width: 0; }
         .flight-route-col.dep { text-align: left; }
         .flight-route-col.arr { text-align: right; }
-        .flight-route-code { font-size: 21px; font-weight: 900; word-break: break-all; }
-        .flight-route-time { font-size: 14.5px; font-weight: 700; color: var(--text-soft); margin-top: 2px; }
-        .flight-route-tag { display: inline-block; margin-top: 6px; padding: 3px 12px; border-radius: 999px; font-size: 11.5px; font-weight: 800; border: 1.5px solid rgba(53,50,44,0.4); }
+        .flight-route-code { font-size: 18px; font-weight: 900; word-break: break-all; }
+        .flight-route-time { font-size: 17px; font-weight: 800; color: var(--text-main); margin-top: 2px; }
+        .flight-route-tag { display: inline-block; margin-top: 5px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; border: 1.5px solid rgba(53,50,44,0.4); }
         .flight-route-tag.dep-tag { background: var(--main-green); color: #275b1d; }
         .flight-route-tag.arr-tag { background: var(--main-purple); color: #4a2d6b; }
-        .flight-route-mid { flex: 0 0 auto; font-size: 10.5px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
-        .flight-route-line { width: 48px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
-        .flight-route-plane { font-size: 13px; }
-        .flight-ticket-infogrid { display: flex; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; margin-top: 12px; }
-        .flight-info-box { flex: 1; min-width: 0; text-align: center; padding: 8px 4px; }
+        .flight-route-mid { flex: 0 0 auto; font-size: 10px; color: var(--text-soft); font-weight: 700; text-align: center; padding: 0 4px; }
+        .flight-route-date-mini { font-size: 11.5px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; white-space: nowrap; }
+        .flight-route-line { width: 40px; height: 0; border-top: 2px dashed #b8b2a4; margin: 3px auto; }
+        .flight-route-plane { font-size: 12px; }
+        .flight-ticket-infogrid { display: flex; background: #fff; border: 2px solid var(--border-color); border-radius: 12px; margin-top: 8px; }
+        .flight-info-box { flex: 1; min-width: 0; text-align: center; padding: 6px 4px; }
         .flight-info-box + .flight-info-box { border-left: 2px dashed rgba(53,50,44,0.3); }
-        .flight-info-label { font-size: 10px; color: var(--text-soft); font-weight: 700; letter-spacing: 0.5px; }
-        .flight-info-value { font-size: 13.5px; font-weight: 700; margin-top: 2px; word-break: break-word; }
-        .flight-ticket-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .flight-info-label { font-size: 9.5px; color: var(--text-soft); font-weight: 700; letter-spacing: 0.5px; }
+        .flight-info-value { font-size: 13px; font-weight: 700; margin-top: 1px; word-break: break-word; }
+        .flight-ticket-actions { display: flex; gap: 8px; margin-top: 8px; }
         .flight-ticket-actions .comic-btn { padding: 9px 4px; font-size: 13px; box-shadow: 2px 2px 0px rgba(53,50,44,0.85); }
         .flight-ticket-actions .comic-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px rgba(53,50,44,0.85); }
         .flight-ticket-empty-hint { font-size: 13px; color: var(--text-soft); text-align: center; padding: 14px 4px; }
@@ -2338,13 +2338,15 @@
         const trip = db.trips[db.currentIdx];
         const tickets = trip.flightTickets || [];
         if (!tickets.length) { wrap.innerHTML = '<div class="flight-ticket-empty-hint">還沒有機票資料，點下面「➕ 新增一張機票」開始建立吧！</div>'; return; }
-        wrap.innerHTML = tickets.map(t => {
-            const dir = flightDirectionMeta(t.direction);
+        wrap.innerHTML = tickets.map((t, i) => {
+            const inferredDir = t.direction || (i === 0 ? 'go' : (i === 1 ? 'back' : 'other'));
+            const dir = flightDirectionMeta(inferredDir);
             return `
             <div class="flight-ticket-card ${dir.cls}">
-                <div class="flight-direction-wrap"><span class="flight-direction-badge ${dir.cls}">${dir.label}</span></div>
-                <div class="flight-ticket-subline">${escapeHtml(t.airline || '未填寫航空公司')}${t.flightNo ? ' · ' + escapeHtml(t.flightNo) : ''}</div>
-                ${t.date ? `<div class="flight-ticket-date">📅 ${escapeHtml(t.date)}</div>` : ''}
+                <div class="flight-ticket-headrow">
+                    <span class="flight-direction-badge ${dir.cls}">${dir.label}</span>
+                    <span class="flight-ticket-subline">${escapeHtml(t.airline || '未填寫航空公司')}${t.flightNo ? ' · ' + escapeHtml(t.flightNo) : ''}</span>
+                </div>
                 <div class="flight-route-row">
                     <div class="flight-route-col dep">
                         <div class="flight-route-code">${escapeHtml(t.depCode || '?')}</div>
@@ -2352,6 +2354,7 @@
                         ${t.depCity ? `<span class="flight-route-tag dep-tag">${escapeHtml(t.depCity)}</span>` : ''}
                     </div>
                     <div class="flight-route-mid">
+                        ${t.date ? `<div class="flight-route-date-mini">${escapeHtml(t.date)}</div>` : ''}
                         ${t.duration ? escapeHtml(t.duration) : ''}
                         <div class="flight-route-line"></div>
                         <div class="flight-route-plane">✈️</div>
