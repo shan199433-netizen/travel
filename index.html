@@ -130,6 +130,13 @@
             display: flex; justify-content: space-between; align-items: center; gap: 10px;
         }
 
+        /* 🏕️ 旅遊項目切換／成員小隊 專用的精簡版樣式，讓兩張卡一頁塞得下，不影響其他頁面的按鈕/輸入框大小 */
+        .compact-card { padding: 14px 14px; margin-bottom: 14px; }
+        .compact-card .card-title { font-size: 15px; margin-bottom: 8px; padding-bottom: 6px; }
+        .compact-card select, .compact-card input[type="text"] { padding: 9px 10px; margin: 4px 0 6px 0; font-size: 14px; }
+        .compact-card .comic-btn { padding: 8px 4px; font-size: 13px; }
+        .compact-row-divider { border-top: 2px dashed rgba(53,50,44,0.25); margin-top: 10px; padding-top: 8px; }
+
         .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .dash-item {
             border: 2px solid var(--border-color); border-radius: 14px; padding: 12px 8px;
@@ -561,37 +568,37 @@
 
     <div id="page-trip" class="page active">
 
-        <div class="comic-card">
+        <div class="comic-card compact-card">
             <div class="card-title">🏕️ 旅遊項目切換</div>
             <div style="display: flex; gap: 8px;">
                 <select id="tripSwitchSelect" onchange="selectTrip(parseInt(this.value))" style="flex:1;"></select>
-                <button class="comic-btn" onclick="deleteCurrentTrip()" style="width:44px; box-shadow:none; padding:5px; flex-shrink:0;" title="刪除目前行程">🗑️</button>
+                <button class="comic-btn" onclick="deleteCurrentTrip()" style="width:56px; box-shadow:none; flex-shrink:0;" title="刪除目前行程">🗑️</button>
             </div>
 
-            <div style="border-top: 2px dashed rgba(53,50,44,0.25); margin-top: 15px; padding-top: 12px;">
-                <label style="font-size: 13px; font-weight: 700; display:block; margin-bottom:6px;">➕ 新增行程</label>
+            <div class="compact-row-divider">
+                <label style="font-size: 13px; font-weight: 700; display:block; margin-bottom:4px;">➕ 新增行程</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="newTripInput" placeholder="加新行程分類（如：2026泰國 🇹🇭）" onkeydown="if(event.key==='Enter'){event.preventDefault(); createNewTrip();}">
-                    <button class="comic-btn btn-blue" onclick="createNewTrip()" style="width:90px; box-shadow:none; padding:5px;">新增</button>
+                    <button class="comic-btn btn-blue" onclick="createNewTrip()" style="width:56px; box-shadow:none; flex-shrink:0;">新增</button>
                 </div>
             </div>
-            <div style="border-top: 2px dashed rgba(53,50,44,0.25); margin-top: 15px; padding-top: 12px;">
-                <label style="font-size: 13px; font-weight: 700; display:block; margin-bottom:6px;">🐾 新增成員</label>
+            <div class="compact-row-divider">
+                <label style="font-size: 13px; font-weight: 700; display:block; margin-bottom:4px;">🐾 新增成員</label>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="newMemberInput" placeholder="輸入成員名字（如:小兔、熊大）" onkeydown="if(event.key==='Enter'){event.preventDefault(); addMember();}">
-                    <button class="comic-btn" onclick="addMember()" style="width:90px; box-shadow:none; padding:5px;">加入</button>
+                    <button class="comic-btn" onclick="addMember()" style="width:56px; box-shadow:none; flex-shrink:0;">加入</button>
                 </div>
             </div>
         </div>
 
-        <div class="comic-card">
+        <div class="comic-card compact-card">
             <div class="card-title">🐱 成員小隊</div>
-            <div style="font-size:15px; line-height: 1.6;">
+            <div style="font-size:14px; line-height: 1.6;">
                 <b>🐾 成員名單：</b>
-                <div id="curTripMembers" style="background:#fff; padding:10px; border:2px solid #333; border-radius:12px; margin-top: 8px; min-height: 30px;">無成員</div>
-                <b style="display:block; margin-top:16px;">🎯 當前查看專案：</b> <span id="curTripName" style="color:#ff5722; font-weight:bold;">請先建立行程</span>
-                <button class="comic-btn btn-blue" onclick="copyGuestLink()" style="width:100%; margin-top:10px; box-shadow:none; padding:6px;">🔗 複製這一團的分享連結</button>
-                <button class="comic-btn btn-orange" onclick="exportTripCSV()" style="width:100%; margin-top:8px; box-shadow:none; padding:6px;">📤 匯出這一團的花費紀錄</button>
+                <div id="curTripMembers" style="background:#fff; padding:8px; border:2px solid #333; border-radius:12px; margin-top: 6px; min-height: 30px;">無成員</div>
+                <b style="display:block; margin-top:10px;">🎯 當前查看專案：</b> <span id="curTripName" style="color:#ff5722; font-weight:bold;">請先建立行程</span>
+                <button class="comic-btn btn-blue" onclick="copyGuestLink()" style="width:100%; margin-top:8px; box-shadow:none;">🔗 複製這一團的分享連結</button>
+                <button class="comic-btn btn-orange" onclick="exportTripCSV()" style="width:100%; margin-top:6px; box-shadow:none;">📤 匯出這一團的花費紀錄</button>
             </div>
         </div>
     </div>
