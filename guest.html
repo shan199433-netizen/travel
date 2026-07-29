@@ -253,6 +253,30 @@
         .rate-modal-hint { font-size: 11.5px; color: var(--text-soft); text-align: center; margin: 12px 0 0; line-height: 1.5; }
         .overview-cat-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 2px dashed rgba(53,50,44,0.22); font-size: 14.5px; font-weight: 600; }
         .overview-cat-row:last-child { border-bottom: none; }
+
+        /* 🌟 自訂 toast / 確認框 / 輸入框：取代原生 alert() / confirm() / prompt()，統一成漫畫風 */
+        .toast-wrap { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1300; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+        .toast-item {
+            background: var(--main-green); border: 2.5px solid var(--border-color); border-radius: 14px;
+            box-shadow: var(--box-shadow); padding: 10px 18px; font-size: 14px; font-weight: 700;
+            color: var(--text-main); max-width: 84vw; text-align: center; font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", sans-serif;
+            animation: toastIn .25s ease; transition: opacity .2s ease;
+        }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        .confirm-modal-card {
+            width: 280px; max-width: calc(100vw - 40px);
+            background: #fffdf5; border: 3px solid var(--border-color); border-radius: 20px;
+            box-shadow: var(--box-shadow); padding: 22px 20px; box-sizing: border-box; text-align: center;
+        }
+        .confirm-modal-icon { font-size: 30px; margin-bottom: 6px; }
+        .confirm-modal-msg { font-size: 15px; font-weight: 700; line-height: 1.5; margin-bottom: 18px; white-space: pre-line; }
+        .confirm-modal-actions { display: flex; gap: 10px; }
+        .confirm-modal-actions .comic-btn { box-shadow: 2px 2px 0px rgba(53,50,44,0.85); padding: 10px 6px; font-size: 14px; }
+        .confirm-modal-actions .comic-btn:active { box-shadow: var(--active-shadow); }
+        .prompt-modal-input {
+            width: 100%; box-sizing: border-box; border: 2.5px solid var(--border-color); border-radius: 10px;
+            padding: 9px 10px; font-size: 15px; font-family: inherit; margin-bottom: 16px;
+        }
         
         .history-item { border-bottom: 2px dashed rgba(53,50,44,0.22); padding: 13px 0; font-size: 14.5px; line-height: 1.75; position: relative; }
         .timeline-item { border-left: 2.5px solid var(--border-color); padding-left: 15px; margin-left: 10px; position: relative; padding-bottom: 20px; line-height: 1.7; }
@@ -666,10 +690,10 @@
             rateMeta = { source: 'auto', date: today };
             saveRateCache({ rates: fetchedRates, date: today });
             applyRates(fetchedRates);
-            if (forceAlert) alert(`✅ 已成功更新今日匯率（${today}）！`);
+            if (forceAlert) showToast(`✅ 已成功更新今日匯率（${today}）！`);
         } catch (err) {
             // 抓失敗：畫面已經在上面用快取/預設值墊過底了，這裡只需要在使用者主動要求重抓時才跳提示
-            if (forceAlert) alert(`⚠️ 匯率抓取失敗，已沿用${cache ? cache.date + ' 的舊匯率' : '內建預設匯率'}`);
+            if (forceAlert) showToast(`⚠️ 匯率抓取失敗，已沿用${cache ? cache.date + ' 的舊匯率' : '內建預設匯率'}`);
         }
     }
 
@@ -711,7 +735,7 @@
     // 直接改數字框就套用，不需要再另外按「儲存」
     function saveManualRate(code, value) {
         const val = parseFloat(value);
-        if (isNaN(val) || val <= 0) { alert('請輸入大於 0 的數字喔！'); renderRateModal(); return; }
+        if (isNaN(val) || val <= 0) { showToast('請輸入大於 0 的數字喔！'); renderRateModal(); return; }
         rateOverrides[code] = val;
         saveRateOverrides();
         applyRates(baseRatesRaw);
@@ -789,12 +813,10 @@
     function confirmIdentitySelection(selectEl) {
         const name = selectEl.value;
         if (!name) return;
-        if (!confirm(`確定是 ${name} 嗎？確認後就不能再更改身分囉！`)) {
-            populateIdentitySelect();
-            return;
-        }
-        localStorage.setItem(MY_LOCK_KEY, '1');
-        setMyIdentity(name);
+        showConfirm(`確定是 ${name} 嗎？確認後就不能再更改身分囉！`, () => {
+            localStorage.setItem(MY_LOCK_KEY, '1');
+            setMyIdentity(name);
+        }, { icon: '🙋', onCancel: populateIdentitySelect });
     }
     // 身分只能從主控版在「旅遊成員」設定好的名單中選擇，不再開放自由輸入文字；確認鎖定後選單會鎖死
     // 同步更新所有出現身分選單/顯示文字的地方（花費總覽頁的選單＋個人記帳頁的唯讀顯示）
@@ -864,7 +886,7 @@
         saveBaggageStore(store);
     }
     function addBaggageItem(kind) {
-        if (db.currentIdx === -1 || !db.trips.length) return alert('請先選擇一個行程分類！');
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('請先選擇一個行程分類！');
         const inputId = kind === 'carry' ? 'baggageCarryInput' : 'baggageCheckedInput';
         const input = document.getElementById(inputId);
         const name = input.value.trim();
@@ -886,15 +908,17 @@
         const list = getBaggageList();
         const item = list[kind].find(i => i.id === id);
         if (!item) return;
-        const name = prompt('修改行李項目名稱：', item.name);
-        if (name && name.trim()) { item.name = name.trim(); setBaggageList(list); renderBaggageList(); }
+        showPrompt('修改行李項目名稱：', item.name, (name) => {
+            if (name && name.trim()) { item.name = name.trim(); setBaggageList(list); renderBaggageList(); }
+        });
     }
     function deleteBaggageItem(kind, id) {
-        if (!confirm('確定刪除這個行李項目嗎？')) return;
-        const list = getBaggageList();
-        list[kind] = list[kind].filter(i => i.id !== id);
-        setBaggageList(list);
-        renderBaggageList();
+        showConfirm('確定刪除這個行李項目嗎？', () => {
+            const list = getBaggageList();
+            list[kind] = list[kind].filter(i => i.id !== id);
+            setBaggageList(list);
+            renderBaggageList();
+        }, { icon: '🧳' });
     }
     function toggleBaggageManage(btn) {
         const wrap = document.getElementById('baggageColWrap');
@@ -932,6 +956,59 @@
     function renderBaggageList() {
         renderBaggageItems('carry', 'baggageCarryList');
         renderBaggageItems('checked', 'baggageCheckedList');
+    }
+
+    // 🌟 自訂 toast / 確認框 / 輸入框：取代原生 alert() / confirm() / prompt()，統一成漫畫風
+    function ensureToastWrap() {
+        let wrap = document.getElementById('toastWrap');
+        if (!wrap) { wrap = document.createElement('div'); wrap.id = 'toastWrap'; wrap.className = 'toast-wrap'; document.body.appendChild(wrap); }
+        return wrap;
+    }
+    function showToast(msg, ms) {
+        const wrap = ensureToastWrap();
+        const item = document.createElement('div');
+        item.className = 'toast-item'; item.textContent = msg;
+        wrap.appendChild(item);
+        setTimeout(() => { item.style.opacity = '0'; setTimeout(() => item.remove(), 200); }, ms || 1800);
+    }
+    function showConfirm(msg, onYes, opts) {
+        opts = opts || {};
+        const overlay = document.createElement('div');
+        overlay.className = 'rc-overlay';
+        overlay.innerHTML = `<div class="confirm-modal-card">
+            <div class="confirm-modal-icon">${opts.icon || '🤔'}</div>
+            <div class="confirm-modal-msg">${escapeHtml(msg)}</div>
+            <div class="confirm-modal-actions">
+                <button type="button" class="comic-btn" style="background:#fff;">${opts.cancelText || '再想想'}</button>
+                <button type="button" class="comic-btn btn-pink">${opts.okText || '確定'}</button>
+            </div>
+        </div>`;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); if (opts.onCancel) opts.onCancel(); } });
+        const btns = overlay.querySelectorAll('.comic-btn');
+        btns[0].onclick = () => { overlay.remove(); if (opts.onCancel) opts.onCancel(); };
+        btns[1].onclick = () => { overlay.remove(); if (onYes) onYes(); };
+        document.body.appendChild(overlay);
+    }
+    function showPrompt(msg, defaultVal, onSubmit, opts) {
+        opts = opts || {};
+        const overlay = document.createElement('div');
+        overlay.className = 'rc-overlay';
+        overlay.innerHTML = `<div class="confirm-modal-card">
+            <div class="confirm-modal-msg" style="margin-bottom:10px;">${escapeHtml(msg)}</div>
+            <input type="text" class="prompt-modal-input" id="promptModalInput" value="${escapeAttr(defaultVal || '')}">
+            <div class="confirm-modal-actions">
+                <button type="button" class="comic-btn" style="background:#fff;">取消</button>
+                <button type="button" class="comic-btn btn-blue">${opts.okText || '確定'}</button>
+            </div>
+        </div>`;
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+        const btns = overlay.querySelectorAll('.comic-btn');
+        const input = overlay.querySelector('#promptModalInput');
+        btns[0].onclick = () => overlay.remove();
+        btns[1].onclick = () => { const v = input.value; overlay.remove(); if (onSubmit) onSubmit(v); };
+        overlay.addEventListener('keydown', (e) => { if (e.key === 'Enter') btns[1].click(); });
+        document.body.appendChild(overlay);
+        setTimeout(() => input.focus(), 50);
     }
 
     const LOCAL_KEY = 'travel33_local_personal_data_guest';
@@ -1073,24 +1150,25 @@
     function updateProxyExchangeHint() { const amt = parseFloat(document.getElementById('proxyAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('proxyCurrency').value]); document.getElementById('proxyLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
     
     function addPersonalExpense() {
-        if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('無專案！');
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { showToast('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
         const title = document.getElementById('personalTitle').value.trim(); const rawAmount = parseFloat(document.getElementById('personalAmount').value) || 0;
         const currency = document.getElementById('personalCurrency').value; const amount = updatePersonalExchangeHint(); const date = document.getElementById('personalDate').value.trim();
         const category = document.getElementById('personalCategory').value;
-        if (!title || amount <= 0 || !date) return alert('請填寫完整！');
+        if (!title || amount <= 0 || !date) return showToast('請填寫完整！');
         const newExp = { id: genId(), type: 'personalItem', costType: 'personal', title, payer, amount, rawAmount, currency, category, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
-        trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); alert('記好了！');
+        trip.expenses.push(newExp); saveLocalPersonalExpense(newExp); refreshAll(); showToast('記好了！');
         document.getElementById('personalDate').value = ""; document.getElementById('personalTitle').value = ""; document.getElementById('personalAmount').value = "";
     }
     function deletePersonalExpense(id) {
-        if(!confirm('確定刪除這筆紀錄嗎？')) return;
-        const trip = db.trips[db.currentIdx];
-        const idx = trip.expenses.findIndex(e => e.id === id);
-        if (idx > -1) trip.expenses.splice(idx, 1);
-        removeLocalPersonalExpense(id);
-        refreshAll();
+        showConfirm('確定刪除這筆紀錄嗎？', () => {
+            const trip = db.trips[db.currentIdx];
+            const idx = trip.expenses.findIndex(e => e.id === id);
+            if (idx > -1) trip.expenses.splice(idx, 1);
+            removeLocalPersonalExpense(id);
+            refreshAll();
+        }, { icon: '🗑️' });
     }
     // 個人記帳／代購 編輯：點✏️把該筆紀錄換成可編輯表單，儲存後直接更新原紀錄（不用整筆刪除重建）
     let editingPersonalId = null;
@@ -1104,7 +1182,7 @@
         const newRaw = parseFloat(document.getElementById('editPersonalAmount_' + id).value) || 0;
         const newCurrency = document.getElementById('editPersonalCurrency_' + id).value;
         const newCategory = document.getElementById('editPersonalCategory_' + id).value;
-        if (!newTitle || newRaw <= 0 || !newDate) return alert('請填寫完整！');
+        if (!newTitle || newRaw <= 0 || !newDate) return showToast('請填寫完整！');
         e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency; e.category = newCategory;
         e.amount = Math.round(newRaw * rates[newCurrency]);
         updateLocalPersonalExpense(e);
@@ -1129,24 +1207,25 @@
     }
     
     function addProxyExpense() {
-        if (db.currentIdx === -1 || !db.trips.length) return alert('無專案！');
-        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { alert('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('無專案！');
+        let trip = db.trips[db.currentIdx]; const payer = getMyIdentity(); if (!payer) { showToast('請先到「花費總覽」頁選擇並確認你的身分！'); return; }
         const forWho = document.getElementById('proxyFor').value.trim(); const title = document.getElementById('proxyTitle').value.trim();
         const rawAmount = parseFloat(document.getElementById('proxyAmount').value) || 0; const currency = document.getElementById('proxyCurrency').value;
         const amount = updateProxyExchangeHint(); const date = document.getElementById('proxyDate').value.trim();
-        if (!forWho) return alert('請輸入幫誰代購！'); if (!title || amount <= 0 || !date) return alert('請填寫完整！');
+        if (!forWho) return showToast('請輸入幫誰代購！'); if (!title || amount <= 0 || !date) return showToast('請填寫完整！');
         const newProxy = { id: genId(), type: 'proxy', costType: 'proxy', title, payer, forWho, amount, rawAmount, currency, participants: [], date, time: "" };
         if (!trip.expenses) trip.expenses = [];
-        trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); alert('代購記好了！');
+        trip.expenses.push(newProxy); saveLocalPersonalExpense(newProxy); refreshAll(); showToast('代購記好了！');
         document.getElementById('proxyFor').value = ""; document.getElementById('proxyDate').value = ""; document.getElementById('proxyTitle').value = ""; document.getElementById('proxyAmount').value = "";
     }
     function deleteProxyItem(id) {
-        if(!confirm('確定刪除這筆紀錄嗎？')) return;
-        const trip = db.trips[db.currentIdx];
-        const idx = trip.expenses.findIndex(e => e.id === id);
-        if (idx > -1) trip.expenses.splice(idx, 1);
-        removeLocalPersonalExpense(id);
-        refreshAll();
+        showConfirm('確定刪除這筆紀錄嗎？', () => {
+            const trip = db.trips[db.currentIdx];
+            const idx = trip.expenses.findIndex(e => e.id === id);
+            if (idx > -1) trip.expenses.splice(idx, 1);
+            removeLocalPersonalExpense(id);
+            refreshAll();
+        }, { icon: '🗑️' });
     }
     // 代購編輯：連「幫誰代購」都能改，改完存檔後清單會依新的名字重新分組
     let editingProxyId = null;
@@ -1160,7 +1239,7 @@
         const newTitle = document.getElementById('editProxyTitle_' + id).value.trim();
         const newRaw = parseFloat(document.getElementById('editProxyAmount_' + id).value) || 0;
         const newCurrency = document.getElementById('editProxyCurrency_' + id).value;
-        if (!newForWho) return alert('請輸入幫誰代購！'); if (!newTitle || newRaw <= 0 || !newDate) return alert('請填寫完整！');
+        if (!newForWho) return showToast('請輸入幫誰代購！'); if (!newTitle || newRaw <= 0 || !newDate) return showToast('請填寫完整！');
         e.forWho = newForWho; e.date = newDate; e.title = newTitle; e.rawAmount = newRaw; e.currency = newCurrency;
         e.amount = Math.round(newRaw * rates[newCurrency]);
         updateLocalPersonalExpense(e);
@@ -1373,10 +1452,10 @@
         return `🎈 大家旗鼓相當，花得平均又開心～`;
     }
     function generateReportCard() {
-        if (db.currentIdx === -1 || !db.trips.length) return alert('請先選擇一個行程分類！');
+        if (db.currentIdx === -1 || !db.trips.length) return showToast('請先選擇一個行程分類！');
         const trip = db.trips[db.currentIdx];
         const members = trip.members || [];
-        if (!members.length) return alert('這個行程還沒有隊員資料，暫時無法產生戰報卡喔！');
+        if (!members.length) return showToast('這個行程還沒有隊員資料，暫時無法產生戰報卡喔！');
 
         // 每人總花費（複用個人消費總覽同一套計算邏輯，避免跟總覽頁數字對不上）
         const ranking = members.map(name => {
@@ -1385,7 +1464,7 @@
         }).sort((a, b) => b.total - a.total);
         const grandTotal = ranking.reduce((sum, r) => sum + r.total, 0);
 
-        if (!grandTotal) return alert('目前還沒有任何花費紀錄，先記幾筆帳再來產生戰報卡吧！');
+        if (!grandTotal) return showToast('目前還沒有任何花費紀錄，先記幾筆帳再來產生戰報卡吧！');
 
         // 天數：優先用行前設定的起訖日期計算，沒設定就不顯示天數
         let daysLabel = '';
@@ -1423,11 +1502,11 @@
     function closeReportCard() { document.getElementById('reportCardOverlay').style.display = 'none'; }
     function downloadReportCard() {
         const node = document.getElementById('reportCardContent');
-        if (!node || typeof html2canvas === 'undefined') return alert('圖片產生功能載入中，請稍後再試一次！');
+        if (!node || typeof html2canvas === 'undefined') return showToast('圖片產生功能載入中，請稍後再試一次！');
         html2canvas(node, { scale: 3, useCORS: true, backgroundColor: null }).then(canvas => {
             const fileName = `旅遊戰報卡_${(db.trips[db.currentIdx].name || 'trip')}.png`;
             canvas.toBlob(async (blob) => {
-                if (!blob) { alert('圖片產生失敗了，請再試一次！'); return; }
+                if (!blob) { showToast('圖片產生失敗了，請再試一次！'); return; }
                 // 手機（尤其 iOS Safari）對 <a download> 搭配圖片資料常常沒反應，改用系統分享面板，
                 // 讓使用者可以直接「儲存至照片」；沒有分享功能的瀏覽器則退回開新分頁讓使用者長按儲存
                 const file = new File([blob], fileName, { type: 'image/png' });
@@ -1438,7 +1517,7 @@
                 const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
                 if (isIOS) {
                     window.open(url, '_blank');
-                    alert('圖片已在新分頁打開，請長按圖片並選「儲存影像」即可存到相簿！');
+                    showToast('圖片已在新分頁打開，請長按圖片並選「儲存影像」即可存到相簿！');
                 } else {
                     const link = document.createElement('a');
                     link.download = fileName;
@@ -1449,7 +1528,7 @@
                 }
                 setTimeout(() => URL.revokeObjectURL(url), 15000);
             }, 'image/png');
-        }).catch(() => alert('圖片產生失敗了，請再試一次！'));
+        }).catch(() => showToast('圖片產生失敗了，請再試一次！'));
     }
 
     function renderOverview() {
