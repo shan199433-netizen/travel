@@ -1556,7 +1556,7 @@
         const medals = ['🥇', '🥈', '🥉'];
         const rankRowsHtml = ranking.map((r, i) => `
             <div class="rc-rank-row">
-                <span><span class="rc-rank-medal">${medals[i] || (i + 1) + '.'}</span>${r.name}</span>
+                <span><span class="rc-rank-medal">${medals[i] || '🏅'}</span>${r.name}</span>
                 <span>$${Math.round(r.total)}</span>
             </div>`).join('');
 
