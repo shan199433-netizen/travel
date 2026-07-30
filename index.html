@@ -2666,7 +2666,17 @@
     }
     // 現在每頁都已有子導覽分類，收合區塊一律預設展開，切換分頁／子分頁時不再自動收合，
     // 使用者想收合哪一塊就自己按「收合」按鈕，狀態會一直保留到自己再打開。
-    function switchTab(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+    function switchTab(id, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + id).classList.add('active');
+        document.querySelectorAll('.nav-bar .nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+        // 🗓️ 每次從導覽列切回「當地日常／本次行程」頁，都預設顯示 Day1，不沿用上次停留的那一天
+        if (id === 'local' && db.currentIdx !== -1 && db.trips[db.currentIdx]) {
+            db.trips[db.currentIdx].currentDayTab = 1;
+            generateDayTags();
+        }
+    }
 
     // 「當地日常」／「本次行程」合併成一頁後，用這個切換內部的兩個子分頁
     function switchLocalSubTab(name) {
