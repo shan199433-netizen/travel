@@ -150,6 +150,10 @@
             border: 2.5px solid var(--border-color); border-radius: 14px; font-size: 16px;
             font-family: 'naikaifont', "Microsoft JhengHei", "PingFang TC", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #fff; color: var(--text-main);
         }
+        /* 📝 文字框自動長高：讓民宿資訊、每日行程備忘錄這類多行輸入框不會被卡死在小小一格裡 */
+        textarea {
+            min-height: 90px; line-height: 1.6; resize: none; overflow: hidden;
+        }
         select, input[type="text"], input[type="number"], textarea { -webkit-appearance: none; appearance: none; }
         input[type="checkbox"] { -webkit-appearance: checkbox; appearance: auto; width: 17px; height: 17px; accent-color: var(--border-color); }
         input[type="date"], input[type="time"] { -webkit-appearance: none; appearance: none; display: block; min-height: 50px; text-align: left; background: #fff; }
@@ -677,7 +681,7 @@
                 <button class="collapse-btn" onclick="toggleCollapse('hotelInfoBody', this)">▾ 收合</button>
             </div>
             <div id="hotelInfoBody" class="collapsible-content">
-            <textarea id="infoHotel" rows="3" placeholder="民宿名稱、地址..."></textarea>
+            <textarea id="infoHotel" rows="5" placeholder="民宿名稱、地址..."></textarea>
             <button class="comic-btn btn-green" onclick="savePreInfo()" style="margin-top:10px;">💾 儲存 / 更新資訊</button>
             </div>
         </div>
@@ -688,7 +692,7 @@
                 <button class="collapse-btn" onclick="toggleCollapse('prepInfoBody', this)">▾ 收合</button>
             </div>
             <div id="prepInfoBody" class="collapsible-content">
-            <textarea id="infoPrep" rows="4" placeholder="退稅：機場 T2..."></textarea>
+            <textarea id="infoPrep" rows="6" placeholder="退稅：機場 T2..."></textarea>
             <button class="comic-btn btn-green" onclick="savePreInfo()" style="margin-top:10px;">💾 儲存 / 更新資訊</button>
             <p id="preInfoSavedHint" style="font-size:12.5px; color:#2e7d32; margin:8px 0 0 0; min-height:16px;"></p>
             </div>
@@ -845,7 +849,7 @@
                     </div>
                     <input type="text" id="schedDesc" placeholder="活動項目">
                     <div id="descColorRow" class="color-swatch-row"></div>
-                    <textarea id="schedMemo" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;"></textarea>
+                    <textarea id="schedMemo" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="4" style="margin-top:5px; border-radius:8px;"></textarea>
                     <div style="text-align:right; margin-top:2px;">
                         <button type="button" class="comic-btn btn-blue" style="width:auto; padding:6px 14px; font-size:12.5px; box-shadow:2px 2px 0px #333;" onclick="insertLinkIntoMemo('schedMemo')">🔗 插入連結</button>
                     </div>
@@ -1793,6 +1797,20 @@
         result += escapeHtml(text.slice(lastIndex));
         return result.replace(/\n/g, '<br>');
     }
+    // 📝 文字框自動長高：輸入內容超過目前高度時，自動把框撐高，不會再被卡在小小一格裡看不到字
+    function autoGrowTextarea(el) {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = (el.scrollHeight + 2) + 'px';
+    }
+    function autoGrowAllTextareas(container) {
+        (container || document).querySelectorAll('textarea').forEach(autoGrowTextarea);
+    }
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.tagName === 'TEXTAREA') autoGrowTextarea(e.target);
+    });
+    window.addEventListener('load', function () { autoGrowAllTextareas(); });
+
     // 輔助插入連結：有選字就只問網址（選字當顯示文字），沒選字就依序問顯示文字和網址，
     // 插入 [顯示文字](網址) 到目前游標位置。用 textarea 原生的 selectionStart/selectionEnd，
     // 就算手指移開去點按鈕，選取範圍也不會被清空，比 contenteditable 穩定很多。
@@ -1872,6 +1890,7 @@
         trip.scheduleData[trip.currentDayTab].push({ time, desc, memo, descColor: selectedDescColor });
         sortScheduleItems(trip.scheduleData[trip.currentDayTab]);
         document.getElementById('schedDesc').value = ""; document.getElementById('schedMemo').value = "";
+        autoGrowTextarea(document.getElementById('schedMemo'));
         selectedDescColor = 'black';
         renderTimeline(); save();
     }
@@ -1921,7 +1940,7 @@
                     <input type="text" id="editSchedDesc_${idx}" value="${item.desc.replace(/"/g,'&quot;')}" placeholder="活動項目" style="margin-top:4px;">
                     <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">🎨 活動項目顏色</div>
                     <div class="color-swatch-row">${colorSwatchHtml(editingDescColor, 'setEditDescColor')}</div>
-                    <textarea id="editSchedMemo_${idx}" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="3" style="margin-top:5px; border-radius:8px;">${(item.memo||'').replace(/</g,'&lt;')}</textarea>
+                    <textarea id="editSchedMemo_${idx}" placeholder="補充備忘小筆記（可直接貼網址，或選取文字後按下方按鈕）" rows="4" style="margin-top:5px; border-radius:8px;">${(item.memo||'').replace(/</g,'&lt;')}</textarea>
                     <div style="text-align:right; margin-top:2px;">
                         <button type="button" class="comic-btn btn-blue" style="width:auto; padding:6px 14px; font-size:12.5px; box-shadow:2px 2px 0px #333;" onclick="insertLinkIntoMemo('editSchedMemo_${idx}')">🔗 插入連結</button>
                     </div>
@@ -1945,6 +1964,7 @@
         });
         listDiv.innerHTML = html;
         renderAddColorPickers();
+        autoGrowAllTextareas(listDiv);
     }
     function updateExchangeHint() { const amt = parseFloat(document.getElementById('localAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('localCurrency').value]); document.getElementById('twdLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
     function updatePersonalExchangeHint() { const amt = parseFloat(document.getElementById('personalAmount').value) || 0; const twd = Math.round(amt * rates[document.getElementById('personalCurrency').value]); document.getElementById('personalLiveHint').innerText = `🍦 換算台幣：約 $${twd} 元`; return twd; }
@@ -2467,6 +2487,8 @@
         let trip = db.trips[db.currentIdx]; const info = trip.preInfo || {};
         document.getElementById('infoHotel').value = info.hotel || "";
         document.getElementById('infoPrep').value = info.prep || "";
+        autoGrowTextarea(document.getElementById('infoHotel'));
+        autoGrowTextarea(document.getElementById('infoPrep'));
         renderFlightTickets();
     }
     function savePreInfo() {
